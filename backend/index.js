@@ -11,10 +11,10 @@ app.use(cors());
 app.use(express.json());
 
 // Endpoint de prueba
-app.get('/api/v1/health', (req, res) => {
+app.get('/endpoint', (req, res) => {
   res.json({
-    status: 'ok',
-    message: 'CORRIENDO BACKEND EN JS'
+    status: 'Correcto',
+    message: 'Corriendo backend en JS'
   });
 });
 
