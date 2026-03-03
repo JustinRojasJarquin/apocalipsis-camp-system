@@ -11,7 +11,7 @@ app.use(cors());
 app.use(express.json());
 
 // Endpoint de prueba
-app.get('/api/json', (req, res) => {
+app.get('/verify/json', (req, res) => {
   res.json({
     status: 'Correcto',
     message: 'Corriendo backend en JS'
