@@ -9,10 +9,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.get("/api/health", (req, res) => {
+app.get("/endpoint", (req, res) => {
   res.json({
-    status: "ok",
-    message: "API is running (TypeScript backend)",
+    status: "Correcto",
+    message: "Ejecutando en TypeScript",
   });
 });
 
