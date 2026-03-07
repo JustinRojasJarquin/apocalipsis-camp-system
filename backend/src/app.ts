@@ -9,7 +9,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.get("/api", (req, res) => {
+app.get("/api/prueba", (req, res) => {
   res.json({
     status: "Correcto",
     message: "Ejecutando en TypeScript",
