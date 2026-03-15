@@ -1,13 +1,467 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
+}
+
+model asignacion_cargo {
+  id_asignacion       Int                  @id @default(autoincrement())
+  id_persona          Int
+  id_cargo            Int
+  id_campamento       Int
+  fecha_inicio        DateTime             @db.DateTime(0)
+  fecha_fin           DateTime?            @db.DateTime(0)
+  temporal            Boolean              @default(false)
+  persona             persona              @relation(fields: [id_persona], references: [id_persona], onDelete: NoAction, onUpdate: NoAction, map: "asignacion_cargo_ibfk_1")
+  cargo               cargo                @relation(fields: [id_cargo], references: [id_cargo], onDelete: NoAction, onUpdate: NoAction, map: "asignacion_cargo_ibfk_2")
+  campamento          campamento           @relation(fields: [id_campamento], references: [id_campamento], onDelete: NoAction, onUpdate: NoAction, map: "asignacion_cargo_ibfk_3")
+  asignacion_cargo_ia asignacion_cargo_ia?
+
+  @@index([id_campamento], map: "id_campamento")
+  @@index([id_cargo], map: "id_cargo")
+  @@index([id_persona], map: "id_persona")
+}
+
+model asignacion_cargo_ia {
+  id_asignacion        Int              @id
+  sugerido_por_ia      Boolean          @default(false)
+  motivo_sugerencia_ia String?          @db.Text
+  asignacion_cargo     asignacion_cargo @relation(fields: [id_asignacion], references: [id_asignacion], onDelete: NoAction, onUpdate: NoAction, map: "asignacion_cargo_ia_ibfk_1")
+}
+
+model bitacora {
+  id_bitacora          Int        @id @default(autoincrement())
+  id_usuario           Int
+  id_campamento        Int
+  tipo_accion          String     @db.VarChar(60)
+  tabla_afectada       String?    @db.VarChar(60)
+  id_registro_afectado Int?
+  descripcion          String?    @db.Text
+  fecha_hora           DateTime   @default(now()) @db.DateTime(0)
+  usuario              usuario    @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "bitacora_ibfk_1")
+  campamento           campamento @relation(fields: [id_campamento], references: [id_campamento], onDelete: NoAction, onUpdate: NoAction, map: "bitacora_ibfk_2")
+
+  @@index([id_campamento], map: "id_campamento")
+  @@index([id_usuario], map: "id_usuario")
+}
+
+model campamento {
+  id_campamento                                                               Int                     @id @default(autoincrement())
+  nombre                                                                      String                  @db.VarChar(100)
+  ubicacion                                                                   String?                 @db.VarChar(200)
+  descripcion                                                                 String?                 @db.Text
+  activo                                                                      Boolean                 @default(true)
+  asignacion_cargo                                                            asignacion_cargo[]
+  bitacora                                                                    bitacora[]
+  envio_envio_id_campamento_origenTocampamento                                envio[]                 @relation("envio_id_campamento_origenTocampamento")
+  envio_envio_id_campamento_destinoTocampamento                               envio[]                 @relation("envio_id_campamento_destinoTocampamento")
+  evaluacion_ingreso                                                          evaluacion_ingreso[]
+  exploracion                                                                 exploracion[]
+  inventario_campamento                                                       inventario_campamento[]
+  inventario_movimiento                                                       inventario_movimiento[]
+  persona                                                                     persona[]
+  produccion_diaria                                                           produccion_diaria[]
+  racion_diaria                                                               racion_diaria[]
+  solicitud_campamento_solicitud_campamento_id_campamento_origenTocampamento  solicitud_campamento[]  @relation("solicitud_campamento_id_campamento_origenTocampamento")
+  solicitud_campamento_solicitud_campamento_id_campamento_destinoTocampamento solicitud_campamento[]  @relation("solicitud_campamento_id_campamento_destinoTocampamento")
+}
+
+model cargo {
+  id_cargo          Int                 @id @default(autoincrement())
+  nombre            String              @db.VarChar(100)
+  descripcion       String?             @db.Text
+  asignacion_cargo  asignacion_cargo[]
+  persona           persona[]
+  solicitud_persona solicitud_persona[]
+}
+
+model envio {
+  id_envio                                           Int                  @id @default(autoincrement())
+  id_solicitud                                       Int
+  id_campamento_origen                               Int
+  id_campamento_destino                              Int
+  fecha_salida_programada                            DateTime             @db.DateTime(0)
+  fecha_llegada_programada                           DateTime             @db.DateTime(0)
+  fecha_salida_aprobada                              DateTime?            @db.DateTime(0)
+  id_usuario_aprueba_salida                          Int?
+  fecha_llegada_aprobada                             DateTime?            @db.DateTime(0)
+  id_usuario_aprueba_llegada                         Int?
+  estado                                             envio_estado         @default(PENDIENTE)
+  solicitud_campamento                               solicitud_campamento @relation(fields: [id_solicitud], references: [id_solicitud], onDelete: NoAction, onUpdate: NoAction, map: "envio_ibfk_1")
+  campamento_envio_id_campamento_origenTocampamento  campamento           @relation("envio_id_campamento_origenTocampamento", fields: [id_campamento_origen], references: [id_campamento], onDelete: NoAction, onUpdate: NoAction, map: "envio_ibfk_2")
+  campamento_envio_id_campamento_destinoTocampamento campamento           @relation("envio_id_campamento_destinoTocampamento", fields: [id_campamento_destino], references: [id_campamento], onDelete: NoAction, onUpdate: NoAction, map: "envio_ibfk_3")
+  usuario_envio_id_usuario_aprueba_salidaTousuario   usuario?             @relation("envio_id_usuario_aprueba_salidaTousuario", fields: [id_usuario_aprueba_salida], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "envio_ibfk_4")
+  usuario_envio_id_usuario_aprueba_llegadaTousuario  usuario?             @relation("envio_id_usuario_aprueba_llegadaTousuario", fields: [id_usuario_aprueba_llegada], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "envio_ibfk_5")
+  envio_persona                                      envio_persona[]
+  envio_recurso                                      envio_recurso[]
+
+  @@index([id_campamento_destino], map: "id_campamento_destino")
+  @@index([id_campamento_origen], map: "id_campamento_origen")
+  @@index([id_solicitud], map: "id_solicitud")
+  @@index([id_usuario_aprueba_llegada], map: "id_usuario_aprueba_llegada")
+  @@index([id_usuario_aprueba_salida], map: "id_usuario_aprueba_salida")
+}
+
+model envio_persona {
+  id_envio_persona Int     @id @default(autoincrement())
+  id_envio         Int
+  id_persona       Int
+  raciones_viaje   Decimal @default(0.00) @db.Decimal(12, 2)
+  envio            envio   @relation(fields: [id_envio], references: [id_envio], onDelete: NoAction, onUpdate: NoAction, map: "envio_persona_ibfk_1")
+  persona          persona @relation(fields: [id_persona], references: [id_persona], onDelete: NoAction, onUpdate: NoAction, map: "envio_persona_ibfk_2")
+
+  @@index([id_envio], map: "id_envio")
+  @@index([id_persona], map: "id_persona")
+}
+
+model envio_recurso {
+  id_envio_recurso  Int      @id @default(autoincrement())
+  id_envio          Int
+  id_recurso        Int
+  cantidad_enviada  Decimal  @db.Decimal(12, 2)
+  cantidad_recibida Decimal? @db.Decimal(12, 2)
+  envio             envio    @relation(fields: [id_envio], references: [id_envio], onDelete: NoAction, onUpdate: NoAction, map: "envio_recurso_ibfk_1")
+  recurso           recurso  @relation(fields: [id_recurso], references: [id_recurso], onDelete: NoAction, onUpdate: NoAction, map: "envio_recurso_ibfk_2")
+
+  @@index([id_envio], map: "id_envio")
+  @@index([id_recurso], map: "id_recurso")
+}
+
+model estado_persona {
+  id_estado   Int       @id @default(autoincrement())
+  nombre      String    @db.VarChar(100)
+  descripcion String?   @db.Text
+  disponible  Boolean   @default(true)
+  persona     persona[]
+}
+
+model evaluacion_ingreso {
+  id_evaluacion     Int                                 @id @default(autoincrement())
+  id_persona        Int
+  id_campamento     Int
+  fecha_evaluacion  DateTime                            @db.DateTime(0)
+  recomendacion_ia  evaluacion_ingreso_recomendacion_ia
+  motivo_ia         String                              @db.Text
+  decision_final    evaluacion_ingreso_decision_final?
+  id_usuario_decide Int?
+  fecha_decision    DateTime?                           @db.DateTime(0)
+  comentarios       String?                             @db.Text
+  persona           persona                             @relation(fields: [id_persona], references: [id_persona], onDelete: NoAction, onUpdate: NoAction, map: "evaluacion_ingreso_ibfk_1")
+  campamento        campamento                          @relation(fields: [id_campamento], references: [id_campamento], onDelete: NoAction, onUpdate: NoAction, map: "evaluacion_ingreso_ibfk_2")
+  usuario           usuario?                            @relation(fields: [id_usuario_decide], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "evaluacion_ingreso_ibfk_3")
+
+  @@index([id_campamento], map: "id_campamento")
+  @@index([id_persona], map: "id_persona")
+  @@index([id_usuario_decide], map: "id_usuario_decide")
+}
+
+model exploracion {
+  id_exploracion                 Int                              @id @default(autoincrement())
+  id_campamento                  Int
+  nombre                         String                           @db.VarChar(100)
+  descripcion                    String?                          @db.Text
+  fecha_inicio_plan              DateTime                         @db.Date
+  dias_estimados                 Int
+  dias_extra                     Int                              @default(0)
+  dias_extra_usados              Int                              @default(0)
+  fecha_inicio_real              DateTime?                        @db.DateTime(0)
+  fecha_fin_real                 DateTime?                        @db.DateTime(0)
+  estado                         exploracion_estado               @default(PLANIFICADA)
+  campamento                     campamento                       @relation(fields: [id_campamento], references: [id_campamento], onDelete: NoAction, onUpdate: NoAction, map: "exploracion_ibfk_1")
+  exploracion_persona            exploracion_persona[]
+  exploracion_recurso_encontrado exploracion_recurso_encontrado[]
+  exploracion_recurso_llevado    exploracion_recurso_llevado[]
+
+  @@index([id_campamento], map: "id_campamento")
+}
+
+model exploracion_persona {
+  id_exploracion Int
+  id_persona     Int
+  rol_en_mision  exploracion_persona_rol_en_mision @default(EXPLORADOR)
+  exploracion    exploracion                       @relation(fields: [id_exploracion], references: [id_exploracion], onDelete: NoAction, onUpdate: NoAction, map: "exploracion_persona_ibfk_1")
+  persona        persona                           @relation(fields: [id_persona], references: [id_persona], onDelete: NoAction, onUpdate: NoAction, map: "exploracion_persona_ibfk_2")
+
+  @@id([id_exploracion, id_persona])
+  @@index([id_persona], map: "id_persona")
+}
+
+model exploracion_recurso_encontrado {
+  id_registro         Int         @id @default(autoincrement())
+  id_exploracion      Int
+  id_recurso          Int
+  cantidad_encontrada Decimal     @db.Decimal(12, 2)
+  generado_aleatorio  Boolean     @default(false)
+  exploracion         exploracion @relation(fields: [id_exploracion], references: [id_exploracion], onDelete: NoAction, onUpdate: NoAction, map: "exploracion_recurso_encontrado_ibfk_1")
+  recurso             recurso     @relation(fields: [id_recurso], references: [id_recurso], onDelete: NoAction, onUpdate: NoAction, map: "exploracion_recurso_encontrado_ibfk_2")
+
+  @@index([id_exploracion], map: "id_exploracion")
+  @@index([id_recurso], map: "id_recurso")
+}
+
+model exploracion_recurso_llevado {
+  id_registro      Int         @id @default(autoincrement())
+  id_exploracion   Int
+  id_recurso       Int
+  cantidad_llevada Decimal     @db.Decimal(12, 2)
+  exploracion      exploracion @relation(fields: [id_exploracion], references: [id_exploracion], onDelete: NoAction, onUpdate: NoAction, map: "exploracion_recurso_llevado_ibfk_1")
+  recurso          recurso     @relation(fields: [id_recurso], references: [id_recurso], onDelete: NoAction, onUpdate: NoAction, map: "exploracion_recurso_llevado_ibfk_2")
+
+  @@index([id_exploracion], map: "id_exploracion")
+  @@index([id_recurso], map: "id_recurso")
+}
+
+model inventario_campamento {
+  id_campamento Int
+  id_recurso    Int
+  cantidad      Decimal    @default(0.00) @db.Decimal(12, 2)
+  minimo_alerta Decimal    @default(0.00) @db.Decimal(12, 2)
+  campamento    campamento @relation(fields: [id_campamento], references: [id_campamento], onDelete: NoAction, onUpdate: NoAction, map: "inventario_campamento_ibfk_1")
+  recurso       recurso    @relation(fields: [id_recurso], references: [id_recurso], onDelete: NoAction, onUpdate: NoAction, map: "inventario_campamento_ibfk_2")
+
+  @@id([id_campamento, id_recurso])
+  @@index([id_recurso], map: "id_recurso")
+}
+
+model inventario_movimiento {
+  id_movimiento Int                        @id @default(autoincrement())
+  id_campamento Int
+  id_recurso    Int
+  fecha_hora    DateTime                   @db.DateTime(0)
+  tipo          inventario_movimiento_tipo
+  origen        String?                    @db.VarChar(50)
+  referencia    Int?
+  cantidad      Decimal                    @db.Decimal(12, 2)
+  id_usuario    Int
+  campamento    campamento                 @relation(fields: [id_campamento], references: [id_campamento], onDelete: NoAction, onUpdate: NoAction, map: "inventario_movimiento_ibfk_1")
+  recurso       recurso                    @relation(fields: [id_recurso], references: [id_recurso], onDelete: NoAction, onUpdate: NoAction, map: "inventario_movimiento_ibfk_2")
+  usuario       usuario                    @relation(fields: [id_usuario], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "inventario_movimiento_ibfk_3")
+
+  @@index([id_campamento], map: "id_campamento")
+  @@index([id_recurso], map: "id_recurso")
+  @@index([id_usuario], map: "id_usuario")
+}
+
+model persona {
+  id_persona          Int                   @id @default(autoincrement())
+  id_campamento       Int
+  cedula              String                @db.VarChar(30)
+  nombre              String                @db.VarChar(100)
+  apellidos           String                @db.VarChar(150)
+  fecha_nacimiento    DateTime?             @db.Date
+  foto_url            String?               @db.VarChar(255)
+  imagen_carnet_url   String?               @db.VarChar(255)
+  codigo_campamento   String?               @unique(map: "codigo_campamento") @db.VarChar(20)
+  id_cargo_actual     Int?
+  id_estado_actual    Int?
+  activo              Boolean               @default(true)
+  asignacion_cargo    asignacion_cargo[]
+  envio_persona       envio_persona[]
+  evaluacion_ingreso  evaluacion_ingreso[]
+  exploracion_persona exploracion_persona[]
+  campamento          campamento            @relation(fields: [id_campamento], references: [id_campamento], onDelete: NoAction, onUpdate: NoAction, map: "persona_ibfk_1")
+  cargo               cargo?                @relation(fields: [id_cargo_actual], references: [id_cargo], onDelete: NoAction, onUpdate: NoAction, map: "persona_ibfk_2")
+  estado_persona      estado_persona?       @relation(fields: [id_estado_actual], references: [id_estado], onDelete: NoAction, onUpdate: NoAction, map: "persona_ibfk_3")
+  produccion_diaria   produccion_diaria[]
+  racion_diaria       racion_diaria[]
+  usuario             usuario[]
+
+  @@index([id_campamento], map: "id_campamento")
+  @@index([id_cargo_actual], map: "id_cargo_actual")
+  @@index([id_estado_actual], map: "id_estado_actual")
+}
+
+model produccion_diaria {
+  id_produccion Int        @id @default(autoincrement())
+  fecha         DateTime   @db.Date
+  id_persona    Int
+  id_campamento Int
+  id_recurso    Int
+  cantidad      Decimal    @default(0.00) @db.Decimal(12, 2)
+  ajuste_razon  String?    @db.VarChar(100)
+  observaciones String?    @db.Text
+  persona       persona    @relation(fields: [id_persona], references: [id_persona], onDelete: NoAction, onUpdate: NoAction, map: "produccion_diaria_ibfk_1")
+  campamento    campamento @relation(fields: [id_campamento], references: [id_campamento], onDelete: NoAction, onUpdate: NoAction, map: "produccion_diaria_ibfk_2")
+  recurso       recurso    @relation(fields: [id_recurso], references: [id_recurso], onDelete: NoAction, onUpdate: NoAction, map: "produccion_diaria_ibfk_3")
+
+  @@index([id_campamento], map: "id_campamento")
+  @@index([id_persona], map: "id_persona")
+  @@index([id_recurso], map: "id_recurso")
+}
+
+model racion_diaria {
+  id_racion     Int        @id @default(autoincrement())
+  fecha         DateTime   @db.Date
+  id_persona    Int
+  id_campamento Int
+  id_recurso    Int
+  cantidad      Decimal    @default(0.00) @db.Decimal(12, 2)
+  persona       persona    @relation(fields: [id_persona], references: [id_persona], onDelete: NoAction, onUpdate: NoAction, map: "racion_diaria_ibfk_1")
+  campamento    campamento @relation(fields: [id_campamento], references: [id_campamento], onDelete: NoAction, onUpdate: NoAction, map: "racion_diaria_ibfk_2")
+  recurso       recurso    @relation(fields: [id_recurso], references: [id_recurso], onDelete: NoAction, onUpdate: NoAction, map: "racion_diaria_ibfk_3")
+
+  @@index([id_campamento], map: "id_campamento")
+  @@index([id_persona], map: "id_persona")
+  @@index([id_recurso], map: "id_recurso")
+}
+
+model recurso {
+  id_recurso                     Int                              @id @default(autoincrement())
+  nombre                         String                           @db.VarChar(100)
+  categoria                      recurso_categoria
+  unidad                         String                           @db.VarChar(20)
+  envio_recurso                  envio_recurso[]
+  exploracion_recurso_encontrado exploracion_recurso_encontrado[]
+  exploracion_recurso_llevado    exploracion_recurso_llevado[]
+  inventario_campamento          inventario_campamento[]
+  inventario_movimiento          inventario_movimiento[]
+  produccion_diaria              produccion_diaria[]
+  racion_diaria                  racion_diaria[]
+  solicitud_recurso              solicitud_recurso[]
+}
+
+model rol {
+  id_rol  Int       @id @default(autoincrement())
+  nombre  String    @db.VarChar(100)
+  codigo  String    @unique(map: "codigo") @db.VarChar(50)
+  usuario usuario[]
+}
+
+model solicitud_campamento {
+  id_solicitud                                                      Int                         @id @default(autoincrement())
+  id_campamento_origen                                              Int
+  id_campamento_destino                                             Int
+  tipo                                                              solicitud_campamento_tipo
+  estado                                                            solicitud_campamento_estado @default(PENDIENTE)
+  fecha_creacion                                                    DateTime                    @db.DateTime(0)
+  id_usuario_crea                                                   Int
+  fecha_decision                                                    DateTime?                   @db.DateTime(0)
+  id_usuario_decide                                                 Int?
+  motivo                                                            String?                     @db.Text
+  respuesta                                                         String?                     @db.Text
+  envio                                                             envio[]
+  campamento_solicitud_campamento_id_campamento_origenTocampamento  campamento                  @relation("solicitud_campamento_id_campamento_origenTocampamento", fields: [id_campamento_origen], references: [id_campamento], onDelete: NoAction, onUpdate: NoAction, map: "solicitud_campamento_ibfk_1")
+  campamento_solicitud_campamento_id_campamento_destinoTocampamento campamento                  @relation("solicitud_campamento_id_campamento_destinoTocampamento", fields: [id_campamento_destino], references: [id_campamento], onDelete: NoAction, onUpdate: NoAction, map: "solicitud_campamento_ibfk_2")
+  usuario_solicitud_campamento_id_usuario_creaTousuario             usuario                     @relation("solicitud_campamento_id_usuario_creaTousuario", fields: [id_usuario_crea], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "solicitud_campamento_ibfk_3")
+  usuario_solicitud_campamento_id_usuario_decideTousuario           usuario?                    @relation("solicitud_campamento_id_usuario_decideTousuario", fields: [id_usuario_decide], references: [id_usuario], onDelete: NoAction, onUpdate: NoAction, map: "solicitud_campamento_ibfk_4")
+  solicitud_persona                                                 solicitud_persona[]
+  solicitud_recurso                                                 solicitud_recurso[]
+
+  @@index([id_campamento_destino], map: "id_campamento_destino")
+  @@index([id_campamento_origen], map: "id_campamento_origen")
+  @@index([id_usuario_crea], map: "id_usuario_crea")
+  @@index([id_usuario_decide], map: "id_usuario_decide")
+}
+
+model solicitud_persona {
+  id_solicitud_per     Int                  @id @default(autoincrement())
+  id_solicitud         Int
+  id_cargo             Int
+  cantidad_personas    Int                  @default(1)
+  solicitud_campamento solicitud_campamento @relation(fields: [id_solicitud], references: [id_solicitud], onDelete: NoAction, onUpdate: NoAction, map: "solicitud_persona_ibfk_1")
+  cargo                cargo                @relation(fields: [id_cargo], references: [id_cargo], onDelete: NoAction, onUpdate: NoAction, map: "solicitud_persona_ibfk_2")
+
+  @@index([id_cargo], map: "id_cargo")
+  @@index([id_solicitud], map: "id_solicitud")
+}
+
+model solicitud_recurso {
+  id_solicitud_rec     Int                  @id @default(autoincrement())
+  id_solicitud         Int
+  id_recurso           Int
+  cantidad_pedida      Decimal              @db.Decimal(12, 2)
+  cantidad_aprobada    Decimal?             @db.Decimal(12, 2)
+  solicitud_campamento solicitud_campamento @relation(fields: [id_solicitud], references: [id_solicitud], onDelete: NoAction, onUpdate: NoAction, map: "solicitud_recurso_ibfk_1")
+  recurso              recurso              @relation(fields: [id_recurso], references: [id_recurso], onDelete: NoAction, onUpdate: NoAction, map: "solicitud_recurso_ibfk_2")
+
+  @@index([id_recurso], map: "id_recurso")
+  @@index([id_solicitud], map: "id_solicitud")
+}
+
+model usuario {
+  id_usuario                                                           Int                     @id @default(autoincrement())
+  usuario                                                              String                  @unique(map: "usuario") @db.VarChar(50)
+  contrasena_hash                                                      String                  @db.VarChar(255)
+  id_rol                                                               Int
+  id_persona                                                           Int
+  activo                                                               Boolean                 @default(true)
+  bitacora                                                             bitacora[]
+  envio_envio_id_usuario_aprueba_salidaTousuario                       envio[]                 @relation("envio_id_usuario_aprueba_salidaTousuario")
+  envio_envio_id_usuario_aprueba_llegadaTousuario                      envio[]                 @relation("envio_id_usuario_aprueba_llegadaTousuario")
+  evaluacion_ingreso                                                   evaluacion_ingreso[]
+  inventario_movimiento                                                inventario_movimiento[]
+  solicitud_campamento_solicitud_campamento_id_usuario_creaTousuario   solicitud_campamento[]  @relation("solicitud_campamento_id_usuario_creaTousuario")
+  solicitud_campamento_solicitud_campamento_id_usuario_decideTousuario solicitud_campamento[]  @relation("solicitud_campamento_id_usuario_decideTousuario")
+  rol                                                                  rol                     @relation(fields: [id_rol], references: [id_rol], onDelete: NoAction, onUpdate: NoAction, map: "usuario_ibfk_1")
+  persona                                                              persona                 @relation(fields: [id_persona], references: [id_persona], onDelete: NoAction, onUpdate: NoAction, map: "usuario_ibfk_2")
+
+  @@index([id_persona], map: "id_persona")
+  @@index([id_rol], map: "id_rol")
+}
+
+enum exploracion_persona_rol_en_mision {
+  LIDER
+  EXPLORADOR
+}
+
+enum recurso_categoria {
+  COMIDA
+  AGUA
+  HIGIENE
+  DEFENSA
+  MUNICION
+  MEDICINA
+  OTRO
+}
+
+enum solicitud_campamento_tipo {
+  RECURSOS
+  PERSONAS
+  MIXTA
+}
+
+enum evaluacion_ingreso_recomendacion_ia {
+  ACEPTAR
+  RECHAZAR
+}
+
+enum inventario_movimiento_tipo {
+  ENTRADA
+  SALIDA
+  RACION
+  PRODUCCION
+  TRASLADO_SALIDA
+  TRASLADO_ENTRADA
+  EXPLORACION_SALIDA
+  EXPLORACION_ENTRADA
+}
+
+enum solicitud_campamento_estado {
+  PENDIENTE
+  APROBADA
+  RECHAZADA
+  AJUSTADA
+}
+
+enum evaluacion_ingreso_decision_final {
+  ACEPTADO
+  RECHAZADO
+}
+
+enum envio_estado {
+  PENDIENTE
+  EN_TRANSITO
+  COMPLETADO
+  CANCELADO
+}
+
+enum exploracion_estado {
+  PLANIFICADA
+  EN_PROGRESO
+  COMPLETADA
+  CANCELADA
+  FALLIDA
 }
