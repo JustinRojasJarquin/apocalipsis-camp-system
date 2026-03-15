@@ -1,15 +1,26 @@
-import { pool } from "../../config/database";
+import { prisma } from "../../config/prisma";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
-//Consulta a la base de datos sobre los datos del usuario
+/*
+  Servicio de autenticación.
+  Aquí se realiza la lógica del login:
+  1. Buscar usuario en la base de datos
+  2. Verificar que esté activo
+  3. Comparar contraseña con bcrypt
+  4. Generar token JWT
+*/
 export const login = async (usuario: string, password: string) => {
-  const [rows]: any = await pool.query(
-    "SELECT id_usuario, usuario, contrasena_hash, id_rol, activo FROM usuario WHERE usuario = ? LIMIT 1",
-    [usuario]
-  );
-
-  const usuarioEncontrado = rows[0];
+  /*
+    Busca un usuario por su nombre de usuario.
+    Como en Prisma el campo "usuario" es unique,
+    podemos usar findUnique.
+  */
+  const usuarioEncontrado = await prisma.usuario.findUnique({
+    where: {
+      usuario: usuario,
+    },
+  });
 
   if (!usuarioEncontrado) {
     throw new Error("Usuario no encontrado");
@@ -19,7 +30,10 @@ export const login = async (usuario: string, password: string) => {
     throw new Error("Usuario inactivo");
   }
 
-  //Compara la contraseña enviada por el usuario con el hash de la D. Por seguridad se realiza de esta manera
+  /*
+    Comparamos la contraseña que envía el cliente
+    con el hash guardado en la base de datos.
+  */
   const passwordValido = await bcrypt.compare(
     password,
     usuarioEncontrado.contrasena_hash
@@ -29,18 +43,20 @@ export const login = async (usuario: string, password: string) => {
     throw new Error("Contraseña incorrecta");
   }
 
-  const secreto = process.env.JWT_SECRET as string;
-  const expiracion = process.env.JWT_EXPIRES as jwt.SignOptions["expiresIn"];
-
+  /*
+    Generamos el token JWT para autenticación.
+    Por ahora usamos 8 horas fijas para evitar
+    problemas de tipos con TypeScript.
+  */
   const token = jwt.sign(
     {
       id_usuario: usuarioEncontrado.id_usuario,
       id_rol: usuarioEncontrado.id_rol,
       usuario: usuarioEncontrado.usuario,
     },
-    secreto,
+    process.env.JWT_SECRET || "secreto",
     {
-      expiresIn: expiracion || "8h",
+      expiresIn: "8h",
     }
   );
 
