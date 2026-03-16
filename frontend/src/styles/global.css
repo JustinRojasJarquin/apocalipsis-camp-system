@@ -6,78 +6,312 @@
 }
 
 body {
-  background: #0f172a;
   color: white;
+  background: #0f172a;
 }
 
-.login-container,
-.dashboard-container {
+/* =========================
+   LOGIN
+========================= */
+
+.login-container {
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #0f172a, #1e293b);
   padding: 20px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.35), transparent 35%),
+    radial-gradient(circle at bottom center, rgba(0, 31, 94, 0.35), transparent 32%),
+    linear-gradient(135deg, #8bb7eb 0%, #4f8fda 35%, #0050ad 100%);
 }
 
-.login-card,
-.dashboard-card {
+.login-box {
   width: 100%;
-  max-width: 420px;
-  background: #111827;
-  border-radius: 16px;
-  padding: 32px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  max-width: 360px;
+  text-align: center;
+  padding: 20px 28px;
 }
 
-.login-card h1,
-.dashboard-card h1 {
-  margin-bottom: 10px;
-  font-size: 28px;
+.login-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  background: #0b4a9a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.login-card p,
-.dashboard-card p {
-  margin-bottom: 20px;
-  color: #cbd5e1;
+.login-main-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.login-title {
+  font-size: 34px;
+  font-weight: 300;
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+  color: white;
+}
+
+.login-subtitle {
+  font-size: 24px;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.92);
+  margin-bottom: 34px;
 }
 
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 24px;
 }
 
-.login-form input {
-  padding: 14px;
-  border-radius: 10px;
-  border: 1px solid #334155;
-  background: #1e293b;
-  color: white;
-  outline: none;
+.input-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.7);
+  padding-bottom: 8px;
 }
 
-.login-form input:focus {
-  border-color: #3b82f6;
+.input-icon {
+  width: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
 }
 
-.login-form button,
-.dashboard-card button {
-  padding: 14px;
+.input-icon-img {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+}
+
+.input-line input {
+  flex: 1;
   border: none;
-  border-radius: 10px;
-  background: #2563eb;
+  outline: none;
+  background: transparent;
   color: white;
-  cursor: pointer;
-  transition: 0.2s;
+  font-size: 14px;
 }
 
-.login-form button:hover,
-.dashboard-card button:hover {
-  background: #1d4ed8;
+.input-line input::placeholder {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.toggle-password-btn {
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 6px;
+  flex-shrink: 0;
+}
+
+.eye-icon-img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+.login-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: -6px;
+  font-size: 11px;
+  color: white;
+}
+
+.remember-me {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.remember-me input[type="checkbox"] {
+  width: 11px;
+  height: 11px;
+  accent-color: #0b2f66;
+}
+
+.forgot-password {
+  color: white;
+  text-decoration: none;
+}
+
+.forgot-password:hover {
+  text-decoration: underline;
+}
+
+.login-button {
+  margin-top: 2px;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  background: #003f8f;
+  color: white;
+  font-size: 12px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.login-button:hover {
+  background: #003576;
+}
+
+.login-button:disabled {
+  opacity: 0.8;
+  cursor: not-allowed;
 }
 
 .error-text {
-  color: #f87171;
-  font-size: 14px;
+  color: #ffe4e6;
+  font-size: 12px;
+  text-align: left;
+  margin-top: -10px;
+}
+
+/* AUTOFILL SIN CAMBIO DE COLOR */
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: white !important;
+  caret-color: white;
+  transition: background-color 5000s ease-in-out 0s;
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  box-shadow: 0 0 0 1000px transparent inset !important;
+}
+
+/* =========================
+   DASHBOARD
+========================= */
+
+.dashboard-container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.35), transparent 35%),
+    radial-gradient(circle at bottom center, rgba(0, 31, 94, 0.35), transparent 32%),
+    linear-gradient(135deg, #8bb7eb 0%, #4f8fda 35%, #0050ad 100%);
+}
+
+.dashboard-card {
+  width: 100%;
+  max-width: 520px;
+  text-align: center;
+  padding: 40px 24px;
+  color: white;
+}
+
+.dashboard-card h1 {
+  font-size: 68px;
+  font-weight: 300;
+  line-height: 1.1;
+  margin-top: 0;
+  margin-bottom: 28px;
+  color: white;
+}
+
+.dashboard-user {
+  font-size: 24px;
+  margin-bottom: 18px;
+  color: rgba(255, 255, 255, 0.96);
+}
+
+.dashboard-user strong {
+  font-weight: 700;
+}
+
+.dashboard-message {
+  font-size: 22px;
+  margin-bottom: 34px;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.dashboard-card button {
+  width: 100%;
+  max-width: 330px;
+  padding: 16px;
+  border: none;
+  background: #003f8f;
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.dashboard-card button:hover {
+  background: #003576;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 420px) {
+  .login-box {
+    max-width: 100%;
+    padding: 12px 16px;
+  }
+
+  .login-title {
+    font-size: 30px;
+  }
+
+  .login-subtitle {
+    font-size: 21px;
+  }
+
+  .login-options {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-card {
+    max-width: 100%;
+    padding: 28px 18px;
+  }
+
+  .dashboard-card h1 {
+    font-size: 48px;
+    margin-bottom: 22px;
+  }
+
+  .dashboard-user {
+    font-size: 20px;
+    margin-bottom: 14px;
+  }
+
+  .dashboard-message {
+    font-size: 18px;
+    margin-bottom: 26px;
+  }
+
+  .dashboard-card button {
+    max-width: 280px;
+    font-size: 16px;
+    padding: 14px;
+  }
 }

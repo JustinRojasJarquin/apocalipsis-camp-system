@@ -9,6 +9,7 @@ function DashboardPage() {
   const cerrarSesion = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("usuario");
+    localStorage.removeItem("recordarme");
     navigate("/");
   };
 
@@ -16,11 +17,12 @@ function DashboardPage() {
     <div className="dashboard-container">
       <div className="dashboard-card">
         <h1>Bienvenido</h1>
-        <p>
+
+        <p className="dashboard-user">
           Usuario: <strong>{usuario?.usuario || "Sin usuario"}</strong>
         </p>
 
-        <p>Pagina en construccion XD.</p>
+        <p className="dashboard-message">Página en construcción XD.</p>
 
         <button onClick={cerrarSesion}>Cerrar sesión</button>
       </div>
