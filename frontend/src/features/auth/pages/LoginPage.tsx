@@ -1,12 +1,12 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { loginRequest } from "../services/auth.service";
+import { loginRequest } from "../auth.api";
 
-import userIcon from "../assets/user.png";
-import lockIcon from "../assets/lock.png";
-import eyeOpenIcon from "../assets/eye-open.png";
-import eyeClosedIcon from "../assets/eye-closed.png";
+import userIcon from "../../../assets/user.png";
+import lockIcon from "../../../assets/lock.png";
+import eyeOpenIcon from "../../../assets/eye-open.png";
+import eyeClosedIcon from "../../../assets/eye-closed.png";
 
 function LoginPage() {
   const navigate = useNavigate();
