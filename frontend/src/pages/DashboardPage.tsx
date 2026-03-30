@@ -25,6 +25,7 @@ function DashboardPage() {
     void loadCampamentos();
   }, []);
 
+  //actualizado
   return (
     <div style={{ display: "flex", background: "#0f172a", minHeight: "100vh" }}>
       <Sidebar />
