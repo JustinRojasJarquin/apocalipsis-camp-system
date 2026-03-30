@@ -1,31 +1,25 @@
 import { Response } from "express";
 
-/**
- * Respuesta exitosa estándar
- */
-export function successResponse(
+export const successResponse = (
   res: Response,
   data: any,
-  message = "Operación exitosa",
+  mensaje = "Operación exitosa",
   status = 200
-) {
+) => {
   return res.status(status).json({
     success: true,
-    message,
+    mensaje,
     data,
   });
-}
+};
 
-/**
- * Respuesta de error estándar
- */
-export function errorResponse(
+export const errorResponse = (
   res: Response,
-  message = "Error interno del servidor",
+  mensaje = "Error interno del servidor",
   status = 500
-) {
+) => {
   return res.status(status).json({
     success: false,
-    message,
+    mensaje,
   });
-}
+};
