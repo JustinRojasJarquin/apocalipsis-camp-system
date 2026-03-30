@@ -1,30 +1,47 @@
-import { useNavigate } from "react-router-dom";
+import Navbar from "../shared/components/Navbar";
+import Sidebar from "../shared/components/Sidebar";
+import { useAuth } from "../shared/hooks/useAuth";
+import Card from "../shared/components/Card"
 
+//Para que tengan una base con que partir con los modulos campamentos, personas, exploraciones e invetarios 
 function DashboardPage() {
-  const navigate = useNavigate();
-
-  const usuarioGuardado = localStorage.getItem("usuario");
-  const usuario = usuarioGuardado ? JSON.parse(usuarioGuardado) : null;
-
-  const cerrarSesion = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("usuario");
-    localStorage.removeItem("recordarme");
-    navigate("/");
-  };
+  const { usuario } = useAuth();
 
   return (
-    <div className="dashboard-container">
-      <div className="dashboard-card">
-        <h1>Bienvenido</h1>
+    <div style={{ display: "flex", background: "#0f172a" }}>
+      {/* Sidebar */}
+      <Sidebar />
 
-        <p className="dashboard-user">
-          Usuario: <strong>{usuario?.usuario || "Sin usuario"}</strong>
-        </p>
+      {/* Contenido */}
+      <div style={{ flex: 1 }}>
+        <Navbar />
 
-        <p className="dashboard-message">Página en construcción XD.</p>
+        <main style={{ padding: "20px" }}>
+          {/* Header */}
+          <div style={{ marginBottom: "24px" }}>
+            <h1 style={{ color: "white", fontSize: "24px" }}>
+              Bienvenido, {usuario?.usuario}
+            </h1>
+            <p style={{ color: "#94a3b8" }}>
+              Panel de control del sistema
+            </p>
+          </div>
 
-        <button onClick={cerrarSesion}>Cerrar sesión</button>
+          {/* Cards */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: "20px",
+            }}
+          >
+            <Card title="Campamentos" value="0" />
+            <Card title="Personas" value="0" />
+            <Card title="Inventario" value="0" />
+            <Card title="Exploraciones" value="0" />
+          </div>
+
+        </main>
       </div>
     </div>
   );

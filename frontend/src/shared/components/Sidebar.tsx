@@ -4,16 +4,19 @@ function Sidebar() {
   return (
     <aside
       style={{
-        width: "220px",
+        width: "240px",
         minHeight: "100vh",
-        background: "#0f172a",
+        background: "#020617",
         color: "white",
         padding: "20px",
+        borderRight: "1px solid #1f2937",
       }}
     >
-      <h3 style={{ marginBottom: "20px" }}>Menú</h3>
+      <h2 style={{ marginBottom: "30px" }}>
+        Sistema
+      </h2>
 
-      <nav style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+      <nav style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         <Link to="/dashboard">Dashboard</Link>
         <Link to="/campamentos">Campamentos</Link>
         <Link to="/personas">Personas</Link>
