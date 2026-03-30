@@ -1,6 +1,6 @@
-import { useState, useEffect, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { createCampamento, updateCampamento } from "../campamentos.api";
-import type { Campamento } from "../types";
+import type { Campamento, CampamentoFormData } from "../types";
 
 interface Props {
   onSuccess: () => void;
@@ -13,34 +13,42 @@ interface ValidationErrors {
   ubicacion?: string;
 }
 
+const emptyForm: CampamentoFormData = {
+  nombre: "",
+  ubicacion: "",
+  descripcion: "",
+};
+
 export default function CampamentosForm({
   onSuccess,
   campamentoEditando,
   onCancelEdit,
 }: Props) {
-  const [form, setForm] = useState<Campamento>({
-    nombre: "",
-    ubicacion: "",
-    descripcion: "",
-  });
-
+  const [form, setForm] = useState<CampamentoFormData>(emptyForm);
   const [fieldErrors, setFieldErrors] = useState<ValidationErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (campamentoEditando) {
-      setForm(campamentoEditando);
+      setForm({
+        nombre: campamentoEditando.nombre,
+        ubicacion: campamentoEditando.ubicacion ?? "",
+        descripcion: campamentoEditando.descripcion ?? "",
+      });
+      return;
     }
+
+    setForm(emptyForm);
   }, [campamentoEditando]);
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
-    setForm({
-      ...form,
+    setForm((currentForm) => ({
+      ...currentForm,
       [e.target.name]: e.target.value,
-    });
+    }));
   };
 
   const validateForm = () => {
@@ -48,10 +56,12 @@ export default function CampamentosForm({
 
     if (!form.nombre.trim()) {
       errors.nombre = "El nombre es obligatorio";
+    } else if (form.nombre.trim().length < 3) {
+      errors.nombre = "El nombre debe tener al menos 3 caracteres";
     }
 
-    if (!form.ubicacion?.trim()) {
-      errors.ubicacion = "La ubicación es obligatoria";
+    if (form.ubicacion.trim() && form.ubicacion.trim().length < 3) {
+      errors.ubicacion = "La ubicacion debe tener al menos 3 caracteres";
     }
 
     return errors;
@@ -71,17 +81,19 @@ export default function CampamentosForm({
     setIsSaving(true);
 
     try {
-      if (form.id_campamento) {
-        await updateCampamento(form.id_campamento, form);
+      if (campamentoEditando?.id_campamento) {
+        await updateCampamento(campamentoEditando.id_campamento, form);
       } else {
         await createCampamento(form);
       }
 
-      setForm({ nombre: "", ubicacion: "", descripcion: "" });
+      setForm(emptyForm);
       onSuccess();
       onCancelEdit?.();
-    } catch {
-      setError("No se pudo guardar el campamento.");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "No se pudo guardar el campamento.",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -112,7 +124,7 @@ export default function CampamentosForm({
       </label>
 
       <label className="form-field">
-        <span>Ubicación</span>
+        <span>Ubicacion</span>
         <input
           name="ubicacion"
           value={form.ubicacion}
@@ -125,7 +137,7 @@ export default function CampamentosForm({
       </label>
 
       <label className="form-field">
-        <span>Descripción</span>
+        <span>Descripcion</span>
         <textarea
           name="descripcion"
           value={form.descripcion}
@@ -138,20 +150,21 @@ export default function CampamentosForm({
       <button className="button button-primary" disabled={isSaving}>
         {isSaving
           ? "Guardando..."
-          : form.id_campamento
+          : campamentoEditando?.id_campamento
             ? "Actualizar"
             : "Guardar"}
       </button>
+
       {campamentoEditando && (
         <button
           type="button"
           className="button button-secondary"
           onClick={() => {
-            setForm({ nombre: "", ubicacion: "", descripcion: "" });
+            setForm(emptyForm);
             onCancelEdit?.();
           }}
         >
-          Cancelar edición
+          Cancelar edicion
         </button>
       )}
     </form>

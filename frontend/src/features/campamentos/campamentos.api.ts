@@ -1,23 +1,31 @@
-import type { Campamento } from "./types";
+import type { Campamento, CampamentoFormData } from "./types";
 
 const BASE_URL = "http://localhost:4000/api/campamentos";
 
-const handleResponse = async (res: Response) => {
+const handleResponse = async <T>(res: Response): Promise<T> => {
+  const body = await res.text();
+  const data = body ? (JSON.parse(body) as unknown) : null;
+
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || res.statusText || "Error en la petición");
+    const errorData = data as { error?: string; mensaje?: string } | null;
+    const message =
+      errorData?.error ||
+      errorData?.mensaje ||
+      res.statusText ||
+      "Error en la peticion";
+
+    throw new Error(message);
   }
 
-  const body = await res.text();
-  return body ? JSON.parse(body) : null;
+  return data as T;
 };
 
 export const getCampamentos = async (): Promise<Campamento[]> => {
   const res = await fetch(BASE_URL);
-  return (await handleResponse(res)) as Campamento[];
+  return await handleResponse<Campamento[]>(res);
 };
 
-export const createCampamento = async (data: Campamento) => {
+export const createCampamento = async (data: CampamentoFormData) => {
   const res = await fetch(BASE_URL, {
     method: "POST",
     headers: {
@@ -26,10 +34,13 @@ export const createCampamento = async (data: Campamento) => {
     body: JSON.stringify(data),
   });
 
-  return await handleResponse(res);
+  return await handleResponse<Campamento>(res);
 };
 
-export const updateCampamento = async (id: number, data: Campamento) => {
+export const updateCampamento = async (
+  id: number,
+  data: CampamentoFormData,
+) => {
   const res = await fetch(`${BASE_URL}/${id}`, {
     method: "PUT",
     headers: {
@@ -38,7 +49,7 @@ export const updateCampamento = async (id: number, data: Campamento) => {
     body: JSON.stringify(data),
   });
 
-  return await handleResponse(res);
+  return await handleResponse<Campamento>(res);
 };
 
 export const deleteCampamento = async (id: number) => {
@@ -46,5 +57,5 @@ export const deleteCampamento = async (id: number) => {
     method: "DELETE",
   });
 
-  await handleResponse(res);
+  await handleResponse<Campamento>(res);
 };

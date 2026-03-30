@@ -5,3 +5,9 @@ export interface Campamento {
   descripcion?: string;
   activo?: boolean;
 }
+
+export interface CampamentoFormData {
+  nombre: string;
+  ubicacion: string;
+  descripcion: string;
+}
