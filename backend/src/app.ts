@@ -2,7 +2,9 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./modules/auth/auth.routes";
+import campamentosRoutes from "./modules/campamentos/campamentos.routes";
 import { verificarToken } from "./middlewares/auth.middleware";
+
 dotenv.config();
 
 const app = express();
@@ -23,7 +25,9 @@ app.get("/api/privado", verificarToken, (req, res) => {
     usuario: req.usuario,
   });
 });
-// Rutas del módulo de autenticación
+
 app.use("/api/auth", authRoutes);
+
+app.use("/api/campamentos", campamentosRoutes);
 
 export default app;

@@ -14,11 +14,7 @@ function Sidebar() {
       <h3 style={{ marginBottom: "20px" }}>Menú</h3>
 
       <nav style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-        <Link to="/dashboard">Dashboard</Link>
-        <Link to="/campamentos">Campamentos</Link>
-        <Link to="/personas">Personas</Link>
-        <Link to="/inventario">Inventario</Link>
-        <Link to="/exploraciones">Exploraciones</Link>
+        <Link to="/dashboard">Campamentos</Link>
       </nav>
     </aside>
   );
