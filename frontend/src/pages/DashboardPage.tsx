@@ -1,56 +1,47 @@
-import { useNavigate } from "react-router-dom";
+import Navbar from "../shared/components/Navbar";
+import Sidebar from "../shared/components/Sidebar";
+import { useAuth } from "../shared/hooks/useAuth";
+import Card from "../shared/components/Card"
 
+//Para que tengan una base con que partir con los modulos campamentos, personas, exploraciones e invetarios 
 function DashboardPage() {
-  const navigate = useNavigate();
-
-  const cerrarSesion = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("usuario");
-    localStorage.removeItem("recordarme");
-    navigate("/");
-  };
+  const { usuario } = useAuth();
 
   return (
-    <div className="dashboard-container">
-      <div className="dashboard-card">
-        <header className="dashboard-header">
-          <div>
-            <p className="dashboard-overline">Panel de Control</p>
-            <h1>Bienvenido</h1>
-            <p className="dashboard-message">
-              Accede al módulo de campamentos y administra tu información desde
-              aquí.
+    <div style={{ display: "flex", background: "#0f172a" }}>
+      {/* Sidebar */}
+      <Sidebar />
+
+      {/* Contenido */}
+      <div style={{ flex: 1 }}>
+        <Navbar />
+
+        <main style={{ padding: "20px" }}>
+          {/* Header */}
+          <div style={{ marginBottom: "24px" }}>
+            <h1 style={{ color: "white", fontSize: "24px" }}>
+              Bienvenido, {usuario?.usuario}
+            </h1>
+            <p style={{ color: "#94a3b8" }}>
+              Panel de control del sistema
             </p>
           </div>
-        </header>
 
-        <div className="dashboard-grid">
-          <article className="dashboard-panel">
-            <div className="panel-header">
-              <h2>Campamentos</h2>
-              <p>Visualiza y administra todos los campamentos disponibles.</p>
-            </div>
-            <button
-              className="button button-primary dashboard-action-button"
-              onClick={() => navigate("/campamentos")}
-            >
-              Ir a campamentos
-            </button>
-          </article>
+          {/* Cards */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: "20px",
+            }}
+          >
+            <Card title="Campamentos" value="0" />
+            <Card title="Personas" value="0" />
+            <Card title="Inventario" value="0" />
+            <Card title="Exploraciones" value="0" />
+          </div>
 
-          <article className="dashboard-panel dashboard-panel-secondary">
-            <div className="panel-header">
-              <h2>Cuenta</h2>
-              <p>Cierra sesión de forma segura cuando termines.</p>
-            </div>
-            <button
-              className="button button-secondary dashboard-action-button"
-              onClick={cerrarSesion}
-            >
-              Cerrar sesión
-            </button>
-          </article>
-        </div>
+        </main>
       </div>
     </div>
   );
