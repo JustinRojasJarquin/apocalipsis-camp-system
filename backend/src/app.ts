@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./modules/auth/auth.routes";
 import campamentosRoutes from "./modules/campamentos/campamentos.routes";
+import personasRoutes from "./modules/personas/personas.routes";
 import { verificarToken } from "./middlewares/auth.middleware";
 
 dotenv.config();
@@ -29,5 +30,6 @@ app.get("/api/privado", verificarToken, (req, res) => {
 app.use("/api/auth", authRoutes);
 
 app.use("/api/campamentos", campamentosRoutes);
+app.use("/api/personas", personasRoutes);
 
 export default app;
