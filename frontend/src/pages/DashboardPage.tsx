@@ -4,25 +4,35 @@ import Sidebar from "../shared/components/Sidebar";
 import { useAuth } from "../shared/hooks/useAuth";
 import Card from "../shared/components/Card";
 import { getCampamentos } from "../features/campamentos/campamentos.api";
+import { getPersonas } from "../features/personas/personas.api";
 
 function DashboardPage() {
   const { usuario } = useAuth();
   const [campamentosCount, setCampamentosCount] = useState(0);
+  const [personasCount, setPersonasCount] = useState(0);
 
   useEffect(() => {
-    const loadCampamentos = async () => {
+    const loadData = async () => {
       try {
-        const campamentos = await getCampamentos();
+        const [campamentos, personas] = await Promise.all([
+          getCampamentos(),
+          getPersonas(),
+        ]);
+
         const campamentosActivos = campamentos.filter(
           (campamento) => campamento.activo !== false,
         );
+
         setCampamentosCount(campamentosActivos.length);
-      } catch {
+        setPersonasCount(personas.length);
+      } catch (error) {
+        console.error("Error cargando dashboard:", error);
         setCampamentosCount(0);
+        setPersonasCount(0);
       }
     };
 
-    void loadCampamentos();
+    void loadData();
   }, []);
 
   return (
@@ -122,80 +132,9 @@ function DashboardPage() {
               }}
             >
               <Card title="Campamentos" value={campamentosCount} />
-              <Card title="Personas" value="0" />
+              <Card title="Personas" value={personasCount} />
               <Card title="Inventario" value="0" />
               <Card title="Exploraciones" value="0" />
-            </div>
-          </section>
-
-          <section
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-              gap: "20px",
-            }}
-          >
-            <div
-              style={{
-                background: "rgba(15, 23, 42, 0.88)",
-                border: "1px solid rgba(148,163,184,0.12)",
-                borderRadius: "20px",
-                padding: "24px",
-                boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
-              }}
-            >
-              <h3
-                style={{
-                  color: "#f8fafc",
-                  marginTop: 0,
-                  marginBottom: "12px",
-                  fontSize: "18px",
-                }}
-              >
-                Estado del sistema
-              </h3>
-              <p
-                style={{
-                  color: "#94a3b8",
-                  margin: 0,
-                  lineHeight: 1.6,
-                }}
-              >
-                Aquí puedes agregar más adelante métricas, reportes rápidos,
-                actividad reciente o accesos directos a funciones importantes.
-              </p>
-            </div>
-
-            <div
-              style={{
-                background: "rgba(15, 23, 42, 0.88)",
-                border: "1px solid rgba(148,163,184,0.12)",
-                borderRadius: "20px",
-                padding: "24px",
-                boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
-              }}
-            >
-              <h3
-                style={{
-                  color: "#f8fafc",
-                  marginTop: 0,
-                  marginBottom: "12px",
-                  fontSize: "18px",
-                }}
-              >
-                Acciones rápidas
-              </h3>
-              <p
-                style={{
-                  color: "#94a3b8",
-                  margin: 0,
-                  lineHeight: 1.6,
-                }}
-              >
-                Puedes usar este espacio para botones como “Agregar persona”,
-                “Crear campamento”, “Registrar inventario” o “Nueva
-                exploración”.
-              </p>
             </div>
           </section>
         </main>
