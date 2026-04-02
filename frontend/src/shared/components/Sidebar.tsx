@@ -4,17 +4,13 @@ function Sidebar() {
   const location = useLocation();
 
   const menuItems = [
-    { to: "/dashboard", label: "Dashboard" },
-    { to: "/campamentos", label: "Campamentos" },
-    { to: "/personas", label: "Personas" },
-    { to: "/inventario", label: "Inventario" },
-    { to: "/exploraciones", label: "Exploraciones" },
+    { to: "/dashboard", label: "Inicio" },
   ];
 
   return (
     <aside
       style={{
-        width: "250px",
+        width: "270px",
         minHeight: "100vh",
         background: "linear-gradient(180deg, #020617 0%, #0f172a 100%)",
         color: "white",
@@ -23,86 +19,132 @@ function Sidebar() {
         boxShadow: "4px 0 20px rgba(0,0,0,0.18)",
         display: "flex",
         flexDirection: "column",
+        justifyContent: "space-between",
       }}
     >
-      <div
-        style={{
-          marginBottom: "30px",
-          padding: "16px",
-          borderRadius: "16px",
-          background: "rgba(59, 130, 246, 0.08)",
-          border: "1px solid rgba(59, 130, 246, 0.15)",
-        }}
-      >
-        <h2
+      <div>
+        <div
           style={{
-            margin: 0,
-            fontSize: "22px",
-            fontWeight: 700,
-            color: "#f8fafc",
+            marginBottom: "28px",
+            padding: "18px",
+            borderRadius: "18px",
+            background:
+              "linear-gradient(135deg, rgba(59,130,246,0.14), rgba(15,23,42,0.45))",
+            border: "1px solid rgba(59, 130, 246, 0.18)",
           }}
         >
-          Sistema
-        </h2>
+          <h2
+            style={{
+              margin: 0,
+              fontSize: "22px",
+              fontWeight: 700,
+              color: "#f8fafc",
+            }}
+          >
+            Apocalipsis Camp
+          </h2>
+
+          <p
+            style={{
+              margin: "6px 0 0 0",
+              fontSize: "13px",
+              color: "#94a3b8",
+            }}
+          >
+            Panel administrativo
+          </p>
+        </div>
+
+        <div style={{ marginBottom: "24px" }}>
+          <p
+            style={{
+              color: "#64748b",
+              fontSize: "12px",
+              textTransform: "uppercase",
+              letterSpacing: "1px",
+              margin: "0 0 10px 10px",
+            }}
+          >
+            Principal
+          </p>
+
+          <nav style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            {menuItems.map((item) => {
+              const isActive = location.pathname === item.to;
+
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  style={{
+                    textDecoration: "none",
+                    color: isActive ? "#f8fafc" : "#cbd5e1",
+                    background: isActive
+                      ? "linear-gradient(90deg, rgba(59,130,246,0.22), rgba(59,130,246,0.06))"
+                      : "transparent",
+                    border: isActive
+                      ? "1px solid rgba(59,130,246,0.22)"
+                      : "1px solid transparent",
+                    padding: "14px 16px",
+                    borderRadius: "14px",
+                    fontSize: "15px",
+                    fontWeight: isActive ? 600 : 500,
+                    transition: "all 0.25s ease",
+                    display: "block",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background =
+                        "rgba(148, 163, 184, 0.08)";
+                      e.currentTarget.style.color = "#f8fafc";
+                      e.currentTarget.style.transform = "translateX(4px)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.color = "#cbd5e1";
+                      e.currentTarget.style.transform = "translateX(0)";
+                    }
+                  }}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      </div>
+
+      <div
+        style={{
+          padding: "16px",
+          borderRadius: "16px",
+          background: "rgba(15, 23, 42, 0.75)",
+          border: "1px solid rgba(148, 163, 184, 0.10)",
+        }}
+      >
+        <p
+          style={{
+            margin: 0,
+            color: "#e2e8f0",
+            fontSize: "14px",
+            fontWeight: 600,
+          }}
+        >
+          Acceso rápido
+        </p>
         <p
           style={{
             margin: "6px 0 0 0",
-            fontSize: "13px",
             color: "#94a3b8",
+            fontSize: "13px",
+            lineHeight: 1.5,
           }}
         >
-          Panel administrativo
+          Usa las tarjetas del panel principal para entrar a cada módulo.
         </p>
       </div>
-
-      <nav
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "10px",
-        }}
-      >
-        {menuItems.map((item) => {
-          const isActive = location.pathname === item.to;
-
-          return (
-            <Link
-              key={item.to}
-              to={item.to}
-              style={{
-                textDecoration: "none",
-                color: isActive ? "#f8fafc" : "#cbd5e1",
-                background: isActive
-                  ? "linear-gradient(90deg, rgba(59,130,246,0.20), rgba(59,130,246,0.05))"
-                  : "transparent",
-                border: isActive
-                  ? "1px solid rgba(59,130,246,0.22)"
-                  : "1px solid transparent",
-                padding: "14px 16px",
-                borderRadius: "14px",
-                fontSize: "15px",
-                fontWeight: isActive ? 600 : 500,
-                transition: "all 0.25s ease",
-                display: "block",
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background = "rgba(148, 163, 184, 0.08)";
-                  e.currentTarget.style.color = "#f8fafc";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.color = "#cbd5e1";
-                }
-              }}
-            >
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
     </aside>
   );
 }

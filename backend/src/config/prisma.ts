@@ -8,7 +8,12 @@ const adapter = new PrismaMariaDb({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   port: Number(process.env.DB_PORT || 3306),
+
   connectionLimit: 5,
+  acquireTimeout: 30000,
+  initializationTimeout: 30000,
 });
 
 export const prisma = new PrismaClient({ adapter });
+
+//Se actualizo las consultas, 5 usuarios simultaneamente, con un tiempo de respuesta de 30s, para redes lentas

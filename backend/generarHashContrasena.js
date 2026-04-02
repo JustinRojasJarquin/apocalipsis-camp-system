@@ -6,3 +6,4 @@ async function generar() {
 }
 
 generar();
+//Ya no se necesita este archivo, se utilizo como prueba para crear e hash de una contraseña
