@@ -5,6 +5,8 @@ function Sidebar() {
 
   const menuItems = [
     { to: "/dashboard", label: "Inicio" },
+    { to: "/campamentos", label: "Campamentos" },
+    { to: "/exploraciones", label: "Exploraciones" },
   ];
 
   return (
@@ -68,7 +70,9 @@ function Sidebar() {
             Principal
           </p>
 
-          <nav style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          <nav
+            style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+          >
             {menuItems.map((item) => {
               const isActive = location.pathname === item.to;
 

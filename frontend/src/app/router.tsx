@@ -31,7 +31,6 @@ const router = createBrowserRouter([
         ),
       },
       {
-<<<<<<< Updated upstream
         path: "campamentos",
         element: (
           <ProtectedRoute>
@@ -48,16 +47,18 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "inventario",
-        element: (
-          <ProtectedRoute>
-            <InventarioPage />
-=======
         path: "exploraciones",
         element: (
           <ProtectedRoute>
             <ExploracionesPage />
->>>>>>> Stashed changes
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "inventario",
+        element: (
+          <ProtectedRoute>
+            <InventarioPage />
           </ProtectedRoute>
         ),
       },
