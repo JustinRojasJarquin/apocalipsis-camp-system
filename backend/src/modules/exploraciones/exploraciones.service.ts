@@ -214,6 +214,28 @@ export const agregarRecursoLlevado = async (
   });
 };
 
+// ─── Eliminar exploración ─────────────────────────────────────────────────────
+
+export const eliminarExploracion = async (id_exploracion: number) => {
+  const exploracion = await prisma.exploracion.findUnique({
+    where: { id_exploracion },
+  });
+
+  if (!exploracion) {
+    throw new Error("Exploración no encontrada");
+  }
+
+  if (exploracion.estado === "EN_PROGRESO") {
+    throw new Error("No se puede eliminar una exploración en progreso");
+  }
+
+  await prisma.exploracion_persona.deleteMany({ where: { id_exploracion } });
+  await prisma.exploracion_recurso_llevado.deleteMany({ where: { id_exploracion } });
+  await prisma.exploracion_recurso_encontrado.deleteMany({ where: { id_exploracion } });
+
+  await prisma.exploracion.delete({ where: { id_exploracion } });
+};
+
 // ─── Registrar recursos encontrados al retorno ────────────────────────────────
 
 export const registrarRecursoEncontrado = async (

@@ -5,6 +5,7 @@ import {
   obtenerExploracionController,
   crearExploracionController,
   actualizarEstadoController,
+  eliminarExploracionController,
   asignarPersonaController,
   quitarPersonaController,
   agregarRecursoLlevadoController,
@@ -25,8 +26,11 @@ router.get("/:id", obtenerExploracionController);
 // POST /api/exploraciones                 → crear exploración
 router.post("/", crearExploracionController);
 
-// PUT  /api/exploraciones/:id/estado      → cambiar estado
+// PUT    /api/exploraciones/:id/estado    → cambiar estado
 router.put("/:id/estado", actualizarEstadoController);
+
+// DELETE /api/exploraciones/:id           → eliminar exploración
+router.delete("/:id", eliminarExploracionController);
 
 // POST /api/exploraciones/:id/personas                        → asignar persona
 router.post("/:id/personas", asignarPersonaController);

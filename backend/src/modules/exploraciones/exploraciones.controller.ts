@@ -8,6 +8,7 @@ import {
   quitarPersona,
   agregarRecursoLlevado,
   registrarRecursoEncontrado,
+  eliminarExploracion,
 } from "./exploraciones.service";
 import {
   validarCrearExploracion,
@@ -73,6 +74,20 @@ export const actualizarEstadoController = async (
     const datos = validarActualizarEstado(req.body);
     const actualizada = await actualizarEstado(id_exploracion, datos);
     return res.status(200).json(actualizada);
+  } catch (error: any) {
+    const status = error.message === "Exploración no encontrada" ? 404 : 400;
+    return res.status(status).json({ mensaje: error.message });
+  }
+};
+
+export const eliminarExploracionController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const id_exploracion = Number(req.params.id);
+    await eliminarExploracion(id_exploracion);
+    return res.status(200).json({ mensaje: "Exploración eliminada correctamente" });
   } catch (error: any) {
     const status = error.message === "Exploración no encontrada" ? 404 : 400;
     return res.status(status).json({ mensaje: error.message });
