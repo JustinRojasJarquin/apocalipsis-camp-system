@@ -15,9 +15,6 @@ export interface ExploracionPersona {
   id_exploracion: number;
   id_persona: number;
   rol_en_mision: RolEnMision;
-  // Se completará cuando el módulo de Personas esté disponible
-  nombre?: string;
-  apellidos?: string;
 }
 
 export interface RecursoLlevado {
@@ -81,9 +78,9 @@ export interface RecursoEncontradoForm {
   cantidad_encontrada: number;
 }
 
-// ─── Mock temporal hasta que Personas e Inventario estén listos ───────────────
+// ─── Tipos auxiliares ─────────────────────────────────────────────────────────
 
-export interface PersonaMock {
+export interface PersonaResumen {
   id_persona: number;
   nombre: string;
   apellidos: string;

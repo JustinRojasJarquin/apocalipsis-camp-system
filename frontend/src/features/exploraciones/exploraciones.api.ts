@@ -69,6 +69,14 @@ export const actualizarEstado = async (
   return manejarRespuesta<Exploracion>(res);
 };
 
+export const eliminarExploracion = async (id: number): Promise<void> => {
+  const res = await fetch(`${API_URL}/${id}`, {
+    method: "DELETE",
+    headers: headers(),
+  });
+  return manejarRespuesta<void>(res);
+};
+
 // ─── Personas en misión ───────────────────────────────────────────────────────
 
 export const asignarPersona = async (
