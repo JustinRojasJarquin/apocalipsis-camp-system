@@ -55,8 +55,8 @@ function ExploracionForm({ idCampamento, onCreada, onCancelar }: Props) {
       setCargando(true);
       await crearExploracion(form);
       onCreada();
-    } catch (e: any) {
-      setError(e.message || "Error al crear la exploración");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al crear la exploración");
     } finally {
       setCargando(false);
     }

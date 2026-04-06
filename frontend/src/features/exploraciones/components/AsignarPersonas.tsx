@@ -1,15 +1,7 @@
-import { useState } from "react";
-import type { Exploracion, RolEnMision, PersonaMock } from "../types";
+import { useState, useEffect } from "react";
+import type { Exploracion, RolEnMision, PersonaResumen } from "../types";
 import { asignarPersona, quitarPersona } from "../exploraciones.api";
-
-// TODO: Reemplazar con llamada real a GET /api/personas?campamento=:id
-// cuando el módulo de Personas (Ashley) esté listo.
-const PERSONAS_MOCK: PersonaMock[] = [
-  { id_persona: 1, nombre: "Carlos", apellidos: "Ramírez" },
-  { id_persona: 2, nombre: "Laura", apellidos: "Jiménez" },
-  { id_persona: 3, nombre: "Marco", apellidos: "Solís" },
-  { id_persona: 4, nombre: "Valeria", apellidos: "Mora" },
-];
+import { getPersonas } from "../../personas/personas.api";
 
 interface Props {
   exploracion: Exploracion;
@@ -17,14 +9,31 @@ interface Props {
 }
 
 function AsignarPersonas({ exploracion, onCerrar }: Props) {
+  const [personas, setPersonas] = useState<PersonaResumen[]>([]);
   const [idPersonaSeleccionada, setIdPersonaSeleccionada] = useState<number>(0);
   const [rol, setRol] = useState<RolEnMision>("EXPLORADOR");
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
 
+  useEffect(() => {
+    getPersonas()
+      .then((data) =>
+        setPersonas(
+          data
+            .filter((p) => p.activo !== false && p.id_persona !== undefined)
+            .map((p) => ({
+              id_persona: p.id_persona as number,
+              nombre: p.nombre,
+              apellidos: p.apellidos,
+            }))
+        )
+      )
+      .catch(() => setError("No se pudieron cargar las personas"));
+  }, []);
+
   const idsAsignados = exploracion.exploracion_persona.map((p) => p.id_persona);
 
-  const personasDisponibles = PERSONAS_MOCK.filter(
+  const personasDisponibles = personas.filter(
     (p) => !idsAsignados.includes(p.id_persona)
   );
 
@@ -42,8 +51,8 @@ function AsignarPersonas({ exploracion, onCerrar }: Props) {
       });
       setIdPersonaSeleccionada(0);
       onCerrar();
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al asignar persona");
     } finally {
       setCargando(false);
     }
@@ -55,15 +64,15 @@ function AsignarPersonas({ exploracion, onCerrar }: Props) {
     try {
       await quitarPersona(exploracion.id_exploracion, id_persona);
       onCerrar();
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al quitar persona");
     } finally {
       setCargando(false);
     }
   };
 
   const nombrePersona = (id: number) => {
-    const p = PERSONAS_MOCK.find((x) => x.id_persona === id);
+    const p = personas.find((x) => x.id_persona === id);
     return p ? `${p.nombre} ${p.apellidos}` : `Persona #${id}`;
   };
 
@@ -104,10 +113,7 @@ function AsignarPersonas({ exploracion, onCerrar }: Props) {
           <h3>Agregar explorador</h3>
 
           {personasDisponibles.length === 0 ? (
-            <p className="sin-datos-inline">
-              No hay más personas disponibles.
-              {/* TODO: Este listado vendrá de GET /api/personas cuando Ashley termine su módulo */}
-            </p>
+            <p className="sin-datos-inline">No hay más personas disponibles.</p>
           ) : (
             <>
               <div className="campos-fila">
@@ -154,6 +160,10 @@ function AsignarPersonas({ exploracion, onCerrar }: Props) {
             </>
           )}
         </div>
+      )}
+
+      {error && exploracion.estado !== "PLANIFICADA" && (
+        <p className="error-text">{error}</p>
       )}
 
       <div className="form-acciones">
