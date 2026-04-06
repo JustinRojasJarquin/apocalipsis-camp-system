@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import authRoutes from "./modules/auth/auth.routes";
 import campamentosRoutes from "./modules/campamentos/campamentos.routes";
 import personasRoutes from "./modules/personas/personas.routes";
+import exploracionesRoutes from "./modules/exploraciones/exploraciones.routes";
 import { verificarToken } from "./middlewares/auth.middleware";
 
 dotenv.config();
@@ -31,5 +32,8 @@ app.use("/api/auth", authRoutes);
 
 app.use("/api/campamentos", campamentosRoutes);
 app.use("/api/personas", personasRoutes);
+
+// Rutas del módulo de exploraciones
+app.use("/api/exploraciones", exploracionesRoutes);
 
 export default app;

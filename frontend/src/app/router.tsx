@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router-dom";
 import App from "./App";
 import LoginPage from "../features/auth/pages/LoginPage";
 import DashboardPage from "../pages/DashboardPage";
+import ExploracionesPage from "../features/exploraciones/pages/ExploracionesPage";
 import ProtectedRoute from "./guards/ProtectedRoute";
 import PublicRoute from "./guards/PublicRoute";
 import CampamentosPage from "../features/campamentos/pages/CampamentosPage";
@@ -30,6 +31,7 @@ const router = createBrowserRouter([
         ),
       },
       {
+<<<<<<< Updated upstream
         path: "campamentos",
         element: (
           <ProtectedRoute>
@@ -50,6 +52,12 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <InventarioPage />
+=======
+        path: "exploraciones",
+        element: (
+          <ProtectedRoute>
+            <ExploracionesPage />
+>>>>>>> Stashed changes
           </ProtectedRoute>
         ),
       },
