@@ -32,9 +32,8 @@ function ExploracionesPage() {
   const [error, setError] = useState("");
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [seleccionada, setSeleccionada] = useState<Exploracion | null>(null);
-  const [vistaDetalle, setVistaDetalle] = useState<
-    "personas" | "recursos" | null
-  >(null);
+  const [vistaDetalle, setVistaDetalle] = useState<"personas" | "recursos" | null>(null);
+  const [exploracionAEliminar, setExploracionAEliminar] = useState<Exploracion | null>(null);
 
   const cargarExploraciones = async () => {
     try {
@@ -53,13 +52,19 @@ function ExploracionesPage() {
     cargarExploraciones();
   }, []);
 
-  const handleEliminar = async (exp: Exploracion) => {
-    if (!confirm(`¿Eliminar la exploración "${exp.nombre}"? Esta acción no se puede deshacer.`)) return;
+  const handleEliminar = (exp: Exploracion) => {
+    setExploracionAEliminar(exp);
+  };
+
+  const confirmarEliminar = async () => {
+    if (!exploracionAEliminar) return;
     try {
-      await eliminarExploracion(exp.id_exploracion);
+      await eliminarExploracion(exploracionAEliminar.id_exploracion);
+      setExploracionAEliminar(null);
       await cargarExploraciones();
-    } catch (e: any) {
-      alert(e.message);
+    } catch (e) {
+      setExploracionAEliminar(null);
+      setError(e instanceof Error ? e.message : "Error al eliminar");
     }
   };
 
@@ -263,6 +268,25 @@ function ExploracionesPage() {
               exploracion={seleccionada}
               onCerrar={cerrarDetalle}
             />
+          </div>
+        </div>
+      )}
+
+      {exploracionAEliminar && (
+        <div className="modal-overlay">
+          <div className="modal-contenido">
+            <div className="form-container">
+              <h2>Eliminar exploración</h2>
+              <p>¿Estás segura de que deseas eliminar <strong>{exploracionAEliminar.nombre}</strong>? Esta acción no se puede deshacer.</p>
+              <div className="form-acciones">
+                <button className="btn-secundario" onClick={() => setExploracionAEliminar(null)}>
+                  Cancelar
+                </button>
+                <button className="btn-accion cancelar" onClick={confirmarEliminar}>
+                  Eliminar
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
