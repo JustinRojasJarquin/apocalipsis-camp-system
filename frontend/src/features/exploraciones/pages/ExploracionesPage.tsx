@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import type { Exploracion, ExploracionEstado } from "../types";
-import { listarExploraciones, actualizarEstado } from "../exploraciones.api";
+import { listarExploraciones, actualizarEstado, eliminarExploracion } from "../exploraciones.api";
 import ExploracionForm from "../components/ExploracionForm";
 import AsignarPersonas from "../components/AsignarPersonas";
 import RecursosMision from "../components/RecursosMision";
+import Navbar from "../../../shared/components/Navbar";
+import Sidebar from "../../../shared/components/Sidebar";
 
 const ESTADO_ETIQUETA: Record<ExploracionEstado, string> = {
   PLANIFICADA: "Planificada",
@@ -51,6 +53,16 @@ function ExploracionesPage() {
     cargarExploraciones();
   }, []);
 
+  const handleEliminar = async (exp: Exploracion) => {
+    if (!confirm(`¿Eliminar la exploración "${exp.nombre}"? Esta acción no se puede deshacer.`)) return;
+    try {
+      await eliminarExploracion(exp.id_exploracion);
+      await cargarExploraciones();
+    } catch (e: any) {
+      alert(e.message);
+    }
+  };
+
   const handleCambiarEstado = async (
     exp: Exploracion,
     nuevoEstado: ExploracionEstado
@@ -80,7 +92,11 @@ function ExploracionesPage() {
   };
 
   return (
-    <div className="exploraciones-page">
+    <div style={{ display: "flex", background: "#0f172a", minHeight: "100vh" }}>
+      <Sidebar />
+      <div style={{ flex: 1 }}>
+        <Navbar />
+        <main className="exploraciones-page">
       <div className="exploraciones-header">
         <h1>Exploraciones</h1>
         <button
@@ -192,7 +208,24 @@ function ExploracionesPage() {
                 {(exp.estado === "COMPLETADA" ||
                   exp.estado === "CANCELADA" ||
                   exp.estado === "FALLIDA") && (
-                  <span className="texto-cerrado">Exploración finalizada</span>
+                  <>
+                    <span className="texto-cerrado">Exploración finalizada</span>
+                    <button
+                      className="btn-accion cancelar"
+                      onClick={() => handleEliminar(exp)}
+                    >
+                      Eliminar
+                    </button>
+                  </>
+                )}
+
+                {exp.estado === "PLANIFICADA" && (
+                  <button
+                    className="btn-accion cancelar"
+                    onClick={() => handleEliminar(exp)}
+                  >
+                    Eliminar
+                  </button>
                 )}
               </div>
             </div>
@@ -233,6 +266,8 @@ function ExploracionesPage() {
           </div>
         </div>
       )}
+        </main>
+      </div>
     </div>
   );
 }
