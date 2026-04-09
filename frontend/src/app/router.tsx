@@ -7,7 +7,7 @@ import ProtectedRoute from "./guards/ProtectedRoute";
 import PublicRoute from "./guards/PublicRoute";
 import CampamentosPage from "../features/campamentos/pages/CampamentosPage";
 import PersonasPage from "../features/personas/pages/PersonasPage";
-import InventarioPage from "../features/inventario/pages/InventarioPage";
+import InventarioPage from "../features/inventario/InventarioPage";
 
 const router = createBrowserRouter([
   {
