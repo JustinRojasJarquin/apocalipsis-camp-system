@@ -1,18 +1,11 @@
-import { useState } from "react";
-import type { Exploracion, RecursoMock } from "../types";
+import { useState, useEffect } from "react";
+import type { Exploracion } from "../types";
 import {
   agregarRecursoLlevado,
   registrarRecursoEncontrado,
 } from "../exploraciones.api";
-
-// TODO: Reemplazar con llamada real a GET /api/inventario/recursos?campamento=:id
-// cuando el módulo de Inventario (Cris) esté listo.
-const RECURSOS_MOCK: RecursoMock[] = [
-  { id_recurso: 1, nombre: "Agua", categoria: "AGUA", unidad: "litros" },
-  { id_recurso: 2, nombre: "Raciones de comida", categoria: "COMIDA", unidad: "raciones" },
-  { id_recurso: 3, nombre: "Munición", categoria: "MUNICION", unidad: "unidades" },
-  { id_recurso: 4, nombre: "Medicamentos", categoria: "MEDICINA", unidad: "unidades" },
-];
+import { getAvailableResources } from "../../inventario/inventario.api";
+import type { RecursoOption } from "../../inventario/types";
 
 interface Props {
   exploracion: Exploracion;
@@ -20,24 +13,26 @@ interface Props {
 }
 
 function RecursosMision({ exploracion, onCerrar }: Props) {
+  const [recursos, setRecursos] = useState<RecursoOption[]>([]);
   const esPlanificada = exploracion.estado === "PLANIFICADA";
   const esEnProgreso =
-    exploracion.estado === "EN_PROGRESO" ||
-    exploracion.estado === "COMPLETADA";
+    exploracion.estado === "EN_PROGRESO" || exploracion.estado === "COMPLETADA";
 
-  // Formulario recursos a llevar
   const [idRecursoLlevado, setIdRecursoLlevado] = useState<number>(0);
   const [cantidadLlevada, setCantidadLlevada] = useState<number>(1);
-
-  // Formulario recursos encontrados
   const [idRecursoEncontrado, setIdRecursoEncontrado] = useState<number>(0);
   const [cantidadEncontrada, setCantidadEncontrada] = useState<number>(0);
-
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
 
+  useEffect(() => {
+    getAvailableResources()
+      .then(setRecursos)
+      .catch(() => setError("No se pudieron cargar los recursos"));
+  }, []);
+
   const nombreRecurso = (id: number) =>
-    RECURSOS_MOCK.find((r) => r.id_recurso === id)?.nombre ?? `Recurso #${id}`;
+    recursos.find((r) => r.id_recurso === id)?.nombre ?? `Recurso #${id}`;
 
   const handleAgregarLlevado = async () => {
     if (!idRecursoLlevado) {
@@ -58,8 +53,8 @@ function RecursosMision({ exploracion, onCerrar }: Props) {
       setIdRecursoLlevado(0);
       setCantidadLlevada(1);
       onCerrar();
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al agregar recurso");
     } finally {
       setCargando(false);
     }
@@ -84,8 +79,8 @@ function RecursosMision({ exploracion, onCerrar }: Props) {
       setIdRecursoEncontrado(0);
       setCantidadEncontrada(0);
       onCerrar();
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al registrar recurso");
     } finally {
       setCargando(false);
     }
@@ -125,9 +120,9 @@ function RecursosMision({ exploracion, onCerrar }: Props) {
                   onChange={(e) => setIdRecursoLlevado(Number(e.target.value))}
                 >
                   <option value={0}>-- Seleccionar --</option>
-                  {RECURSOS_MOCK.map((r) => (
+                  {recursos.map((r) => (
                     <option key={r.id_recurso} value={r.id_recurso}>
-                      {r.nombre} ({r.unidad})
+                      {r.nombre}
                     </option>
                   ))}
                 </select>
@@ -188,9 +183,9 @@ function RecursosMision({ exploracion, onCerrar }: Props) {
                   }
                 >
                   <option value={0}>-- Seleccionar --</option>
-                  {RECURSOS_MOCK.map((r) => (
+                  {recursos.map((r) => (
                     <option key={r.id_recurso} value={r.id_recurso}>
-                      {r.nombre} ({r.unidad})
+                      {r.nombre}
                     </option>
                   ))}
                 </select>

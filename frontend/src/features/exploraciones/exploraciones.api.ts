@@ -27,10 +27,8 @@ async function manejarRespuesta<T>(res: globalThis.Response): Promise<T> {
   return data as T;
 }
 
-// ─── Exploración ──────────────────────────────────────────────────────────────
-
 export const listarExploraciones = async (
-  id_campamento: number
+  id_campamento: number,
 ): Promise<Exploracion[]> => {
   const res = await fetch(`${API_URL}?campamento=${id_campamento}`, {
     headers: headers(),
@@ -38,15 +36,13 @@ export const listarExploraciones = async (
   return manejarRespuesta<Exploracion[]>(res);
 };
 
-export const obtenerExploracion = async (
-  id: number
-): Promise<Exploracion> => {
+export const obtenerExploracion = async (id: number): Promise<Exploracion> => {
   const res = await fetch(`${API_URL}/${id}`, { headers: headers() });
   return manejarRespuesta<Exploracion>(res);
 };
 
 export const crearExploracion = async (
-  datos: CrearExploracionForm
+  datos: CrearExploracionForm,
 ): Promise<Exploracion> => {
   const res = await fetch(API_URL, {
     method: "POST",
@@ -59,7 +55,7 @@ export const crearExploracion = async (
 export const actualizarEstado = async (
   id: number,
   estado: string,
-  dias_extra_usados?: number
+  dias_extra_usados?: number,
 ): Promise<Exploracion> => {
   const res = await fetch(`${API_URL}/${id}/estado`, {
     method: "PUT",
@@ -77,11 +73,9 @@ export const eliminarExploracion = async (id: number): Promise<void> => {
   return manejarRespuesta<void>(res);
 };
 
-// ─── Personas en misión ───────────────────────────────────────────────────────
-
 export const asignarPersona = async (
   id_exploracion: number,
-  datos: AsignarPersonaForm
+  datos: AsignarPersonaForm,
 ): Promise<void> => {
   const res = await fetch(`${API_URL}/${id_exploracion}/personas`, {
     method: "POST",
@@ -93,23 +87,21 @@ export const asignarPersona = async (
 
 export const quitarPersona = async (
   id_exploracion: number,
-  id_persona: number
+  id_persona: number,
 ): Promise<void> => {
   const res = await fetch(
     `${API_URL}/${id_exploracion}/personas/${id_persona}`,
     {
       method: "DELETE",
       headers: headers(),
-    }
+    },
   );
   return manejarRespuesta<void>(res);
 };
 
-// ─── Recursos ─────────────────────────────────────────────────────────────────
-
 export const agregarRecursoLlevado = async (
   id_exploracion: number,
-  datos: RecursoLlevadoForm
+  datos: RecursoLlevadoForm,
 ): Promise<void> => {
   const res = await fetch(`${API_URL}/${id_exploracion}/recursos-llevados`, {
     method: "POST",
@@ -121,15 +113,12 @@ export const agregarRecursoLlevado = async (
 
 export const registrarRecursoEncontrado = async (
   id_exploracion: number,
-  datos: RecursoEncontradoForm
+  datos: RecursoEncontradoForm,
 ): Promise<void> => {
-  const res = await fetch(
-    `${API_URL}/${id_exploracion}/recursos-encontrados`,
-    {
-      method: "POST",
-      headers: headers(),
-      body: JSON.stringify(datos),
-    }
-  );
+  const res = await fetch(`${API_URL}/${id_exploracion}/recursos-encontrados`, {
+    method: "POST",
+    headers: headers(),
+    body: JSON.stringify(datos),
+  });
   return manejarRespuesta<void>(res);
 };

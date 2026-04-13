@@ -1,5 +1,3 @@
-// ─── Enums ────────────────────────────────────────────────────────────────────
-
 export type ExploracionEstado =
   | "PLANIFICADA"
   | "EN_PROGRESO"
@@ -8,8 +6,6 @@ export type ExploracionEstado =
   | "FALLIDA";
 
 export type RolEnMision = "LIDER" | "EXPLORADOR";
-
-// ─── Modelos ──────────────────────────────────────────────────────────────────
 
 export interface ExploracionPersona {
   id_exploracion: number;
@@ -22,8 +18,6 @@ export interface RecursoLlevado {
   id_exploracion: number;
   id_recurso: number;
   cantidad_llevada: number;
-  // Se completará cuando el módulo de Inventario esté disponible
-  nombre_recurso?: string;
 }
 
 export interface RecursoEncontrado {
@@ -32,7 +26,6 @@ export interface RecursoEncontrado {
   id_recurso: number;
   cantidad_encontrada: number;
   generado_aleatorio: boolean;
-  nombre_recurso?: string;
 }
 
 export interface Exploracion {
@@ -51,8 +44,6 @@ export interface Exploracion {
   exploracion_recurso_llevado: RecursoLlevado[];
   exploracion_recurso_encontrado: RecursoEncontrado[];
 }
-
-// ─── Formularios ──────────────────────────────────────────────────────────────
 
 export interface CrearExploracionForm {
   id_campamento: number;
@@ -78,17 +69,8 @@ export interface RecursoEncontradoForm {
   cantidad_encontrada: number;
 }
 
-// ─── Tipos auxiliares ─────────────────────────────────────────────────────────
-
 export interface PersonaResumen {
   id_persona: number;
   nombre: string;
   apellidos: string;
-}
-
-export interface RecursoMock {
-  id_recurso: number;
-  nombre: string;
-  categoria: string;
-  unidad: string;
 }

@@ -41,8 +41,8 @@ function ExploracionesPage() {
       setError("");
       const datos = await listarExploraciones(ID_CAMPAMENTO_MOCK);
       setExploraciones(datos);
-    } catch (e: any) {
-      setError(e.message || "Error al cargar exploraciones");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al cargar exploraciones");
     } finally {
       setCargando(false);
     }
@@ -75,8 +75,8 @@ function ExploracionesPage() {
     try {
       await actualizarEstado(exp.id_exploracion, nuevoEstado);
       await cargarExploraciones();
-    } catch (e: any) {
-      alert(e.message);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al cambiar estado");
     }
   };
 
