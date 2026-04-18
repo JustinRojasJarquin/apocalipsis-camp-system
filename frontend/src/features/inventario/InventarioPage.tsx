@@ -1,6 +1,5 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import Navbar from "../../shared/components/Navbar";
-import Sidebar from "../../shared/components/Sidebar";
 import {
   createResource,
   deleteResource,
@@ -162,8 +161,7 @@ function InventarioPage() {
 
   return (
     <div style={{ display: "flex", background: "#0f172a", minHeight: "100vh" }}>
-      <Sidebar />
-
+      
       <div style={{ flex: 1 }}>
         <Navbar />
 

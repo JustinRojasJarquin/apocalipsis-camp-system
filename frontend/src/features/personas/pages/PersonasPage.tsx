@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import Navbar from "../../../shared/components/Navbar";
-import Sidebar from "../../../shared/components/Sidebar";
 import { getCampamentos } from "../../campamentos/campamentos.api";
 import PersonaForm from "../components/PersonaForm";
 import PersonaTabla from "../components/PersonaTabla";
@@ -82,7 +81,7 @@ function PersonasPage() {
 
   return (
     <div style={{ display: "flex", background: "#0f172a", minHeight: "100vh" }}>
-      <Sidebar />
+      
 
       <div style={{ flex: 1 }}>
         <Navbar />

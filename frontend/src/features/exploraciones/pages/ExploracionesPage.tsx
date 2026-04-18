@@ -1,11 +1,15 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { Exploracion, ExploracionEstado } from "../types";
-import { listarExploraciones, actualizarEstado, eliminarExploracion } from "../exploraciones.api";
+import {
+  listarExploraciones,
+  actualizarEstado,
+  eliminarExploracion,
+} from "../exploraciones.api";
 import ExploracionForm from "../components/ExploracionForm";
 import AsignarPersonas from "../components/AsignarPersonas";
 import RecursosMision from "../components/RecursosMision";
 import Navbar from "../../../shared/components/Navbar";
-import Sidebar from "../../../shared/components/Sidebar";
+import "../../../styles/theme.css";
 
 const ESTADO_ETIQUETA: Record<ExploracionEstado, string> = {
   PLANIFICADA: "Planificada",
@@ -15,15 +19,15 @@ const ESTADO_ETIQUETA: Record<ExploracionEstado, string> = {
   FALLIDA: "Fallida",
 };
 
-const ESTADO_COLOR: Record<ExploracionEstado, string> = {
-  PLANIFICADA: "#f0a500",
-  EN_PROGRESO: "#2a9d8f",
-  COMPLETADA: "#4caf50",
-  CANCELADA: "#9e9e9e",
-  FALLIDA: "#e63946",
+const ESTADO_CLASE: Record<ExploracionEstado, string> = {
+  PLANIFICADA: "badge-planificada",
+  EN_PROGRESO: "badge-progreso",
+  COMPLETADA: "badge-completada",
+  CANCELADA: "badge-cancelada",
+  FALLIDA: "badge-fallida",
 };
 
-// TODO: Obtener el campamento activo del contexto de sesión cuando esté implementado
+
 const ID_CAMPAMENTO_MOCK = 1;
 
 function ExploracionesPage() {
@@ -49,7 +53,7 @@ function ExploracionesPage() {
   };
 
   useEffect(() => {
-    cargarExploraciones();
+    void cargarExploraciones();
   }, []);
 
   const handleEliminar = (exp: Exploracion) => {
@@ -58,6 +62,7 @@ function ExploracionesPage() {
 
   const confirmarEliminar = async () => {
     if (!exploracionAEliminar) return;
+
     try {
       await eliminarExploracion(exploracionAEliminar.id_exploracion);
       setExploracionAEliminar(null);
@@ -70,7 +75,7 @@ function ExploracionesPage() {
 
   const handleCambiarEstado = async (
     exp: Exploracion,
-    nuevoEstado: ExploracionEstado
+    nuevoEstado: ExploracionEstado,
   ) => {
     try {
       await actualizarEstado(exp.id_exploracion, nuevoEstado);
@@ -82,7 +87,7 @@ function ExploracionesPage() {
 
   const handleCreada = () => {
     setMostrarFormulario(false);
-    cargarExploraciones();
+    void cargarExploraciones();
   };
 
   const abrirDetalle = (exp: Exploracion, vista: "personas" | "recursos") => {
@@ -93,203 +98,229 @@ function ExploracionesPage() {
   const cerrarDetalle = () => {
     setSeleccionada(null);
     setVistaDetalle(null);
-    cargarExploraciones();
+    void cargarExploraciones();
   };
 
   return (
-    <div style={{ display: "flex", background: "#0f172a", minHeight: "100vh" }}>
-      <Sidebar />
+    <div style={{ display: "flex", minHeight: "100vh", background: "var(--color-bg)" }}>
+
       <div style={{ flex: 1 }}>
         <Navbar />
+
         <main className="exploraciones-page">
-      <div className="exploraciones-header">
-        <h1>Exploraciones</h1>
-        <button
-          className="btn-primario"
-          onClick={() => setMostrarFormulario(true)}
-        >
-          + Nueva exploración
-        </button>
-      </div>
+          <section className="exploraciones-hero">
+            <div className="exploraciones-hero__content">
+              <p className="exploraciones-hero__eyebrow">Gestión operativa</p>
+              <h1 className="exploraciones-hero__title">Exploraciones</h1>
+              <p className="exploraciones-hero__subtitle">
+                Administra misiones, asignación de personas, recursos y seguimiento
+                de estados dentro del campamento.
+              </p>
+            </div>
 
-      {error && <p className="error-text">{error}</p>}
+            <button
+              className="btn-primario"
+              onClick={() => setMostrarFormulario(true)}
+            >
+              + Nueva exploración
+            </button>
+          </section>
 
-      {cargando ? (
-        <p className="cargando-texto">Cargando exploraciones...</p>
-      ) : exploraciones.length === 0 ? (
-        <div className="sin-datos">
-          <p>No hay exploraciones registradas para este campamento.</p>
-        </div>
-      ) : (
-        <div className="exploraciones-lista">
-          {exploraciones.map((exp) => (
-            <div key={exp.id_exploracion} className="exploracion-card">
-              <div className="card-encabezado">
-                <div>
-                  <h2>{exp.nombre}</h2>
-                  {exp.descripcion && (
-                    <p className="card-descripcion">{exp.descripcion}</p>
-                  )}
-                </div>
-                <span
-                  className="estado-badge"
-                  style={{ backgroundColor: ESTADO_COLOR[exp.estado] }}
-                >
-                  {ESTADO_ETIQUETA[exp.estado]}
-                </span>
+          {error && <p className="error-text">{error}</p>}
+
+          {cargando ? (
+            <div className="exploraciones-empty">
+              <p className="cargando-texto">Cargando exploraciones...</p>
+            </div>
+          ) : exploraciones.length === 0 ? (
+            <div className="exploraciones-empty">
+              <h3>No hay exploraciones registradas</h3>
+              <p>Crea una nueva exploración para comenzar a organizar las misiones.</p>
+            </div>
+          ) : (
+            <section className="exploraciones-lista">
+              {exploraciones.map((exp) => (
+                <article key={exp.id_exploracion} className="exploracion-card">
+                  <div className="exploracion-card__top">
+                    <div className="exploracion-card__title-block">
+                      <h2>{exp.nombre}</h2>
+                      {exp.descripcion && (
+                        <p className="card-descripcion">{exp.descripcion}</p>
+                      )}
+                    </div>
+
+                    <span className={`estado-badge ${ESTADO_CLASE[exp.estado]}`}>
+                      {ESTADO_ETIQUETA[exp.estado]}
+                    </span>
+                  </div>
+
+                  <div className="exploracion-stats">
+                    <div className="stat-item">
+                      <span className="stat-label">Inicio planeado</span>
+                      <strong>
+                        {new Date(exp.fecha_inicio_plan).toLocaleDateString("es-CR")}
+                      </strong>
+                    </div>
+
+                    <div className="stat-item">
+                      <span className="stat-label">Días estimados</span>
+                      <strong>{exp.dias_estimados}</strong>
+                    </div>
+
+                    <div className="stat-item">
+                      <span className="stat-label">Días extra</span>
+                      <strong>{exp.dias_extra}</strong>
+                    </div>
+
+                    <div className="stat-item">
+                      <span className="stat-label">Exploradores</span>
+                      <strong>{exp.exploracion_persona.length}</strong>
+                    </div>
+                  </div>
+
+                  <div className="card-acciones">
+                    {exp.estado === "PLANIFICADA" && (
+                      <>
+                        <button
+                          className="btn-secundario"
+                          onClick={() => abrirDetalle(exp, "personas")}
+                        >
+                          Asignar personas
+                        </button>
+
+                        <button
+                          className="btn-secundario"
+                          onClick={() => abrirDetalle(exp, "recursos")}
+                        >
+                          Recursos a llevar
+                        </button>
+
+                        <button
+                          className="btn-accion btn-success"
+                          onClick={() => handleCambiarEstado(exp, "EN_PROGRESO")}
+                        >
+                          Iniciar
+                        </button>
+
+                        <button
+                          className="btn-accion btn-danger-soft"
+                          onClick={() => handleCambiarEstado(exp, "CANCELADA")}
+                        >
+                          Cancelar
+                        </button>
+
+                        <button
+                          className="btn-accion btn-danger"
+                          onClick={() => handleEliminar(exp)}
+                        >
+                          Eliminar
+                        </button>
+                      </>
+                    )}
+
+                    {exp.estado === "EN_PROGRESO" && (
+                      <>
+                        <button
+                          className="btn-secundario"
+                          onClick={() => abrirDetalle(exp, "recursos")}
+                        >
+                          Registrar encontrados
+                        </button>
+
+                        <button
+                          className="btn-accion btn-success"
+                          onClick={() => handleCambiarEstado(exp, "COMPLETADA")}
+                        >
+                          Completar
+                        </button>
+
+                        <button
+                          className="btn-accion btn-warning"
+                          onClick={() => handleCambiarEstado(exp, "FALLIDA")}
+                        >
+                          Marcar fallida
+                        </button>
+                      </>
+                    )}
+
+                    {(exp.estado === "COMPLETADA" ||
+                      exp.estado === "CANCELADA" ||
+                      exp.estado === "FALLIDA") && (
+                      <>
+                        <span className="texto-cerrado">Exploración finalizada</span>
+
+                        <button
+                          className="btn-accion btn-danger"
+                          onClick={() => handleEliminar(exp)}
+                        >
+                          Eliminar
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </article>
+              ))}
+            </section>
+          )}
+
+          {mostrarFormulario && (
+            <div className="modal-overlay">
+              <div className="modal-contenido">
+                <ExploracionForm
+                  idCampamento={ID_CAMPAMENTO_MOCK}
+                  onCreada={handleCreada}
+                  onCancelar={() => setMostrarFormulario(false)}
+                />
               </div>
+            </div>
+          )}
 
-              <div className="card-datos">
-                <span>
-                  Inicio planeado:{" "}
-                  {new Date(exp.fecha_inicio_plan).toLocaleDateString("es-CR")}
-                </span>
-                <span>Días estimados: {exp.dias_estimados}</span>
-                <span>Días extra: {exp.dias_extra}</span>
-                <span>
-                  Exploradores: {exp.exploracion_persona.length}
-                </span>
+          {seleccionada && vistaDetalle === "personas" && (
+            <div className="modal-overlay">
+              <div className="modal-contenido">
+                <AsignarPersonas exploracion={seleccionada} onCerrar={cerrarDetalle} />
               </div>
+            </div>
+          )}
 
-              <div className="card-acciones">
-                {exp.estado === "PLANIFICADA" && (
-                  <>
+          {seleccionada && vistaDetalle === "recursos" && (
+            <div className="modal-overlay">
+              <div className="modal-contenido">
+                <RecursosMision exploracion={seleccionada} onCerrar={cerrarDetalle} />
+              </div>
+            </div>
+          )}
+
+          {exploracionAEliminar && (
+            <div className="modal-overlay">
+              <div className="modal-contenido">
+                <div className="form-container">
+                  <h2>Eliminar exploración</h2>
+                  <p>
+                    ¿Estás segura de que deseas eliminar{" "}
+                    <strong>{exploracionAEliminar.nombre}</strong>? Esta acción no se
+                    puede deshacer.
+                  </p>
+
+                  <div className="form-acciones">
                     <button
                       className="btn-secundario"
-                      onClick={() => abrirDetalle(exp, "personas")}
-                    >
-                      Asignar personas
-                    </button>
-                    <button
-                      className="btn-secundario"
-                      onClick={() => abrirDetalle(exp, "recursos")}
-                    >
-                      Recursos a llevar
-                    </button>
-                    <button
-                      className="btn-accion iniciar"
-                      onClick={() =>
-                        handleCambiarEstado(exp, "EN_PROGRESO")
-                      }
-                    >
-                      Iniciar
-                    </button>
-                    <button
-                      className="btn-accion cancelar"
-                      onClick={() =>
-                        handleCambiarEstado(exp, "CANCELADA")
-                      }
+                      onClick={() => setExploracionAEliminar(null)}
                     >
                       Cancelar
                     </button>
-                  </>
-                )}
 
-                {exp.estado === "EN_PROGRESO" && (
-                  <>
                     <button
-                      className="btn-secundario"
-                      onClick={() => abrirDetalle(exp, "recursos")}
-                    >
-                      Registrar encontrados
-                    </button>
-                    <button
-                      className="btn-accion completar"
-                      onClick={() =>
-                        handleCambiarEstado(exp, "COMPLETADA")
-                      }
-                    >
-                      Completar
-                    </button>
-                    <button
-                      className="btn-accion cancelar"
-                      onClick={() => handleCambiarEstado(exp, "FALLIDA")}
-                    >
-                      Marcar fallida
-                    </button>
-                  </>
-                )}
-
-                {(exp.estado === "COMPLETADA" ||
-                  exp.estado === "CANCELADA" ||
-                  exp.estado === "FALLIDA") && (
-                  <>
-                    <span className="texto-cerrado">Exploración finalizada</span>
-                    <button
-                      className="btn-accion cancelar"
-                      onClick={() => handleEliminar(exp)}
+                      className="btn-accion btn-danger"
+                      onClick={confirmarEliminar}
                     >
                       Eliminar
                     </button>
-                  </>
-                )}
-
-                {exp.estado === "PLANIFICADA" && (
-                  <button
-                    className="btn-accion cancelar"
-                    onClick={() => handleEliminar(exp)}
-                  >
-                    Eliminar
-                  </button>
-                )}
+                  </div>
+                </div>
               </div>
             </div>
-          ))}
-        </div>
-      )}
-
-      {mostrarFormulario && (
-        <div className="modal-overlay">
-          <div className="modal-contenido">
-            <ExploracionForm
-              idCampamento={ID_CAMPAMENTO_MOCK}
-              onCreada={handleCreada}
-              onCancelar={() => setMostrarFormulario(false)}
-            />
-          </div>
-        </div>
-      )}
-
-      {seleccionada && vistaDetalle === "personas" && (
-        <div className="modal-overlay">
-          <div className="modal-contenido">
-            <AsignarPersonas
-              exploracion={seleccionada}
-              onCerrar={cerrarDetalle}
-            />
-          </div>
-        </div>
-      )}
-
-      {seleccionada && vistaDetalle === "recursos" && (
-        <div className="modal-overlay">
-          <div className="modal-contenido">
-            <RecursosMision
-              exploracion={seleccionada}
-              onCerrar={cerrarDetalle}
-            />
-          </div>
-        </div>
-      )}
-
-      {exploracionAEliminar && (
-        <div className="modal-overlay">
-          <div className="modal-contenido">
-            <div className="form-container">
-              <h2>Eliminar exploración</h2>
-              <p>¿Estás segura de que deseas eliminar <strong>{exploracionAEliminar.nombre}</strong>? Esta acción no se puede deshacer.</p>
-              <div className="form-acciones">
-                <button className="btn-secundario" onClick={() => setExploracionAEliminar(null)}>
-                  Cancelar
-                </button>
-                <button className="btn-accion cancelar" onClick={confirmarEliminar}>
-                  Eliminar
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+          )}
         </main>
       </div>
     </div>

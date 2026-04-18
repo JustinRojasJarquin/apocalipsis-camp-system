@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 
-function Sidebar() {
+function TopNav() {
   const location = useLocation();
 
   const menuItems = [
@@ -10,147 +10,110 @@ function Sidebar() {
   ];
 
   return (
-    <aside
+    <header
       style={{
-        width: "270px",
-        minHeight: "100vh",
-        background: "linear-gradient(180deg, #020617 0%, #0f172a 100%)",
-        color: "white",
-        padding: "24px 18px",
-        borderRight: "1px solid rgba(148, 163, 184, 0.12)",
-        boxShadow: "4px 0 20px rgba(0,0,0,0.18)",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
+        position: "sticky",
+        top: 0,
+        zIndex: 50,
+        width: "100%",
+        background: "rgba(2, 6, 23, 0.88)",
+        backdropFilter: "blur(14px)",
+        borderBottom: "1px solid rgba(148, 163, 184, 0.12)",
       }}
     >
-      <div>
-        <div
-          style={{
-            marginBottom: "28px",
-            padding: "18px",
-            borderRadius: "18px",
-            background:
-              "linear-gradient(135deg, rgba(59,130,246,0.14), rgba(15,23,42,0.45))",
-            border: "1px solid rgba(59, 130, 246, 0.18)",
-          }}
-        >
-          <h2
+      <div
+        style={{
+          maxWidth: "1400px",
+          margin: "0 auto",
+          padding: "16px 28px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "20px",
+        }}
+      >
+        <div style={{ minWidth: "220px" }}>
+          <h1
             style={{
               margin: 0,
-              fontSize: "22px",
-              fontWeight: 700,
+              fontSize: "24px",
+              fontWeight: 800,
               color: "#f8fafc",
+              lineHeight: 1.1,
             }}
           >
             Apocalipsis Camp
-          </h2>
-
+          </h1>
           <p
             style={{
-              margin: "6px 0 0 0",
-              fontSize: "13px",
+              margin: "4px 0 0",
               color: "#94a3b8",
+              fontSize: "13px",
             }}
           >
-            Panel administrativo
+            Sistema de administración
           </p>
         </div>
 
-        <div style={{ marginBottom: "24px" }}>
-          <p
+        <nav
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            flexWrap: "wrap",
+            justifyContent: "center",
+            flex: 1,
+          }}
+        >
+          {menuItems.map((item) => {
+            const isActive = location.pathname === item.to;
+
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                style={{
+                  textDecoration: "none",
+                  color: isActive ? "#f8fafc" : "#cbd5e1",
+                  background: isActive
+                    ? "linear-gradient(135deg, rgba(59,130,246,0.22), rgba(59,130,246,0.10))"
+                    : "transparent",
+                  border: isActive
+                    ? "1px solid rgba(59,130,246,0.28)"
+                    : "1px solid transparent",
+                  padding: "12px 18px",
+                  borderRadius: "999px",
+                  fontSize: "15px",
+                  fontWeight: isActive ? 700 : 500,
+                  transition: "all 0.25s ease",
+                }}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div style={{ minWidth: "180px", display: "flex", justifyContent: "flex-end" }}>
+          <button
             style={{
-              color: "#64748b",
-              fontSize: "12px",
-              textTransform: "uppercase",
-              letterSpacing: "1px",
-              margin: "0 0 10px 10px",
+              border: "none",
+              background: "linear-gradient(135deg, #ef4444, #dc2626)",
+              color: "white",
+              padding: "12px 18px",
+              borderRadius: "14px",
+              fontWeight: 700,
+              fontSize: "15px",
+              cursor: "pointer",
+              boxShadow: "0 10px 20px rgba(220, 38, 38, 0.25)",
             }}
           >
-            Principal
-          </p>
-
-          <nav
-            style={{ display: "flex", flexDirection: "column", gap: "10px" }}
-          >
-            {menuItems.map((item) => {
-              const isActive = location.pathname === item.to;
-
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  style={{
-                    textDecoration: "none",
-                    color: isActive ? "#f8fafc" : "#cbd5e1",
-                    background: isActive
-                      ? "linear-gradient(90deg, rgba(59,130,246,0.22), rgba(59,130,246,0.06))"
-                      : "transparent",
-                    border: isActive
-                      ? "1px solid rgba(59,130,246,0.22)"
-                      : "1px solid transparent",
-                    padding: "14px 16px",
-                    borderRadius: "14px",
-                    fontSize: "15px",
-                    fontWeight: isActive ? 600 : 500,
-                    transition: "all 0.25s ease",
-                    display: "block",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.background =
-                        "rgba(148, 163, 184, 0.08)";
-                      e.currentTarget.style.color = "#f8fafc";
-                      e.currentTarget.style.transform = "translateX(4px)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.background = "transparent";
-                      e.currentTarget.style.color = "#cbd5e1";
-                      e.currentTarget.style.transform = "translateX(0)";
-                    }
-                  }}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
+            Cerrar sesión
+          </button>
         </div>
       </div>
-
-      <div
-        style={{
-          padding: "16px",
-          borderRadius: "16px",
-          background: "rgba(15, 23, 42, 0.75)",
-          border: "1px solid rgba(148, 163, 184, 0.10)",
-        }}
-      >
-        <p
-          style={{
-            margin: 0,
-            color: "#e2e8f0",
-            fontSize: "14px",
-            fontWeight: 600,
-          }}
-        >
-          Acceso rápido
-        </p>
-        <p
-          style={{
-            margin: "6px 0 0 0",
-            color: "#94a3b8",
-            fontSize: "13px",
-            lineHeight: 1.5,
-          }}
-        >
-          Usa las tarjetas del panel principal para entrar a cada módulo.
-        </p>
-      </div>
-    </aside>
+    </header>
   );
 }
 
-export default Sidebar;
+export default TopNav;

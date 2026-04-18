@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import Navbar from "../../../shared/components/Navbar";
-import Sidebar from "../../../shared/components/Sidebar";
 import CampamentosForm from "../components/CampamentosForm";
 import { deleteCampamento, getCampamentos } from "../campamentos.api";
 import type { Campamento } from "../types";
@@ -76,7 +75,7 @@ function CampamentosPage() {
 
   return (
     <div style={{ display: "flex", background: "#0f172a", minHeight: "100vh" }}>
-      <Sidebar />
+      
 
       <div style={{ flex: 1 }}>
         <Navbar />
