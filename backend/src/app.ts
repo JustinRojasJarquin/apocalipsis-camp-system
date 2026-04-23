@@ -1,6 +1,13 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import authRoutes from "./modules/auth/auth.routes";
+import campamentosRoutes from "./modules/campamentos/campamentos.routes";
+import personasRoutes from "./modules/personas/personas.routes";
+import exploracionesRoutes from "./modules/exploraciones/exploraciones.routes";
+import { verificarToken } from "./middlewares/auth.middleware";
+import inventarioRoutes from "./modules/inventario/inventario.routes";
+
 
 dotenv.config();
 
@@ -9,13 +16,28 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.get("/api/prueba", (req, res) => {
+app.use("/api/inventario", inventarioRoutes);
+
+app.get("/api", (req, res) => {
   res.json({
     status: "Correcto",
     message: "Ejecutando en TypeScript",
   });
 });
 
-//Probando commit 
-//VC
+app.get("/api/privado", verificarToken, (req, res) => {
+  res.json({
+    mensaje: "Ruta protegida correcta",
+    usuario: req.usuario,
+  });
+});
+
+app.use("/api/auth", authRoutes);
+
+app.use("/api/campamentos", campamentosRoutes);
+app.use("/api/personas", personasRoutes);
+
+// Rutas del módulo de exploraciones
+app.use("/api/exploraciones", exploracionesRoutes);
+
 export default app;
