@@ -8,6 +8,23 @@ import type {
   UpdateCampamentoDTO,
 } from "./campamentos.dto";
 
+const normalizeCampamentoData = (
+  data: CreateCampamentoDTO | UpdateCampamentoDTO,
+) => ({
+  ...("nombre" in data && data.nombre !== undefined
+    ? { nombre: data.nombre.trim() }
+    : {}),
+  ...("ubicacion" in data
+    ? { ubicacion: data.ubicacion?.trim() || null }
+    : {}),
+  ...("descripcion" in data
+    ? { descripcion: data.descripcion?.trim() || null }
+    : {}),
+  ...("activo" in data && data.activo !== undefined
+    ? { activo: data.activo }
+    : {}),
+});
+
 export const getCampamentos = async () => {
   return await prisma.campamento.findMany({
     where: { activo: true },
@@ -16,12 +33,13 @@ export const getCampamentos = async () => {
 
 export const createCampamento = async (data: CreateCampamentoDTO) => {
   validateCreateCampamento(data);
+  const campamentoData = normalizeCampamentoData(data);
 
   return await prisma.campamento.create({
     data: {
-      nombre: data.nombre,
-      ubicacion: data.ubicacion,
-      descripcion: data.descripcion,
+      nombre: campamentoData.nombre!,
+      ubicacion: campamentoData.ubicacion,
+      descripcion: campamentoData.descripcion,
       activo: true, // por defecto
     },
   });
@@ -39,7 +57,7 @@ export const updateCampamento = async (
 
   return await prisma.campamento.update({
     where: { id_campamento: id },
-    data,
+    data: normalizeCampamentoData(data),
   });
 };
 

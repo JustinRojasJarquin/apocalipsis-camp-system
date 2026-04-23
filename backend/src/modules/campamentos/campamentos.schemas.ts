@@ -1,45 +1,51 @@
 import { CreateCampamentoDTO, UpdateCampamentoDTO } from "./campamentos.dto";
 
 export const validateCreateCampamento = (data: CreateCampamentoDTO) => {
-  if (!data.nombre || data.nombre.trim() === "") {
+  const nombre = data.nombre?.trim();
+  const ubicacion = data.ubicacion?.trim();
+  const descripcion = data.descripcion?.trim();
+
+  if (!nombre) {
     throw new Error("El nombre es obligatorio");
   }
 
-  if (data.nombre.length < 3) {
+  if (nombre.length < 3) {
     throw new Error("El nombre debe tener al menos 3 caracteres");
   }
 
-  if (data.ubicacion && data.ubicacion.trim().length < 3) {
-    throw new Error("La ubicación debe tener al menos 3 caracteres");
+  if (ubicacion && ubicacion.length < 3) {
+    throw new Error("La ubicacion debe tener al menos 3 caracteres");
   }
 
-  if (data.descripcion && data.descripcion.length > 255) {
-    throw new Error("La descripción no puede exceder los 255 caracteres");
+  if (descripcion && descripcion.length > 255) {
+    throw new Error("La descripcion no puede exceder los 255 caracteres");
   }
 };
 
 export const validateUpdateCampamento = (data: UpdateCampamentoDTO) => {
   if (data.nombre !== undefined) {
-    if (data.nombre.trim() === "") {
-      throw new Error("El nombre no puede estar vacío");
+    const nombre = data.nombre.trim();
+
+    if (nombre === "") {
+      throw new Error("El nombre no puede estar vacio");
     }
 
-    if (data.nombre.length < 3) {
+    if (nombre.length < 3) {
       throw new Error("El nombre debe tener al menos 3 caracteres");
     }
   }
 
   if (data.ubicacion !== undefined) {
-    if (data.ubicacion.trim() === "") {
-      throw new Error("La ubicación no puede estar vacía");
-    }
+    const ubicacion = data.ubicacion.trim();
 
-    if (data.ubicacion.length < 3) {
-      throw new Error("La ubicación debe tener al menos 3 caracteres");
+    if (ubicacion && ubicacion.length < 3) {
+      throw new Error("La ubicacion debe tener al menos 3 caracteres");
     }
   }
 
-  if (data.descripcion && data.descripcion.length > 255) {
-    throw new Error("La descripción no puede exceder los 255 caracteres");
+  const descripcion = data.descripcion?.trim();
+
+  if (descripcion && descripcion.length > 255) {
+    throw new Error("La descripcion no puede exceder los 255 caracteres");
   }
 };

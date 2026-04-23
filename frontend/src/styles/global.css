@@ -406,6 +406,20 @@ input:-webkit-autofill:active {
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.14);
 }
 
+.campamentos-grid > .campamentos-form-card {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+.campamentos-detail-card {
+  grid-column: 1;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(59, 130, 246, 0.24);
+  border-radius: 24px;
+  padding: 28px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.14);
+}
+
 .card-header {
   display: flex;
   justify-content: space-between;
@@ -476,6 +490,13 @@ input:-webkit-autofill:active {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
 }
 
+.campamento-card-selected {
+  border-color: rgba(96, 165, 250, 0.72);
+  box-shadow:
+    inset 0 0 0 1px rgba(96, 165, 250, 0.22),
+    0 18px 42px rgba(37, 99, 235, 0.16);
+}
+
 .campamento-card-header {
   display: flex;
   justify-content: space-between;
@@ -514,6 +535,107 @@ input:-webkit-autofill:active {
 .status-inactive {
   background: rgba(239, 68, 68, 0.12);
   color: #fca5a5;
+}
+
+.campamento-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.campamento-summary-item {
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(37, 99, 235, 0.12);
+  border: 1px solid rgba(96, 165, 250, 0.2);
+}
+
+.campamento-summary-item span {
+  display: block;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.campamento-summary-item strong {
+  font-size: 28px;
+}
+
+.campamento-detail-section {
+  display: grid;
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.detail-section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.detail-section-title h4 {
+  margin: 0;
+}
+
+.detail-section-title span {
+  color: rgba(255, 255, 255, 0.64);
+  font-size: 13px;
+}
+
+.campamento-mini-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.campamento-mini-card {
+  display: grid;
+  gap: 7px;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(148, 163, 184, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.campamento-mini-card span {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.table th {
+  color: rgba(255, 255, 255, 0.64);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.table .status-badge {
+  min-width: 80px;
+  margin-top: 0;
+  padding: 7px 10px;
 }
 
 .campamentos-form {
@@ -727,6 +849,16 @@ input:-webkit-autofill:active {
   }
 
   .campamentos-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .campamentos-grid > .campamentos-form-card,
+  .campamentos-detail-card {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .campamento-summary-grid {
     grid-template-columns: 1fr;
   }
 }

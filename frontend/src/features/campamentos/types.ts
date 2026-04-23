@@ -1,8 +1,8 @@
 export interface Campamento {
   id_campamento?: number;
   nombre: string;
-  ubicacion?: string;
-  descripcion?: string;
+  ubicacion?: string | null;
+  descripcion?: string | null;
   activo?: boolean;
 }
 

@@ -14,7 +14,7 @@ export interface UpdateCampamentoDTO {
 export interface CampamentoResponseDTO {
   id_campamento: number;
   nombre: string;
-  ubicacion?: string;
-  descripcion?: string;
+  ubicacion?: string | null;
+  descripcion?: string | null;
   activo: boolean;
 }

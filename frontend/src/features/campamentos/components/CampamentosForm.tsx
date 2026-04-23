@@ -80,11 +80,17 @@ export default function CampamentosForm({
     setError(null);
     setIsSaving(true);
 
+    const payload: CampamentoFormData = {
+      nombre: form.nombre.trim(),
+      ubicacion: form.ubicacion.trim(),
+      descripcion: form.descripcion.trim(),
+    };
+
     try {
       if (campamentoEditando?.id_campamento) {
-        await updateCampamento(campamentoEditando.id_campamento, form);
+        await updateCampamento(campamentoEditando.id_campamento, payload);
       } else {
-        await createCampamento(form);
+        await createCampamento(payload);
       }
 
       setForm(emptyForm);
