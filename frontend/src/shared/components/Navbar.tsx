@@ -43,9 +43,18 @@ function Navbar() {
       roles: [...ROLES.ADMIN],
     },
     {
+      to: "/usuarios",
+      label: "Usuarios",
+      roles: [...ROLES.ADMIN],
+    },
+    {
       to: "/inventario",
       label: "Inventario",
-      roles: [...ROLES.ADMIN, ...ROLES.GESTOR_RECURSOS, ...ROLES.TRABAJADOR],
+      roles: [
+        ...ROLES.ADMIN,
+        ...ROLES.GESTOR_RECURSOS,
+        ...ROLES.TRABAJADOR,
+      ],
     },
     {
       to: "/exploraciones",
@@ -86,6 +95,7 @@ function Navbar() {
           gap: "20px",
         }}
       >
+        {/* IZQUIERDA */}
         <div>
           <h1
             style={{
@@ -122,6 +132,7 @@ function Navbar() {
           )}
         </div>
 
+        {/* CENTRO */}
         <nav
           style={{
             display: "flex",
@@ -159,6 +170,7 @@ function Navbar() {
           })}
         </nav>
 
+        {/* DERECHA */}
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
           <button
             onClick={handleLogout}

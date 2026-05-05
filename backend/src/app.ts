@@ -8,6 +8,8 @@ import exploracionesRoutes from "./modules/exploraciones/exploraciones.routes";
 import inventarioRoutes from "./modules/inventario/inventario.routes";
 import solicitudesRoutes from "./modules/solicitudes/solicitudes.routes";
 import { verificarToken } from "./middlewares/auth.middleware";
+import usuariosRoutes from "./modules/usuarios/usuarios.routes";
+import rolesRoutes from "./modules/roles/roles.routes";
 
 dotenv.config();
 
@@ -36,5 +38,7 @@ app.use("/api/personas", personasRoutes);
 app.use("/api/inventario", inventarioRoutes);
 app.use("/api/exploraciones", exploracionesRoutes);
 app.use("/api/solicitudes", solicitudesRoutes);
+app.use("/api/usuarios", usuariosRoutes);
+app.use("/api/roles", rolesRoutes);
 
 export default app;
