@@ -60,3 +60,20 @@ export const remove = async (req: Request, res: Response) => {
     res.status(getErrorStatus(message)).json({ error: message });
   }
 };
+export const getCargos = async (_req: Request, res: Response) => {
+  try {
+    const data = await service.getCargos();
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
+
+export const getEstados = async (_req: Request, res: Response) => {
+  try {
+    const data = await service.getEstados();
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};

@@ -1,8 +1,20 @@
 import { Link, useLocation } from "react-router-dom";
 import { storage } from "../utils/storage";
 
+const ROLES = {
+  ADMIN: ["ADMIN", "ADMINISTRADOR"],
+  GESTOR_RECURSOS: ["GESTOR_RECURSOS", "GESTION_RECURSOS"],
+  VIAJES: ["VIAJES", "ENCARGADO_VIAJES"],
+  TRABAJADOR: ["TRABAJADOR"],
+};
+
 function Navbar() {
   const location = useLocation();
+  const usuario = storage.getUsuario();
+
+  const rolCodigo = usuario?.rol?.codigo;
+  const cargoNombre = usuario?.persona?.cargo?.nombre;
+  const campamentoNombre = usuario?.persona?.campamento?.nombre;
 
   const handleLogout = () => {
     storage.clearAuth();
@@ -10,12 +22,42 @@ function Navbar() {
   };
 
   const menuItems = [
-    { to: "/dashboard", label: "Inicio" },
-    { to: "/campamentos", label: "Campamentos" },
-    { to: "/personas", label: "Personas" },
-    { to: "/inventario", label: "Inventario" },
-    { to: "/exploraciones", label: "Exploraciones" },
+    {
+      to: "/dashboard",
+      label: "Inicio",
+      roles: [
+        ...ROLES.ADMIN,
+        ...ROLES.GESTOR_RECURSOS,
+        ...ROLES.VIAJES,
+        ...ROLES.TRABAJADOR,
+      ],
+    },
+    {
+      to: "/campamentos",
+      label: "Campamentos",
+      roles: [...ROLES.ADMIN],
+    },
+    {
+      to: "/personas",
+      label: "Personas",
+      roles: [...ROLES.ADMIN],
+    },
+    {
+      to: "/inventario",
+      label: "Inventario",
+      roles: [...ROLES.ADMIN, ...ROLES.GESTOR_RECURSOS, ...ROLES.TRABAJADOR],
+    },
+    {
+      to: "/exploraciones",
+      label: "Exploraciones",
+      roles: [...ROLES.ADMIN, ...ROLES.VIAJES],
+    },
   ];
+
+  const visibleMenuItems = menuItems.filter((item) => {
+    if (!rolCodigo) return false;
+    return item.roles.includes(rolCodigo);
+  });
 
   return (
     <header
@@ -39,7 +81,7 @@ function Navbar() {
           width: "100%",
           maxWidth: "1400px",
           display: "grid",
-          gridTemplateColumns: "260px 1fr 220px",
+          gridTemplateColumns: "260px 1fr 260px",
           alignItems: "center",
           gap: "20px",
         }}
@@ -55,6 +97,7 @@ function Navbar() {
           >
             Apocalipsis Camp
           </h1>
+
           <p
             style={{
               margin: "4px 0 0 0",
@@ -62,8 +105,21 @@ function Navbar() {
               fontSize: "13px",
             }}
           >
-            Sistema de administración
+            {rolCodigo ? `Rol: ${rolCodigo}` : "Sistema de administración"}
           </p>
+
+          {cargoNombre && (
+            <p
+              style={{
+                margin: "2px 0 0 0",
+                color: "#64748b",
+                fontSize: "12px",
+              }}
+            >
+              Cargo: {cargoNombre}
+              {campamentoNombre ? ` · ${campamentoNombre}` : ""}
+            </p>
+          )}
         </div>
 
         <nav
@@ -74,7 +130,7 @@ function Navbar() {
             flexWrap: "wrap",
           }}
         >
-          {menuItems.map((item) => {
+          {visibleMenuItems.map((item) => {
             const isActive = location.pathname === item.to;
 
             return (

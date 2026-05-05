@@ -5,7 +5,7 @@ import { getCampamentos } from "../features/campamentos/campamentos.api";
 import { getPersonas } from "../features/personas/personas.api";
 import { getResources } from "../features/inventario/inventario.api";
 import { listarExploraciones } from "../features/exploraciones/exploraciones.api";
-import { storage } from "../../src/shared/utils/storage";
+import { storage } from "../shared/utils/storage";
 
 import campamentosIcon from "../assets/campamentos.png";
 import personasIcon from "../assets/personas.png";
@@ -24,13 +24,16 @@ type DashboardStats = {
 type ModuleItem = {
   title: string;
   value?: number;
-  showCount?: boolean;
   countLabel?: string;
   to: string;
   icon: string;
   accent: string;
   description: string;
   status: string;
+};
+
+type ModuleItemWithRoles = ModuleItem & {
+  roles: string[];
 };
 
 const styles = {
@@ -187,7 +190,6 @@ const styles = {
     marginBottom: "20px",
     flexWrap: "wrap" as const,
   },
-  sectionTitleBlock: {},
   sectionTag: {
     margin: 0,
     marginBottom: "6px",
@@ -221,6 +223,11 @@ const styles = {
 function DashboardPage() {
   const { usuario } = useAuth();
 
+  const rolCodigo = usuario?.rol?.codigo ?? "";
+  const cargoNombre = usuario?.persona?.cargo?.nombre;
+  const campamentoNombre = usuario?.persona?.campamento?.nombre;
+  const nombrePersona = usuario?.persona?.nombre;
+
   const [stats, setStats] = useState<DashboardStats>({
     campamentos: 0,
     personas: 0,
@@ -235,7 +242,9 @@ function DashboardPage() {
 
   useEffect(() => {
     const loadDashboardData = async () => {
-      const idCampamento = Number(localStorage.getItem("campamento_id"));
+      const idCampamento =
+        usuario?.persona?.campamento?.id_campamento ??
+        Number(localStorage.getItem("campamento_id"));
 
       const [
         campamentosResult,
@@ -255,9 +264,7 @@ function DashboardPage() {
           : [];
 
       const personas =
-        personasResult.status === "fulfilled"
-          ? personasResult.value
-          : [];
+        personasResult.status === "fulfilled" ? personasResult.value : [];
 
       const inventario =
         inventarioResult.status === "fulfilled"
@@ -268,25 +275,6 @@ function DashboardPage() {
         exploracionesResult.status === "fulfilled"
           ? exploracionesResult.value
           : [];
-
-      if (campamentosResult.status === "rejected") {
-        console.error("Error cargando campamentos:", campamentosResult.reason);
-      }
-
-      if (personasResult.status === "rejected") {
-        console.error("Error cargando personas:", personasResult.reason);
-      }
-
-      if (inventarioResult.status === "rejected") {
-        console.error("Error cargando inventario:", inventarioResult.reason);
-      }
-
-      if (exploracionesResult.status === "rejected") {
-        console.error(
-          "Error cargando exploraciones:",
-          exploracionesResult.reason,
-        );
-      }
 
       const campamentosActivos = campamentos.filter(
         (campamento: { activo?: boolean }) => campamento.activo !== false,
@@ -301,14 +289,31 @@ function DashboardPage() {
     };
 
     void loadDashboardData();
-  }, []);
+  }, [usuario]);
 
-  const modules: ModuleItem[] = useMemo(
-    () => [
+  const heroMessage = useMemo(() => {
+    if (rolCodigo === "ADMIN" || rolCodigo === "ADMINISTRADOR") {
+      return "Panel administrativo general. Puedes gestionar campamentos, personas, recursos y operaciones del sistema.";
+    }
+
+    if (rolCodigo === "GESTOR_RECURSOS" || rolCodigo === "GESTION_RECURSOS") {
+      return "Panel de gestión de recursos. Puedes revisar inventario, alertas y movimientos del campamento.";
+    }
+
+    if (rolCodigo === "VIAJES" || rolCodigo === "ENCARGADO_VIAJES") {
+      return "Panel de viajes y exploraciones. Puedes gestionar exploraciones, traslados y seguimiento operativo.";
+    }
+
+    return `Panel del trabajador. Cargo: ${cargoNombre ?? "Sin cargo"}${
+      campamentoNombre ? ` · Campamento: ${campamentoNombre}` : ""
+    }.`;
+  }, [rolCodigo, cargoNombre, campamentoNombre]);
+
+  const modules: ModuleItem[] = useMemo(() => {
+    const allModules: ModuleItemWithRoles[] = [
       {
         title: "Campamentos",
         value: stats.campamentos,
-        showCount: true,
         countLabel: "Registros",
         to: "/campamentos",
         icon: campamentosIcon,
@@ -316,46 +321,58 @@ function DashboardPage() {
         description:
           "Administra campamentos, estado operativo y configuración general.",
         status: "Disponible",
+        roles: ["ADMIN", "ADMINISTRADOR"],
       },
       {
         title: "Personas",
         value: stats.personas,
-        showCount: true,
         countLabel: "Registros",
         to: "/personas",
         icon: personasIcon,
         accent: "#22c55e",
         description:
-          "Gestiona expedientes, roles y personal registrado en el sistema.",
+          "Gestiona expedientes, cargos y personal registrado en el sistema.",
         status: "Disponible",
+        roles: ["ADMIN", "ADMINISTRADOR"],
       },
       {
         title: "Inventario",
         value: stats.inventario,
-        showCount: true,
         countLabel: "Registros",
         to: "/inventario",
         icon: inventarioIcon,
         accent: "#f59e0b",
         description:
-          "Administra recursos, existencias y movimientos del inventario disponible.",
+          "Administra recursos, existencias y movimientos del inventario.",
         status: "Disponible",
+        roles: [
+          "ADMIN",
+          "ADMINISTRADOR",
+          "GESTOR_RECURSOS",
+          "GESTION_RECURSOS",
+          "TRABAJADOR",
+        ],
       },
       {
         title: "Exploraciones",
         value: stats.exploraciones,
-        showCount: true,
         countLabel: "Registros",
         to: "/exploraciones",
         icon: exploracionesIcon,
         accent: "#ef4444",
         description:
-          "Gestiona exploraciones, seguimiento operativo y resultados registrados.",
+          "Gestiona exploraciones, seguimiento operativo y resultados.",
         status: "Disponible",
+        roles: ["ADMIN", "ADMINISTRADOR", "VIAJES", "ENCARGADO_VIAJES"],
       },
-    ],
-    [stats],
-  );
+    ];
+
+    if (!rolCodigo) {
+      return allModules;
+    }
+
+    return allModules.filter((module) => module.roles.includes(rolCodigo));
+  }, [stats, rolCodigo]);
 
   return (
     <div style={styles.page}>
@@ -367,19 +384,7 @@ function DashboardPage() {
           <div style={styles.heroTopBar}>
             <span style={styles.heroTag}>Centro de control</span>
 
-            <button
-              type="button"
-              style={styles.logoutButton}
-              onClick={handleLogout}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "rgba(127,29,29,0.35)";
-                e.currentTarget.style.transform = "translateY(-2px)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "rgba(127,29,29,0.20)";
-                e.currentTarget.style.transform = "translateY(0)";
-              }}
-            >
+            <button type="button" style={styles.logoutButton} onClick={handleLogout}>
               Cerrar sesión
             </button>
           </div>
@@ -388,18 +393,16 @@ function DashboardPage() {
             <div style={styles.heroLeft}>
               <div>
                 <div style={styles.heroHeader}>
-                  <span style={styles.heroTag}>Panel principal</span>
+                  <span style={styles.heroTag}>
+                    {rolCodigo ? `Rol: ${rolCodigo}` : "Panel principal"}
+                  </span>
                 </div>
 
                 <h1 style={styles.heroTitle}>
-                  Hola, {usuario?.usuario ?? "usuario"}
+                  Hola, {nombrePersona ?? usuario?.usuario ?? "usuario"}
                 </h1>
 
-                <p style={styles.heroText}>
-                  Bienvenida al panel principal. Desde aquí puedes acceder a los
-                  módulos del sistema y consultar rápidamente el estado general
-                  de la operación.
-                </p>
+                <p style={styles.heroText}>{heroMessage}</p>
               </div>
             </div>
 
@@ -433,11 +436,11 @@ function DashboardPage() {
 
         <section>
           <div style={styles.sectionHeader}>
-            <div style={styles.sectionTitleBlock}>
+            <div>
               <p style={styles.sectionTag}>Navegación principal</p>
-              <h2 style={styles.sectionTitle}>Módulos del sistema</h2>
+              <h2 style={styles.sectionTitle}>Módulos disponibles</h2>
               <p style={styles.sectionSubtitle}>
-                Selecciona un módulo para entrar directamente a su gestión.
+                Los módulos visibles dependen del rol asignado a tu usuario.
               </p>
             </div>
           </div>
@@ -472,16 +475,6 @@ function ModuleCard({ module }: { module: ModuleItem }) {
           "transform 0.28s ease, box-shadow 0.28s ease, border 0.28s ease",
         cursor: "pointer",
       }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = "translateY(-8px)";
-        e.currentTarget.style.boxShadow = "0 22px 40px rgba(0, 0, 0, 0.34)";
-        e.currentTarget.style.border = `1px solid ${module.accent}55`;
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = "translateY(0)";
-        e.currentTarget.style.boxShadow = "0 14px 30px rgba(0, 0, 0, 0.28)";
-        e.currentTarget.style.border = "1px solid rgba(148, 163, 184, 0.12)";
-      }}
     >
       <div
         style={{
@@ -493,18 +486,6 @@ function ModuleCard({ module }: { module: ModuleItem }) {
           borderRadius: "50%",
           background: `${module.accent}20`,
           filter: "blur(4px)",
-        }}
-      />
-
-      <div
-        style={{
-          position: "absolute",
-          left: "18px",
-          top: "18px",
-          right: "18px",
-          height: "1px",
-          background: `linear-gradient(90deg, ${module.accent}, transparent)`,
-          opacity: 0.7,
         }}
       />
 
@@ -537,7 +518,6 @@ function ModuleCard({ module }: { module: ModuleItem }) {
               background: `${module.accent}20`,
               border: `1px solid ${module.accent}30`,
               padding: "12px",
-              boxShadow: `inset 0 1px 0 ${module.accent}22`,
             }}
           >
             <img
@@ -557,15 +537,9 @@ function ModuleCard({ module }: { module: ModuleItem }) {
               borderRadius: "999px",
               fontSize: "12px",
               fontWeight: 800,
-              background:
-                module.status === "Disponible"
-                  ? "rgba(34,197,94,0.12)"
-                  : "rgba(245,158,11,0.12)",
-              color: module.status === "Disponible" ? "#86efac" : "#fcd34d",
-              border:
-                module.status === "Disponible"
-                  ? "1px solid rgba(34,197,94,0.22)"
-                  : "1px solid rgba(245,158,11,0.22)",
+              background: "rgba(34,197,94,0.12)",
+              color: "#86efac",
+              border: "1px solid rgba(34,197,94,0.22)",
             }}
           >
             {module.status}

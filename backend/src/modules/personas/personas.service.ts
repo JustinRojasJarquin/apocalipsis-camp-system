@@ -216,3 +216,14 @@ export const deletePersona = async (id: number) => {
     include: personaInclude,
   });
 };
+export const getCargos = async () => {
+  return prisma.cargo.findMany({
+    orderBy: { nombre: "asc" },
+  });
+};
+
+export const getEstados = async () => {
+  return prisma.estado_persona.findMany({
+    orderBy: { nombre: "asc" },
+  });
+};

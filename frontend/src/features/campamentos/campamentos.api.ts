@@ -25,6 +25,7 @@ export const getCampamentos = async (): Promise<Campamento[]> => {
   return await handleResponse<Campamento[]>(res);
 };
 
+
 export const createCampamento = async (data: CampamentoFormData) => {
   const res = await fetch(BASE_URL, {
     method: "POST",
@@ -58,4 +59,38 @@ export const deleteCampamento = async (id: number) => {
   });
 
   await handleResponse<Campamento>(res);
+};
+
+const SOLICITUDES_URL = "http://localhost:4000/api/solicitudes";
+
+export const getSolicitudes = async () => {
+  const res = await fetch(SOLICITUDES_URL);
+  return await handleResponse<any[]>(res);
+};
+
+export const crearSolicitud = async (data: any) => {
+  const res = await fetch(SOLICITUDES_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  return await handleResponse<any>(res);
+};
+
+export const responderSolicitud = async (
+  id: number,
+  data: any
+) => {
+  const res = await fetch(`${SOLICITUDES_URL}/${id}/responder`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  return await handleResponse<any>(res);
 };

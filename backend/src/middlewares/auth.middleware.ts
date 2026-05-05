@@ -5,7 +5,12 @@ interface PayloadToken {
   id_usuario: number;
   id_rol: number;
   usuario: string;
+  rol_codigo?: string;
+  id_persona?: number;
+  id_campamento?: number;
+  id_cargo?: number | null;
 }
+
 
 declare global {
   namespace Express {
@@ -18,7 +23,7 @@ declare global {
 export const verificarToken = (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const authHeader = req.headers.authorization;
@@ -33,13 +38,13 @@ export const verificarToken = (
 
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || "secreto"
+      process.env.JWT_SECRET || "secreto",
     ) as PayloadToken;
 
     req.usuario = decoded;
 
     next();
-  } catch (error) {
+  } catch {
     return res.status(401).json({
       mensaje: "Token inválido o expirado",
     });

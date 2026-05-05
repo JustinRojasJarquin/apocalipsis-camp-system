@@ -5,9 +5,9 @@ import authRoutes from "./modules/auth/auth.routes";
 import campamentosRoutes from "./modules/campamentos/campamentos.routes";
 import personasRoutes from "./modules/personas/personas.routes";
 import exploracionesRoutes from "./modules/exploraciones/exploraciones.routes";
-import { verificarToken } from "./middlewares/auth.middleware";
 import inventarioRoutes from "./modules/inventario/inventario.routes";
-
+import solicitudesRoutes from "./modules/solicitudes/solicitudes.routes";
+import { verificarToken } from "./middlewares/auth.middleware";
 
 dotenv.config();
 
@@ -15,8 +15,6 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-
-app.use("/api/inventario", inventarioRoutes);
 
 app.get("/api", (req, res) => {
   res.json({
@@ -33,11 +31,10 @@ app.get("/api/privado", verificarToken, (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
-
 app.use("/api/campamentos", campamentosRoutes);
 app.use("/api/personas", personasRoutes);
-
-// Rutas del módulo de exploraciones
+app.use("/api/inventario", inventarioRoutes);
 app.use("/api/exploraciones", exploracionesRoutes);
+app.use("/api/solicitudes", solicitudesRoutes);
 
 export default app;

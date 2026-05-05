@@ -6,11 +6,14 @@ export interface PersonaCampamento {
 export interface PersonaCargo {
   id_cargo: number;
   nombre: string;
+  descripcion?: string | null;
 }
 
 export interface PersonaEstado {
   id_estado: number;
   nombre: string;
+  descripcion?: string | null;
+  disponible?: boolean;
 }
 
 export interface Persona {
@@ -40,4 +43,6 @@ export interface PersonaFormData {
   foto_url: string;
   imagen_carnet_url: string;
   codigo_campamento: string;
+  id_cargo_actual: string;
+  id_estado_actual: string;
 }

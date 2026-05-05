@@ -5,6 +5,10 @@ interface JwtPayload {
   id_usuario: number;
   id_rol: number;
   usuario: string;
+  rol_codigo?: string;
+  id_persona?: number;
+  id_campamento?: number;
+  id_cargo?: number | null;
 }
 
 const JWT_SECRET: Secret = process.env.JWT_SECRET || "secreto";

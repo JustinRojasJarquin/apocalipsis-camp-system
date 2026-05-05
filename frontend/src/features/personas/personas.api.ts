@@ -1,4 +1,9 @@
-import type { Persona, PersonaFormData } from "./types";
+import type {
+  Persona,
+  PersonaCargo,
+  PersonaEstado,
+  PersonaFormData,
+} from "./types";
 
 const BASE_URL = "http://localhost:4000/api/personas";
 
@@ -8,6 +13,7 @@ const handleResponse = async <T>(res: Response): Promise<T> => {
 
   if (!res.ok) {
     const errorData = data as { error?: string; mensaje?: string } | null;
+
     const message =
       errorData?.error ||
       errorData?.mensaje ||
@@ -29,11 +35,27 @@ const mapPayload = (data: PersonaFormData) => ({
   foto_url: data.foto_url.trim() || null,
   imagen_carnet_url: data.imagen_carnet_url.trim() || null,
   codigo_campamento: data.codigo_campamento.trim() || null,
+  id_cargo_actual: data.id_cargo_actual
+    ? Number(data.id_cargo_actual)
+    : null,
+  id_estado_actual: data.id_estado_actual
+    ? Number(data.id_estado_actual)
+    : null,
 });
 
 export const getPersonas = async (): Promise<Persona[]> => {
   const res = await fetch(BASE_URL);
   return await handleResponse<Persona[]>(res);
+};
+
+export const getCargos = async (): Promise<PersonaCargo[]> => {
+  const res = await fetch(`${BASE_URL}/cargos`);
+  return await handleResponse<PersonaCargo[]>(res);
+};
+
+export const getEstados = async (): Promise<PersonaEstado[]> => {
+  const res = await fetch(`${BASE_URL}/estados`);
+  return await handleResponse<PersonaEstado[]>(res);
 };
 
 export const createPersona = async (data: PersonaFormData) => {

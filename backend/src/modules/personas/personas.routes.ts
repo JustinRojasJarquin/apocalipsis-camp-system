@@ -3,6 +3,9 @@ import * as controller from "./personas.controller";
 
 const router = Router();
 
+router.get("/cargos", controller.getCargos);
+router.get("/estados", controller.getEstados);
+
 router.get("/", controller.getAll);
 router.get("/:id", controller.getById);
 router.post("/", controller.create);

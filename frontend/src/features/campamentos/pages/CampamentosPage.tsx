@@ -7,37 +7,44 @@ import { getPersonas } from "../../personas/personas.api";
 import type { Persona } from "../../personas/types";
 import { getResources } from "../../inventario/inventario.api";
 import type { InventarioResource } from "../../inventario/types";
+import SolicitudesPage from "../../solicitudes/pages/SolicitudesPage";
 
 function CampamentosPage() {
   const [campamentos, setCampamentos] = useState<Campamento[]>([]);
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [inventario, setInventario] = useState<InventarioResource[]>([]);
-  const [campamentoEditando, setCampamentoEditando] = useState<Campamento | null>(
-    null,
-  );
-  const [selectedCampamentoId, setSelectedCampamentoId] = useState<number | null>(
-    null,
-  );
+  const [campamentoEditando, setCampamentoEditando] =
+    useState<Campamento | null>(null);
+
+  const [selectedCampamentoId, setSelectedCampamentoId] =
+    useState<number | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDeletingId, setIsDeletingId] = useState<number | null>(null);
+
   const campamentosActivos = campamentos.filter(
     (campamento) => campamento.activo !== false,
   );
+
   const selectedCampamento =
     campamentosActivos.find(
       (campamento) => campamento.id_campamento === selectedCampamentoId,
     ) ?? campamentosActivos[0];
+
   const selectedId = selectedCampamento?.id_campamento;
+
   const personasCampamento = selectedId
     ? personas.filter(
         (persona) =>
           persona.activo !== false && persona.id_campamento === selectedId,
       )
     : [];
+
   const inventarioCampamento = selectedId
     ? inventario.filter((resource) => resource.campId === selectedId)
     : [];
+
   const inventarioCritico = inventarioCampamento.filter(
     (resource) => resource.status === "critical",
   ).length;
@@ -47,11 +54,9 @@ function CampamentosPage() {
     setError(null);
 
     try {
-      const [campamentosData, personasData, inventarioData] = await Promise.all([
-        getCampamentos(),
-        getPersonas(),
-        getResources(),
-      ]);
+      const [campamentosData, personasData, inventarioData] =
+        await Promise.all([getCampamentos(), getPersonas(), getResources()]);
+
       const activeCampamentos = campamentosData.filter(
         (campamento) => campamento.activo !== false,
       );
@@ -59,6 +64,7 @@ function CampamentosPage() {
       setCampamentos(campamentosData);
       setPersonas(personasData);
       setInventario(inventarioData);
+
       setSelectedCampamentoId((currentId) => {
         const currentStillExists = activeCampamentos.some(
           (campamento) => campamento.id_campamento === currentId,
@@ -122,8 +128,6 @@ function CampamentosPage() {
 
   return (
     <div style={{ display: "flex", background: "#0f172a", minHeight: "100vh" }}>
-      
-
       <div style={{ flex: 1 }}>
         <Navbar />
 
@@ -164,10 +168,12 @@ function CampamentosPage() {
                     <span>Personas</span>
                     <strong>{personasCampamento.length}</strong>
                   </div>
+
                   <div className="campamento-summary-item">
                     <span>Recursos</span>
                     <strong>{inventarioCampamento.length}</strong>
                   </div>
+
                   <div className="campamento-summary-item">
                     <span>Alertas</span>
                     <strong>{inventarioCritico}</strong>
@@ -194,7 +200,9 @@ function CampamentosPage() {
                           <strong>
                             {persona.nombre} {persona.apellidos}
                           </strong>
+
                           <span>Cedula: {persona.cedula}</span>
+
                           <span>
                             Cargo: {persona.cargo?.nombre ?? "Sin cargo"}
                           </span>
@@ -225,6 +233,7 @@ function CampamentosPage() {
                             <th>Estado</th>
                           </tr>
                         </thead>
+
                         <tbody>
                           {inventarioCampamento.map((resource) => (
                             <tr key={`${resource.campId}-${resource.id}`}>
@@ -251,6 +260,13 @@ function CampamentosPage() {
                     </div>
                   )}
                 </section>
+
+                <SolicitudesPage
+                  campamento={selectedCampamento}
+                  campamentos={campamentosActivos}
+                  inventario={inventario}
+                  personas={personas}
+                />
               </div>
             )}
 
