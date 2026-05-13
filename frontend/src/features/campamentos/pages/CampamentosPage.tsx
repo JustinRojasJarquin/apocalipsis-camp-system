@@ -9,6 +9,8 @@ import { getResources } from "../../inventario/inventario.api";
 import type { InventarioResource } from "../../inventario/types";
 import SolicitudesPage from "../../solicitudes/pages/SolicitudesPage";
 
+type CampamentoTab = "lista" | "detalle" | "formulario" | "solicitudes";
+
 function CampamentosPage() {
   const [campamentos, setCampamentos] = useState<Campamento[]>([]);
   const [personas, setPersonas] = useState<Persona[]>([]);
@@ -19,6 +21,7 @@ function CampamentosPage() {
   const [selectedCampamentoId, setSelectedCampamentoId] =
     useState<number | null>(null);
 
+  const [activeTab, setActiveTab] = useState<CampamentoTab>("lista");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDeletingId, setIsDeletingId] = useState<number | null>(null);
@@ -70,9 +73,7 @@ function CampamentosPage() {
           (campamento) => campamento.id_campamento === currentId,
         );
 
-        if (currentStillExists) {
-          return currentId;
-        }
+        if (currentStillExists) return currentId;
 
         return activeCampamentos[0]?.id_campamento ?? null;
       });
@@ -92,17 +93,13 @@ function CampamentosPage() {
   }, []);
 
   const handleDelete = async (campamento: Campamento) => {
-    if (!campamento.id_campamento) {
-      return;
-    }
+    if (!campamento.id_campamento) return;
 
     const confirmed = window.confirm(
       `Deseas desactivar el campamento "${campamento.nombre}"?`,
     );
 
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
     setIsDeletingId(campamento.id_campamento);
     setError(null);
@@ -126,6 +123,24 @@ function CampamentosPage() {
     }
   };
 
+  const selectCampamento = (campamento: Campamento, tab: CampamentoTab) => {
+    setSelectedCampamentoId(campamento.id_campamento ?? null);
+    setActiveTab(tab);
+  };
+
+  const tabButtonStyle = (tab: CampamentoTab): React.CSSProperties => ({
+    border: activeTab === tab ? "1px solid #3b82f6" : "1px solid #334155",
+    background:
+      activeTab === tab
+        ? "linear-gradient(135deg, rgba(59,130,246,0.25), rgba(59,130,246,0.08))"
+        : "rgba(15,23,42,0.88)",
+    color: activeTab === tab ? "#f8fafc" : "#cbd5e1",
+    padding: "14px 18px",
+    borderRadius: "16px",
+    cursor: "pointer",
+    fontWeight: 800,
+  });
+
   return (
     <div style={{ display: "flex", background: "#0f172a", minHeight: "100vh" }}>
       <div style={{ flex: 1 }}>
@@ -136,8 +151,8 @@ function CampamentosPage() {
             <div>
               <h1>Campamentos</h1>
               <p className="page-description">
-                Administra los campamentos activos, crea nuevos registros y
-                actualiza la informacion principal del modulo.
+                Administra campamentos por secciones para evitar saturar la
+                pantalla.
               </p>
             </div>
 
@@ -149,133 +164,53 @@ function CampamentosPage() {
 
           {error && <div className="error-box">{error}</div>}
 
-          <section className="campamentos-grid">
-            {selectedCampamento && (
-              <div className="campamentos-detail-card">
-                <div className="card-header">
-                  <div>
-                    <span className="page-badge">Informacion solicitada</span>
-                    <h3>{selectedCampamento.nombre}</h3>
-                    <p className="small-text">
-                      {selectedCampamento.ubicacion?.trim() ||
-                        "Sin ubicacion registrada"}
-                    </p>
-                  </div>
-                </div>
+          <section
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: "14px",
+              marginBottom: "24px",
+            }}
+          >
+            <button style={tabButtonStyle("lista")} onClick={() => setActiveTab("lista")}>
+              Lista
+            </button>
 
-                <div className="campamento-summary-grid">
-                  <div className="campamento-summary-item">
-                    <span>Personas</span>
-                    <strong>{personasCampamento.length}</strong>
-                  </div>
+            <button
+              style={tabButtonStyle("detalle")}
+              disabled={!selectedCampamento}
+              onClick={() => setActiveTab("detalle")}
+            >
+              Detalle
+            </button>
 
-                  <div className="campamento-summary-item">
-                    <span>Recursos</span>
-                    <strong>{inventarioCampamento.length}</strong>
-                  </div>
+            <button
+              style={tabButtonStyle("formulario")}
+              onClick={() => {
+                setCampamentoEditando(null);
+                setActiveTab("formulario");
+              }}
+            >
+              Crear / Editar
+            </button>
 
-                  <div className="campamento-summary-item">
-                    <span>Alertas</span>
-                    <strong>{inventarioCritico}</strong>
-                  </div>
-                </div>
+            <button
+              style={tabButtonStyle("solicitudes")}
+              disabled={!selectedCampamento}
+              onClick={() => setActiveTab("solicitudes")}
+            >
+              Solicitudes
+            </button>
+          </section>
 
-                <section className="campamento-detail-section">
-                  <div className="detail-section-title">
-                    <h4>Personas del campamento</h4>
-                    <span>{personasCampamento.length} registros</span>
-                  </div>
-
-                  {personasCampamento.length === 0 ? (
-                    <div className="empty-state">
-                      No hay personas registradas en este campamento.
-                    </div>
-                  ) : (
-                    <div className="campamento-mini-list">
-                      {personasCampamento.map((persona) => (
-                        <article
-                          key={persona.id_persona}
-                          className="campamento-mini-card"
-                        >
-                          <strong>
-                            {persona.nombre} {persona.apellidos}
-                          </strong>
-
-                          <span>Cedula: {persona.cedula}</span>
-
-                          <span>
-                            Cargo: {persona.cargo?.nombre ?? "Sin cargo"}
-                          </span>
-                        </article>
-                      ))}
-                    </div>
-                  )}
-                </section>
-
-                <section className="campamento-detail-section">
-                  <div className="detail-section-title">
-                    <h4>Recursos e inventario</h4>
-                    <span>{inventarioCampamento.length} recursos</span>
-                  </div>
-
-                  {inventarioCampamento.length === 0 ? (
-                    <div className="empty-state">
-                      No hay inventario registrado en este campamento.
-                    </div>
-                  ) : (
-                    <div className="table-responsive">
-                      <table className="table">
-                        <thead>
-                          <tr>
-                            <th>Recurso</th>
-                            <th>Cantidad</th>
-                            <th>Minimo</th>
-                            <th>Estado</th>
-                          </tr>
-                        </thead>
-
-                        <tbody>
-                          {inventarioCampamento.map((resource) => (
-                            <tr key={`${resource.campId}-${resource.id}`}>
-                              <td>{resource.name}</td>
-                              <td>{resource.quantity}</td>
-                              <td>{resource.minThreshold}</td>
-                              <td>
-                                <span
-                                  className={
-                                    resource.status === "critical"
-                                      ? "status-badge status-inactive"
-                                      : "status-badge status-active"
-                                  }
-                                >
-                                  {resource.status === "critical"
-                                    ? "Critico"
-                                    : "Estable"}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </section>
-
-                <SolicitudesPage
-                  campamento={selectedCampamento}
-                  campamentos={campamentosActivos}
-                  inventario={inventario}
-                  personas={personas}
-                />
-              </div>
-            )}
-
-            <div className="campamentos-list-card">
+          {activeTab === "lista" && (
+            <section className="campamentos-list-card">
               <div className="card-header">
                 <div>
-                  <h3>Listado</h3>
+                  <h3>Listado de campamentos</h3>
                   <p className="small-text">
-                    Consulta, edita o desactiva los campamentos disponibles.
+                    Selecciona un campamento para ver detalle, editarlo o
+                    gestionar solicitudes.
                   </p>
                 </div>
               </div>
@@ -326,26 +261,30 @@ function CampamentosPage() {
                         <button
                           type="button"
                           className="button button-secondary"
-                          onClick={() =>
-                            setSelectedCampamentoId(
-                              campamento.id_campamento ?? null,
-                            )
-                          }
+                          onClick={() => selectCampamento(campamento, "detalle")}
                         >
-                          Ver informacion
+                          Ver detalle
                         </button>
 
                         <button
                           type="button"
                           className="button button-primary"
                           onClick={() => {
-                            setSelectedCampamentoId(
-                              campamento.id_campamento ?? null,
-                            );
                             setCampamentoEditando(campamento);
+                            selectCampamento(campamento, "formulario");
                           }}
                         >
                           Editar
+                        </button>
+
+                        <button
+                          type="button"
+                          className="button button-secondary"
+                          onClick={() =>
+                            selectCampamento(campamento, "solicitudes")
+                          }
+                        >
+                          Solicitudes
                         </button>
 
                         <button
@@ -363,19 +302,145 @@ function CampamentosPage() {
                   ))}
                 </div>
               )}
-            </div>
+            </section>
+          )}
 
-            <aside className="campamentos-form-card">
+          {activeTab === "detalle" && selectedCampamento && (
+            <section className="campamentos-detail-card">
+              <div className="card-header">
+                <div>
+                  <span className="page-badge">Detalle del campamento</span>
+                  <h3>{selectedCampamento.nombre}</h3>
+                  <p className="small-text">
+                    {selectedCampamento.ubicacion?.trim() ||
+                      "Sin ubicacion registrada"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="campamento-summary-grid">
+                <div className="campamento-summary-item">
+                  <span>Personas</span>
+                  <strong>{personasCampamento.length}</strong>
+                </div>
+
+                <div className="campamento-summary-item">
+                  <span>Recursos</span>
+                  <strong>{inventarioCampamento.length}</strong>
+                </div>
+
+                <div className="campamento-summary-item">
+                  <span>Alertas</span>
+                  <strong>{inventarioCritico}</strong>
+                </div>
+              </div>
+
+              <section className="campamento-detail-section">
+                <div className="detail-section-title">
+                  <h4>Personas del campamento</h4>
+                  <span>{personasCampamento.length} registros</span>
+                </div>
+
+                {personasCampamento.length === 0 ? (
+                  <div className="empty-state">
+                    No hay personas registradas en este campamento.
+                  </div>
+                ) : (
+                  <div className="campamento-mini-list">
+                    {personasCampamento.map((persona) => (
+                      <article
+                        key={persona.id_persona}
+                        className="campamento-mini-card"
+                      >
+                        <strong>
+                          {persona.nombre} {persona.apellidos}
+                        </strong>
+                        <span>Cedula: {persona.cedula}</span>
+                        <span>Cargo: {persona.cargo?.nombre ?? "Sin cargo"}</span>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              <section className="campamento-detail-section">
+                <div className="detail-section-title">
+                  <h4>Recursos e inventario</h4>
+                  <span>{inventarioCampamento.length} recursos</span>
+                </div>
+
+                {inventarioCampamento.length === 0 ? (
+                  <div className="empty-state">
+                    No hay inventario registrado en este campamento.
+                  </div>
+                ) : (
+                  <div className="table-responsive">
+                    <table className="table">
+                      <thead>
+                        <tr>
+                          <th>Recurso</th>
+                          <th>Cantidad</th>
+                          <th>Minimo</th>
+                          <th>Estado</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {inventarioCampamento.map((resource) => (
+                          <tr key={`${resource.campId}-${resource.id}`}>
+                            <td>{resource.name}</td>
+                            <td>{resource.quantity}</td>
+                            <td>{resource.minThreshold}</td>
+                            <td>
+                              <span
+                                className={
+                                  resource.status === "critical"
+                                    ? "status-badge status-inactive"
+                                    : "status-badge status-active"
+                                }
+                              >
+                                {resource.status === "critical"
+                                  ? "Critico"
+                                  : "Estable"}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            </section>
+          )}
+
+          {activeTab === "formulario" && (
+            <section className="campamentos-form-card">
               <CampamentosForm
                 campamentoEditando={campamentoEditando}
-                onCancelEdit={() => setCampamentoEditando(null)}
+                onCancelEdit={() => {
+                  setCampamentoEditando(null);
+                  setActiveTab("lista");
+                }}
                 onSuccess={() => {
                   setCampamentoEditando(null);
+                  setActiveTab("lista");
                   void loadCampamentos();
                 }}
               />
-            </aside>
-          </section>
+            </section>
+          )}
+
+          {activeTab === "solicitudes" && selectedCampamento && (
+            <section className="campamentos-detail-card">
+              <SolicitudesPage
+                campamento={selectedCampamento}
+                campamentos={campamentosActivos}
+                inventario={inventario}
+                personas={personas}
+              />
+            </section>
+          )}
         </main>
       </div>
     </div>

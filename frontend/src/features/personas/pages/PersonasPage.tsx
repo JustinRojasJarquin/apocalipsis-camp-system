@@ -6,10 +6,14 @@ import PersonaTabla from "../components/PersonaTabla";
 import { deletePersona, getPersonas } from "../personas.api";
 import type { Persona, PersonaCampamento } from "../types";
 
+type PersonasTab = "lista" | "formulario";
+
 function PersonasPage() {
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [campamentos, setCampamentos] = useState<PersonaCampamento[]>([]);
   const [personaEditando, setPersonaEditando] = useState<Persona | null>(null);
+
+  const [activeTab, setActiveTab] = useState<PersonasTab>("lista");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDeletingId, setIsDeletingId] = useState<number | null>(null);
@@ -25,6 +29,7 @@ function PersonasPage() {
       ]);
 
       setPersonas(personasData.filter((persona) => persona.activo !== false));
+
       setCampamentos(
         campamentosData
           .filter((campamento) => campamento.id_campamento !== undefined)
@@ -35,7 +40,9 @@ function PersonasPage() {
       );
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "No se pudieron cargar las personas.",
+        err instanceof Error
+          ? err.message
+          : "No se pudieron cargar las personas.",
       );
     } finally {
       setLoading(false);
@@ -46,18 +53,19 @@ function PersonasPage() {
     void loadData();
   }, []);
 
+  const handleEdit = (persona: Persona) => {
+    setPersonaEditando(persona);
+    setActiveTab("formulario");
+  };
+
   const handleDelete = async (persona: Persona) => {
-    if (!persona.id_persona) {
-      return;
-    }
+    if (!persona.id_persona) return;
 
     const confirmed = window.confirm(
       `Deseas desactivar a "${persona.nombre} ${persona.apellidos}"?`,
     );
 
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
     setIsDeletingId(persona.id_persona);
     setError(null);
@@ -79,10 +87,21 @@ function PersonasPage() {
     }
   };
 
+  const tabButtonStyle = (tab: PersonasTab): React.CSSProperties => ({
+    border: activeTab === tab ? "1px solid #3b82f6" : "1px solid #334155",
+    background:
+      activeTab === tab
+        ? "linear-gradient(135deg, rgba(59,130,246,0.25), rgba(59,130,246,0.08))"
+        : "rgba(15,23,42,0.88)",
+    color: activeTab === tab ? "#f8fafc" : "#cbd5e1",
+    padding: "14px 18px",
+    borderRadius: "16px",
+    cursor: "pointer",
+    fontWeight: 800,
+  });
+
   return (
     <div style={{ display: "flex", background: "#0f172a", minHeight: "100vh" }}>
-      
-
       <div style={{ flex: 1 }}>
         <Navbar />
 
@@ -92,8 +111,8 @@ function PersonasPage() {
               <span className="page-badge">Modulo personas</span>
               <h1>Personas</h1>
               <p className="page-description">
-                Registra, consulta y actualiza las personas activas del sistema,
-                enlazandolas directamente con su campamento.
+                Administra personas por secciones para consultar, crear y editar
+                sin saturar la pantalla.
               </p>
             </div>
 
@@ -105,8 +124,39 @@ function PersonasPage() {
 
           {error && <div className="error-box">{error}</div>}
 
-          <section className="campamentos-grid">
-            <div className="campamentos-list-card">
+          <section
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: "14px",
+              marginBottom: "24px",
+            }}
+          >
+            <button
+              type="button"
+              style={tabButtonStyle("lista")}
+              onClick={() => {
+                setPersonaEditando(null);
+                setActiveTab("lista");
+              }}
+            >
+              Lista de personas
+            </button>
+
+            <button
+              type="button"
+              style={tabButtonStyle("formulario")}
+              onClick={() => {
+                setPersonaEditando(null);
+                setActiveTab("formulario");
+              }}
+            >
+              Crear persona
+            </button>
+          </section>
+
+          {activeTab === "lista" && (
+            <section className="campamentos-list-card">
               <div className="card-header">
                 <div>
                   <h3>Listado</h3>
@@ -120,23 +170,29 @@ function PersonasPage() {
                 personas={personas}
                 loading={loading}
                 deletingId={isDeletingId}
-                onEdit={setPersonaEditando}
+                onEdit={handleEdit}
                 onDelete={(persona) => void handleDelete(persona)}
               />
-            </div>
+            </section>
+          )}
 
-            <aside className="campamentos-form-card">
+          {activeTab === "formulario" && (
+            <section className="campamentos-form-card">
               <PersonaForm
                 campamentos={campamentos}
                 personaEditando={personaEditando}
-                onCancelEdit={() => setPersonaEditando(null)}
+                onCancelEdit={() => {
+                  setPersonaEditando(null);
+                  setActiveTab("lista");
+                }}
                 onSuccess={() => {
                   setPersonaEditando(null);
+                  setActiveTab("lista");
                   void loadData();
                 }}
               />
-            </aside>
-          </section>
+            </section>
+          )}
         </main>
       </div>
     </div>

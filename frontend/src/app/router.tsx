@@ -3,7 +3,6 @@ import App from "./App";
 
 import LoginPage from "../features/auth/pages/LoginPage";
 import DashboardPage from "../pages/DashboardPage";
-
 import ExploracionesPage from "../features/exploraciones/pages/ExploracionesPage";
 import CampamentosPage from "../features/campamentos/pages/CampamentosPage";
 import PersonasPage from "../features/personas/pages/PersonasPage";
@@ -12,6 +11,12 @@ import UsuariosPage from "../features/usuarios/pages/UsuariosPage";
 
 import ProtectedRoute from "./guards/ProtectedRoute";
 import PublicRoute from "./guards/PublicRoute";
+import RoleRoute from "./guards/RoleRoute";
+
+const ADMIN = ["ADMIN", "ADMINISTRADOR"];
+const RECURSOS = ["ADMIN", "ADMINISTRADOR", "GESTOR_RECURSOS", "GESTION_RECURSOS"];
+const VIAJES = ["ADMIN", "ADMINISTRADOR", "VIAJES", "ENCARGADO_VIAJES"];
+const TRABAJADOR = ["ADMIN", "ADMINISTRADOR", "GESTOR_RECURSOS", "TRABAJADOR"];
 
 const router = createBrowserRouter([
   {
@@ -38,7 +43,9 @@ const router = createBrowserRouter([
         path: "campamentos",
         element: (
           <ProtectedRoute>
-            <CampamentosPage />
+            <RoleRoute roles={ADMIN}>
+              <CampamentosPage />
+            </RoleRoute>
           </ProtectedRoute>
         ),
       },
@@ -46,23 +53,9 @@ const router = createBrowserRouter([
         path: "personas",
         element: (
           <ProtectedRoute>
-            <PersonasPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "exploraciones",
-        element: (
-          <ProtectedRoute>
-            <ExploracionesPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "inventario",
-        element: (
-          <ProtectedRoute>
-            <InventarioPage />
+            <RoleRoute roles={ADMIN}>
+              <PersonasPage />
+            </RoleRoute>
           </ProtectedRoute>
         ),
       },
@@ -70,7 +63,29 @@ const router = createBrowserRouter([
         path: "usuarios",
         element: (
           <ProtectedRoute>
-            <UsuariosPage />
+            <RoleRoute roles={ADMIN}>
+              <UsuariosPage />
+            </RoleRoute>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "inventario",
+        element: (
+          <ProtectedRoute>
+            <RoleRoute roles={TRABAJADOR}>
+              <InventarioPage />
+            </RoleRoute>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "exploraciones",
+        element: (
+          <ProtectedRoute>
+            <RoleRoute roles={VIAJES}>
+              <ExploracionesPage />
+            </RoleRoute>
           </ProtectedRoute>
         ),
       },
