@@ -11,11 +11,10 @@ const adapter = new PrismaMariaDb({
   ssl: {
     rejectUnauthorized: false,
   },
-  connectionLimit: 30,
-  acquireTimeout: 10000,
-  initializationTimeout: 10000,
+  connectionLimit: 50,
+  acquireTimeout: 30000,
+  initializationTimeout: 30000,
 });
 
 export const prisma = new PrismaClient({ adapter });
 
-//Se actualizo las consultas, 5 usuarios simultaneamente, con un tiempo de respuesta de 30s, para redes lentas
