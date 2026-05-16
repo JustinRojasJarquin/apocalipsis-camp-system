@@ -466,6 +466,7 @@ input:-webkit-autofill:active {
 }
 
 .filter-field input,
+.filter-field select,
 .filter-flag input {
   width: 100%;
   padding: 12px 14px;
@@ -774,6 +775,44 @@ input:-webkit-autofill:active {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.personas-pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 14px;
+  margin-top: 18px;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.personas-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(2, 6, 23, 0.72);
+  backdrop-filter: blur(10px);
+}
+
+.personas-modal {
+  width: min(920px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  padding: 28px;
+  border-radius: 18px;
+  background: #0f172a;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.36);
+}
+
+.persona-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
 }
 
 .app-shell {

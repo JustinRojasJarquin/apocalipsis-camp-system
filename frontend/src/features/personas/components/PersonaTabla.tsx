@@ -4,6 +4,7 @@ interface Props {
   personas: Persona[];
   loading: boolean;
   deletingId: number | null;
+  onView: (persona: Persona) => void;
   onEdit: (persona: Persona) => void;
   onDelete: (persona: Persona) => void;
 }
@@ -24,6 +25,7 @@ export default function PersonaTabla({
   personas,
   loading,
   deletingId,
+  onView,
   onEdit,
   onDelete,
 }: Props) {
@@ -80,6 +82,14 @@ export default function PersonaTabla({
 
               <td>
                 <div className="personas-actions">
+                  <button
+                    type="button"
+                    className="button button-secondary"
+                    onClick={() => onView(persona)}
+                  >
+                    Ver
+                  </button>
+
                   <button
                     type="button"
                     className="button button-primary"

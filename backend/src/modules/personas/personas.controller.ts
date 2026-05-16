@@ -9,12 +9,46 @@ const getErrorStatus = (message: string) => {
   return 400;
 };
 
-export const getAll = async (_req: Request, res: Response) => {
+const parseOptionalNumber = (value: unknown) => {
+  if (typeof value !== "string" || value.trim() === "") {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error("Los filtros numericos deben ser enteros positivos");
+  }
+
+  return parsed;
+};
+
+const parseOptionalBoolean = (value: unknown) => {
+  if (typeof value !== "string" || value.trim() === "") {
+    return undefined;
+  }
+
+  if (value === "true") return true;
+  if (value === "false") return false;
+
+  throw new Error("El filtro activo debe ser true o false");
+};
+
+export const getAll = async (req: Request, res: Response) => {
   try {
-    const data = await service.getPersonas();
+    const data = await service.getPersonas({
+      buscar:
+        typeof req.query.buscar === "string" ? req.query.buscar : undefined,
+      id_campamento: parseOptionalNumber(req.query.id_campamento),
+      id_cargo: parseOptionalNumber(req.query.id_cargo),
+      id_estado: parseOptionalNumber(req.query.id_estado),
+      activo: parseOptionalBoolean(req.query.activo),
+    });
+
     res.json(data);
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    const message = (error as Error).message;
+    res.status(getErrorStatus(message)).json({ error: message });
   }
 };
 

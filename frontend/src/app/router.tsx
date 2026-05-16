@@ -14,7 +14,6 @@ import PublicRoute from "./guards/PublicRoute";
 import RoleRoute from "./guards/RoleRoute";
 
 const ADMIN = ["ADMIN", "ADMINISTRADOR"];
-const RECURSOS = ["ADMIN", "ADMINISTRADOR", "GESTOR_RECURSOS", "GESTION_RECURSOS"];
 const VIAJES = ["ADMIN", "ADMINISTRADOR", "VIAJES", "ENCARGADO_VIAJES"];
 const TRABAJADOR = ["ADMIN", "ADMINISTRADOR", "GESTOR_RECURSOS", "TRABAJADOR"];
 

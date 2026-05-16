@@ -16,6 +16,18 @@ export interface PersonaEstado {
   disponible?: boolean;
 }
 
+export interface PersonaCargoHistorial {
+  id_asignacion: number;
+  id_persona: number;
+  id_cargo: number;
+  id_campamento: number;
+  fecha_inicio: string;
+  fecha_fin?: string | null;
+  temporal: boolean;
+  cargo?: PersonaCargo;
+  campamento?: PersonaCampamento;
+}
+
 export interface Persona {
   id_persona?: number;
   id_campamento: number;
@@ -32,6 +44,7 @@ export interface Persona {
   campamento?: PersonaCampamento;
   cargo?: PersonaCargo | null;
   estado_persona?: PersonaEstado | null;
+  asignacion_cargo?: PersonaCargoHistorial[];
 }
 
 export interface PersonaFormData {
@@ -45,4 +58,22 @@ export interface PersonaFormData {
   codigo_campamento: string;
   id_cargo_actual: string;
   id_estado_actual: string;
+}
+
+export interface PersonaFilters {
+  buscar: string;
+  id_campamento: string;
+  id_cargo: string;
+  id_estado: string;
+}
+
+export interface CargoFormData {
+  nombre: string;
+  descripcion: string;
+}
+
+export interface EstadoPersonaFormData {
+  nombre: string;
+  descripcion: string;
+  disponible: boolean;
 }

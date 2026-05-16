@@ -7,6 +7,8 @@ import personasRoutes from "./modules/personas/personas.routes";
 import exploracionesRoutes from "./modules/exploraciones/exploraciones.routes";
 import inventarioRoutes from "./modules/inventario/inventario.routes";
 import solicitudesRoutes from "./modules/solicitudes/solicitudes.routes";
+import cargosRoutes from "./modules/cargos/cargos.routes";
+import estadosPersonaRoutes from "./modules/estados-persona/estados-persona.routes";
 import { verificarToken } from "./middlewares/auth.middleware";
 import usuariosRoutes from "./modules/usuarios/usuarios.routes";
 import rolesRoutes from "./modules/roles/roles.routes";
@@ -35,6 +37,8 @@ app.get("/api/privado", verificarToken, (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/campamentos", campamentosRoutes);
 app.use("/api/personas", personasRoutes);
+app.use("/api/cargos", cargosRoutes);
+app.use("/api/estados-persona", estadosPersonaRoutes);
 app.use("/api/inventario", inventarioRoutes);
 app.use("/api/exploraciones", exploracionesRoutes);
 app.use("/api/solicitudes", solicitudesRoutes);

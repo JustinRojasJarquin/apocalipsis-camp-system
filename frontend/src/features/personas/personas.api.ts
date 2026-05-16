@@ -2,6 +2,7 @@ import type {
   Persona,
   PersonaCargo,
   PersonaEstado,
+  PersonaFilters,
   PersonaFormData,
 } from "./types";
 
@@ -43,8 +44,30 @@ const mapPayload = (data: PersonaFormData) => ({
     : null,
 });
 
-export const getPersonas = async (): Promise<Persona[]> => {
-  const res = await fetch(BASE_URL);
+const appendFilter = (
+  params: URLSearchParams,
+  key: string,
+  value: string,
+) => {
+  const trimmed = value.trim();
+
+  if (trimmed) {
+    params.set(key, trimmed);
+  }
+};
+
+export const getPersonas = async (
+  filters?: Partial<PersonaFilters>,
+): Promise<Persona[]> => {
+  const params = new URLSearchParams();
+
+  appendFilter(params, "buscar", filters?.buscar ?? "");
+  appendFilter(params, "id_campamento", filters?.id_campamento ?? "");
+  appendFilter(params, "id_cargo", filters?.id_cargo ?? "");
+  appendFilter(params, "id_estado", filters?.id_estado ?? "");
+
+  const query = params.toString();
+  const res = await fetch(query ? `${BASE_URL}?${query}` : BASE_URL);
   return await handleResponse<Persona[]>(res);
 };
 
@@ -88,4 +111,9 @@ export const deletePersona = async (id: number) => {
   });
 
   await handleResponse<Persona>(res);
+};
+
+export const getPersonaById = async (id: number): Promise<Persona> => {
+  const res = await fetch(`${BASE_URL}/${id}`);
+  return await handleResponse<Persona>(res);
 };
