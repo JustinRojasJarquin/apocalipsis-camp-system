@@ -29,3 +29,18 @@ export const validateResource = (data: any): string | null => {
 
   return null;
 };
+
+export const validateProduccion = (data: any): string | null => {
+  if (data.personaId == null || data.campId == null || data.resourceId == null || data.cantidad == null) {
+    return "Campos requeridos: personaId, campId, resourceId, cantidad";
+  }
+
+  if (typeof data.personaId !== "number" || data.personaId <= 0) return "personaId inválido";
+  if (typeof data.campId !== "number" || data.campId <= 0) return "campId inválido";
+  if (typeof data.resourceId !== "number" || data.resourceId <= 0) return "resourceId inválido";
+  if (typeof data.cantidad !== "number" || data.cantidad <= 0) return "cantidad debe ser mayor que 0";
+
+  return null;
+};
+
+export const validateRacion = validateProduccion;

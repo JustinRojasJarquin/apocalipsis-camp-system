@@ -1,8 +1,10 @@
 import { prisma } from "../../config/prisma";
-import { validateResource } from "./inventario.schemas";
+import { validateResource, validateProduccion, validateRacion } from "./inventario.schemas";
 import type {
   CreateInventarioCampamentoDTO,
   UpdateInventarioCampamentoDTO,
+  CreateProduccionDiariaDTO,
+  CreateRacionDiariaDTO,
 } from "./inventario.dto";
 
 export const getAllResources = async (campId?: number) => {
@@ -142,4 +144,183 @@ export const deleteResource = async (campId: number, resourceId: number) => {
       },
     },
   });
+};
+
+export const createProduccion = async (payload: CreateProduccionDiariaDTO) => {
+  const validationError = validateProduccion(payload);
+  if (validationError) throw new Error(validationError);
+
+  const fecha = payload.fecha ? new Date(payload.fecha) : new Date();
+
+  return await prisma.$transaction(async (tx) => {
+    const prod = await tx.produccion_diaria.create({
+      data: {
+        fecha: fecha,
+        id_persona: payload.personaId,
+        id_campamento: payload.campId,
+        id_recurso: payload.resourceId,
+        cantidad: payload.cantidad,
+        ajuste_razon: payload.ajusteRazon || null,
+        observaciones: payload.observaciones || null,
+      },
+    });
+
+    const invent = await tx.inventario_campamento.findUnique({
+      where: {
+        id_campamento_id_recurso: {
+          id_campamento: payload.campId,
+          id_recurso: payload.resourceId,
+        },
+      },
+    });
+
+    if (invent) {
+      await tx.inventario_campamento.update({
+        where: {
+          id_campamento_id_recurso: {
+            id_campamento: payload.campId,
+            id_recurso: payload.resourceId,
+          },
+        },
+        data: { cantidad: Number(invent.cantidad) + payload.cantidad },
+      });
+    } else {
+      await tx.inventario_campamento.create({
+        data: {
+          id_campamento: payload.campId,
+          id_recurso: payload.resourceId,
+          cantidad: payload.cantidad,
+          minimo_alerta: 0,
+        },
+      });
+    }
+
+    await tx.inventario_movimiento.create({
+      data: {
+        id_campamento: payload.campId,
+        id_recurso: payload.resourceId,
+        fecha_hora: new Date(),
+        tipo: "PRODUCCION",
+        origen: "Produccion",
+        referencia: prod.id_produccion,
+        cantidad: payload.cantidad,
+        id_usuario: payload.personaId,
+      },
+    });
+
+    return prod;
+  });
+};
+
+export const createRacion = async (payload: CreateRacionDiariaDTO) => {
+  const validationError = validateRacion(payload);
+  if (validationError) throw new Error(validationError);
+
+  const fecha = payload.fecha ? new Date(payload.fecha) : new Date();
+
+  return await prisma.$transaction(async (tx) => {
+    const inv = await tx.inventario_campamento.findUnique({
+      where: {
+        id_campamento_id_recurso: {
+          id_campamento: payload.campId,
+          id_recurso: payload.resourceId,
+        },
+      },
+    });
+
+    if (!inv) throw new Error("Inventario no existe para ese campamento y recurso");
+    const current = Number(inv.cantidad);
+    if (current < payload.cantidad) throw new Error("Inventario insuficiente para ración");
+
+    const racion = await tx.racion_diaria.create({
+      data: {
+        fecha: fecha,
+        id_persona: payload.personaId,
+        id_campamento: payload.campId,
+        id_recurso: payload.resourceId,
+        cantidad: payload.cantidad,
+      },
+    });
+
+    await tx.inventario_campamento.update({
+      where: {
+        id_campamento_id_recurso: {
+          id_campamento: payload.campId,
+          id_recurso: payload.resourceId,
+        },
+      },
+      data: { cantidad: current - payload.cantidad },
+    });
+
+    await tx.inventario_movimiento.create({
+      data: {
+        id_campamento: payload.campId,
+        id_recurso: payload.resourceId,
+        fecha_hora: new Date(),
+        tipo: "RACION",
+        origen: "Racion",
+        referencia: racion.id_racion,
+        cantidad: payload.cantidad,
+        id_usuario: payload.personaId,
+      },
+    });
+
+    return racion;
+  });
+};
+
+export const recalculateInventoryForDate = async (campId: number, dateIso?: string) => {
+  const date = dateIso ? new Date(dateIso) : new Date();
+  const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const end = new Date(start);
+  end.setDate(start.getDate() + 1);
+
+  // sumar produccion por recurso
+  const producciones = await prisma.produccion_diaria.groupBy({
+    by: ["id_recurso"],
+    where: { id_campamento: campId, fecha: { gte: start, lt: end } },
+    _sum: { cantidad: true },
+  });
+
+  const raciones = await prisma.racion_diaria.groupBy({
+    by: ["id_recurso"],
+    where: { id_campamento: campId, fecha: { gte: start, lt: end } },
+    _sum: { cantidad: true },
+  });
+
+  const mapProd = new Map(producciones.map((p) => [p.id_recurso, Number(p._sum.cantidad || 0)]));
+  const mapRac = new Map(raciones.map((r) => [r.id_recurso, Number(r._sum.cantidad || 0)]));
+
+  const resourceIds = new Set<number>([...mapProd.keys(), ...mapRac.keys()]);
+
+  const results: Array<{ resourceId: number; produced: number; consumed: number; before: number; after: number }> = [];
+
+  await prisma.$transaction(async (tx) => {
+    for (const rid of resourceIds) {
+      const prod = mapProd.get(rid) || 0;
+      const rac = mapRac.get(rid) || 0;
+
+      const inv = await tx.inventario_campamento.findUnique({
+        where: { id_campamento_id_recurso: { id_campamento: campId, id_recurso: rid } },
+      });
+
+      const before = inv ? Number(inv.cantidad) : 0;
+      const after = before + prod - rac;
+
+      if (inv) {
+        await tx.inventario_campamento.update({
+          where: { id_campamento_id_recurso: { id_campamento: campId, id_recurso: rid } },
+          data: { cantidad: after },
+        });
+      } else {
+        await tx.inventario_campamento.create({
+          data: { id_campamento: campId, id_recurso: rid, cantidad: after, minimo_alerta: 0 },
+        });
+      }
+
+      results.push({ resourceId: rid, produced: prod, consumed: rac, before, after });
+    }
+  });
+
+  return results;
 };

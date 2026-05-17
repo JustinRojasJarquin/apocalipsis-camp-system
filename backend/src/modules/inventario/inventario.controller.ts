@@ -4,6 +4,11 @@ import type {
   CreateInventarioCampamentoDTO,
   UpdateInventarioCampamentoDTO,
 } from "./inventario.dto";
+import type {
+  CreateProduccionDiariaDTO,
+  CreateRacionDiariaDTO,
+} from "./inventario.dto";
+import { recalculateInventoryForDate } from "./inventario.service";
 
 export const getResources = async (req: Request, res: Response) => {
   try {
@@ -54,6 +59,37 @@ export const deleteResource = async (req: Request, res: Response) => {
     const resourceId = Number(req.params.resourceId);
     await service.deleteResource(campId, resourceId);
     res.status(204).send();
+  } catch (error) {
+    res.status(400).json({ message: (error as Error).message });
+  }
+};
+
+export const createProduccion = async (req: Request, res: Response) => {
+  try {
+    const payload = req.body as CreateProduccionDiariaDTO;
+    const data = await service.createProduccion(payload);
+    res.status(201).json(data);
+  } catch (error) {
+    res.status(400).json({ message: (error as Error).message });
+  }
+};
+
+export const createRacion = async (req: Request, res: Response) => {
+  try {
+    const payload = req.body as CreateRacionDiariaDTO;
+    const data = await service.createRacion(payload);
+    res.status(201).json(data);
+  } catch (error) {
+    res.status(400).json({ message: (error as Error).message });
+  }
+};
+
+export const recalculate = async (req: Request, res: Response) => {
+  try {
+    const campId = Number(req.params.campId);
+    const date = req.body?.date as string | undefined;
+    const data = await recalculateInventoryForDate(campId, date);
+    res.json(data);
   } catch (error) {
     res.status(400).json({ message: (error as Error).message });
   }
