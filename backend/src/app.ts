@@ -12,6 +12,7 @@ import estadosPersonaRoutes from "./modules/estados-persona/estados-persona.rout
 import { verificarToken } from "./middlewares/auth.middleware";
 import usuariosRoutes from "./modules/usuarios/usuarios.routes";
 import rolesRoutes from "./modules/roles/roles.routes";
+import enviosRoutes from "./modules/envios/envios.routes";
 
 dotenv.config();
 
@@ -44,5 +45,6 @@ app.use("/api/exploraciones", exploracionesRoutes);
 app.use("/api/solicitudes", solicitudesRoutes);
 app.use("/api/usuarios", usuariosRoutes);
 app.use("/api/roles", rolesRoutes);
+app.use("/api/envios", enviosRoutes);
 
 export default app;
