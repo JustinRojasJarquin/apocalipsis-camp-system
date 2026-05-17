@@ -57,6 +57,15 @@ function Navbar() {
       ],
     },
     {
+      to: "/recursos",
+      label: "Catálogo de recursos",
+      roles: [
+        ...ROLES.ADMIN,
+        ...ROLES.GESTOR_RECURSOS,
+        ...ROLES.TRABAJADOR,
+      ],
+    },
+    {
       to: "/exploraciones",
       label: "Exploraciones",
       roles: [...ROLES.ADMIN, ...ROLES.VIAJES],

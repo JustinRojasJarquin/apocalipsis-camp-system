@@ -5,7 +5,7 @@ import type {
 } from "./types";
 
 const BASE_URL = "http://localhost:4000/api/inventario/resources";
-const RESOURCE_CATALOG_URL = "http://localhost:4000/api/inventario/recursos";
+const RESOURCE_CATALOG_URL = "http://localhost:4000/api/recursos";
 
 const handleResponse = async <T>(res: Response): Promise<T> => {
   const body = await res.text();

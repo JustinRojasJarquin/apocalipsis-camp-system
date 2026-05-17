@@ -7,6 +7,7 @@ import ExploracionesPage from "../features/exploraciones/pages/ExploracionesPage
 import CampamentosPage from "../features/campamentos/pages/CampamentosPage";
 import PersonasPage from "../features/personas/pages/PersonasPage";
 import InventarioPage from "../features/inventario/InventarioPage";
+import RecursosPage from "../features/recursos/RecursosPage";
 import UsuariosPage from "../features/usuarios/pages/UsuariosPage";
 
 import ProtectedRoute from "./guards/ProtectedRoute";
@@ -74,6 +75,16 @@ const router = createBrowserRouter([
           <ProtectedRoute>
             <RoleRoute roles={TRABAJADOR}>
               <InventarioPage />
+            </RoleRoute>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "recursos",
+        element: (
+          <ProtectedRoute>
+            <RoleRoute roles={TRABAJADOR}>
+              <RecursosPage />
             </RoleRoute>
           </ProtectedRoute>
         ),

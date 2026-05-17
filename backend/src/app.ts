@@ -6,12 +6,14 @@ import campamentosRoutes from "./modules/campamentos/campamentos.routes";
 import personasRoutes from "./modules/personas/personas.routes";
 import exploracionesRoutes from "./modules/exploraciones/exploraciones.routes";
 import inventarioRoutes from "./modules/inventario/inventario.routes";
+import recursosRoutes from "./modules/recursos/recursos.routes";
 import solicitudesRoutes from "./modules/solicitudes/solicitudes.routes";
 import cargosRoutes from "./modules/cargos/cargos.routes";
 import estadosPersonaRoutes from "./modules/estados-persona/estados-persona.routes";
 import { verificarToken } from "./middlewares/auth.middleware";
 import usuariosRoutes from "./modules/usuarios/usuarios.routes";
 import rolesRoutes from "./modules/roles/roles.routes";
+import { seedRecursos } from "./modules/recursos/recursos.service";
 
 dotenv.config();
 
@@ -40,9 +42,14 @@ app.use("/api/personas", personasRoutes);
 app.use("/api/cargos", cargosRoutes);
 app.use("/api/estados-persona", estadosPersonaRoutes);
 app.use("/api/inventario", inventarioRoutes);
+app.use("/api/recursos", recursosRoutes);
 app.use("/api/exploraciones", exploracionesRoutes);
 app.use("/api/solicitudes", solicitudesRoutes);
 app.use("/api/usuarios", usuariosRoutes);
 app.use("/api/roles", rolesRoutes);
+
+seedRecursos().catch((error) => {
+  console.warn("No se pudieron sembrar recursos de prueba:", error.message);
+});
 
 export default app;
