@@ -8,8 +8,9 @@ import type { Persona } from "../../personas/types";
 import { getResources } from "../../inventario/inventario.api";
 import type { InventarioResource } from "../../inventario/types";
 import SolicitudesPage from "../../solicitudes/pages/SolicitudesPage";
+import EnviosPage from "../../envios/pages/EnviosPage";
 
-type CampamentoTab = "lista" | "detalle" | "formulario" | "solicitudes";
+type CampamentoTab = "lista" | "detalle" | "formulario" | "solicitudes" | "envios";
 
 function CampamentosPage() {
   const [campamentos, setCampamentos] = useState<Campamento[]>([]);
@@ -200,6 +201,14 @@ function CampamentosPage() {
               onClick={() => setActiveTab("solicitudes")}
             >
               Solicitudes
+            </button>
+
+            <button
+              style={tabButtonStyle("envios")}
+              disabled={!selectedCampamento}
+              onClick={() => setActiveTab("envios")}
+            >
+              Envíos
             </button>
           </section>
 
@@ -439,6 +448,12 @@ function CampamentosPage() {
                 inventario={inventario}
                 personas={personas}
               />
+            </section>
+          )}
+
+          {activeTab === "envios" && selectedCampamento && (
+            <section className="campamentos-detail-card">
+              <EnviosPage campamento={selectedCampamento} />
             </section>
           )}
         </main>

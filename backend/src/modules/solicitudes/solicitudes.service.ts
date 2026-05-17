@@ -1,14 +1,14 @@
 import { prisma } from "../../config/prisma";
+import type { CreateSolicitudDTO, ResponderSolicitudDTO } from "./solicitudes.dto";
+import { validateCrearSolicitud, validateResponderSolicitud } from "./solicitudes.schemas";
 
-export const crearSolicitud = async (data: any, idUsuario: number) => {
-  if (data.id_campamento_origen === data.id_campamento_destino) {
-    throw new Error("El campamento origen y destino no pueden ser iguales");
-  }
+export const crearSolicitud = async (data: CreateSolicitudDTO, idUsuario: number) => {
+  validateCrearSolicitud(data);
 
   return prisma.solicitud_campamento.create({
     data: {
-      id_campamento_origen: Number(data.id_campamento_origen),
-      id_campamento_destino: Number(data.id_campamento_destino),
+      id_campamento_origen: data.id_campamento_origen,
+      id_campamento_destino: data.id_campamento_destino,
       tipo: data.tipo,
       estado: "PENDIENTE",
       fecha_creacion: new Date(),
@@ -16,19 +16,16 @@ export const crearSolicitud = async (data: any, idUsuario: number) => {
       motivo: data.motivo ?? null,
       solicitud_recurso: {
         create:
-          data.recursos?.map((r: any) => ({
-            id_recurso: Number(r.id_recurso),
-            cantidad_pedida: Number(r.cantidad_pedida),
-            cantidad_aprobada: r.cantidad_aprobada
-              ? Number(r.cantidad_aprobada)
-              : null,
+          data.recursos?.map((r) => ({
+            id_recurso: r.id_recurso,
+            cantidad_pedida: r.cantidad_pedida,
           })) ?? [],
       },
       solicitud_persona: {
         create:
-          data.personas?.map((p: any) => ({
-            id_cargo: Number(p.id_cargo),
-            cantidad_personas: Number(p.cantidad_personas),
+          data.personas?.map((p) => ({
+            id_cargo: p.id_cargo,
+            cantidad_personas: p.cantidad_personas,
           })) ?? [],
       },
     },
@@ -87,9 +84,11 @@ export const obtenerSolicitud = async (id: number) => {
 
 export const responderSolicitud = async (
   idSolicitud: number,
-  data: any,
+  data: ResponderSolicitudDTO,
   idUsuario: number
 ) => {
+  validateResponderSolicitud(data);
+
   return prisma.$transaction(async (tx) => {
     const solicitud = await tx.solicitud_campamento.findUnique({
       where: { id_solicitud: idSolicitud },
