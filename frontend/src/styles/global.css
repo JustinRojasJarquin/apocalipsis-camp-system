@@ -735,6 +735,29 @@ input:-webkit-autofill:active {
   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.14);
 }
 
+.filter-field select option,
+.form-field select option,
+select option {
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+.filter-field select option:checked,
+.form-field select option:checked,
+select option:checked {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.filter-field select:disabled,
+.form-field select:disabled,
+.filter-field input:disabled,
+.form-field input:disabled,
+.form-field textarea:disabled {
+  opacity: 0.68;
+  cursor: not-allowed;
+}
+
 .form-field textarea {
   resize: vertical;
 }

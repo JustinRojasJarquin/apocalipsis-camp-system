@@ -33,6 +33,21 @@ type SolicitudCampamento = {
       nombre: string;
     };
   }>;
+  envio?: Array<{
+    id_envio: number;
+    estado: "PENDIENTE" | "EN_TRANSITO" | "COMPLETADO" | "CANCELADO";
+    envio_persona?: Array<{
+      id_envio_persona: number;
+      persona?: { nombre: string; apellidos: string };
+      raciones_viaje: number;
+    }>;
+    envio_recurso?: Array<{
+      id_envio_recurso: number;
+      cantidad_enviada: number;
+      cantidad_recibida?: number | null;
+      recurso?: { nombre: string; unidad?: string };
+    }>;
+  }>;
 };
 
 type Props = {
@@ -225,8 +240,6 @@ function SolicitudesPage({
         body: JSON.stringify({
           estado,
           respuesta: `Solicitud ${estado.toLowerCase()}`,
-          fecha_salida_programada: new Date().toISOString(),
-          fecha_llegada_programada: new Date().toISOString(),
         }),
       });
 
@@ -395,6 +408,17 @@ function SolicitudesPage({
                         {persona.cantidad_personas}
                       </div>
                     ))}
+
+                    {(solicitud.envio ?? []).flatMap((envio) =>
+                      (envio.envio_persona ?? []).map((personaEnvio) => (
+                        <div key={`ep-${envio.id_envio}-${personaEnvio.id_envio_persona}`}>
+                          Asignada:{" "}
+                          {personaEnvio.persona
+                            ? `${personaEnvio.persona.nombre} ${personaEnvio.persona.apellidos}`
+                            : "Persona"}
+                        </div>
+                      )),
+                    )}
                   </td>
                   <td>
                     {solicitud.estado === "PENDIENTE" ? (

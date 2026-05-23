@@ -51,17 +51,20 @@ export const validateResponderSolicitud = (data: ResponderSolicitudDTO): void =>
   if (data.respuesta !== undefined && typeof data.respuesta !== "string")
     throw new Error("respuesta debe ser texto");
 
-  if (data.estado === "APROBADA" || data.estado === "AJUSTADA") {
+  if (data.fecha_salida_programada || data.fecha_llegada_programada) {
     if (!data.fecha_salida_programada || !data.fecha_llegada_programada)
-      throw new Error("Se requieren fecha_salida_programada y fecha_llegada_programada al aprobar");
+      throw new Error("Debe enviar salida y llegada programadas juntas");
 
     const salida = new Date(data.fecha_salida_programada);
     const llegada = new Date(data.fecha_llegada_programada);
 
-    if (isNaN(salida.getTime())) throw new Error("fecha_salida_programada inválida");
-    if (isNaN(llegada.getTime())) throw new Error("fecha_llegada_programada inválida");
-    if (llegada <= salida) throw new Error("fecha_llegada_programada debe ser posterior a fecha_salida_programada");
+    if (isNaN(salida.getTime())) throw new Error("fecha_salida_programada invalida");
+    if (isNaN(llegada.getTime())) throw new Error("fecha_llegada_programada invalida");
+    if (llegada <= salida)
+      throw new Error("fecha_llegada_programada debe ser posterior a fecha_salida_programada");
+  }
 
+  if (data.estado === "APROBADA" || data.estado === "AJUSTADA") {
     if (data.recursos_aprobados) {
       for (const r of data.recursos_aprobados) {
         if (!Number.isInteger(r.id_solicitud_rec) || r.id_solicitud_rec <= 0)
@@ -71,7 +74,10 @@ export const validateResponderSolicitud = (data: ResponderSolicitudDTO): void =>
       }
     }
 
-    if (data.raciones_viaje !== undefined && (typeof data.raciones_viaje !== "number" || data.raciones_viaje < 0))
-      throw new Error("raciones_viaje debe ser un número mayor o igual a 0");
+    if (
+      data.raciones_viaje !== undefined &&
+      (typeof data.raciones_viaje !== "number" || data.raciones_viaje < 0)
+    )
+      throw new Error("raciones_viaje debe ser un numero mayor o igual a 0");
   }
 };

@@ -9,6 +9,32 @@ export type SolicitudCampamento = {
   estado: SolicitudEstado;
   motivo?: string | null;
   respuesta?: string | null;
-  solicitud_recurso?: any[];
-  solicitud_persona?: any[];
+  solicitud_recurso?: Array<{
+    id_solicitud_rec: number;
+    id_recurso: number;
+    cantidad_pedida: number;
+    cantidad_aprobada?: number | null;
+    recurso?: { nombre: string; unidad?: string };
+  }>;
+  solicitud_persona?: Array<{
+    id_solicitud_per: number;
+    id_cargo: number;
+    cantidad_personas: number;
+    cargo?: { nombre: string };
+  }>;
+  envio?: Array<{
+    id_envio: number;
+    estado: "PENDIENTE" | "EN_TRANSITO" | "COMPLETADO" | "CANCELADO";
+    envio_persona?: Array<{
+      id_envio_persona: number;
+      persona?: { nombre: string; apellidos: string };
+      raciones_viaje: number;
+    }>;
+    envio_recurso?: Array<{
+      id_envio_recurso: number;
+      cantidad_enviada: number;
+      cantidad_recibida?: number | null;
+      recurso?: { nombre: string; unidad?: string };
+    }>;
+  }>;
 };

@@ -453,7 +453,13 @@ function CampamentosPage() {
 
           {activeTab === "envios" && selectedCampamento && (
             <section className="campamentos-detail-card">
-              <EnviosPage campamento={selectedCampamento} />
+              <EnviosPage
+                campamento={selectedCampamento}
+                campamentos={campamentosActivos}
+                personas={personas}
+                inventario={inventario}
+                onDataChanged={loadCampamentos}
+              />
             </section>
           )}
         </main>

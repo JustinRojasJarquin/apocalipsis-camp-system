@@ -60,7 +60,12 @@ export const listarSolicitudes = async (filters?: {
       campamento_solicitud_campamento_id_campamento_destinoTocampamento: true,
       solicitud_recurso: { include: { recurso: true } },
       solicitud_persona: { include: { cargo: true } },
-      envio: true,
+      envio: {
+        include: {
+          envio_persona: { include: { persona: true } },
+          envio_recurso: { include: { recurso: true } },
+        },
+      },
     },
     orderBy: { fecha_creacion: "desc" },
   });
@@ -122,59 +127,6 @@ export const responderSolicitud = async (
         fecha_decision: new Date(),
       },
     });
-
-    if (data.estado === "APROBADA" || data.estado === "AJUSTADA") {
-      const envio = await tx.envio.create({
-        data: {
-          id_solicitud: idSolicitud,
-          id_campamento_origen: solicitud.id_campamento_origen,
-          id_campamento_destino: solicitud.id_campamento_destino,
-          fecha_salida_programada: data.fecha_salida_programada
-            ? new Date(data.fecha_salida_programada)
-            : new Date(),
-          fecha_llegada_programada: data.fecha_llegada_programada
-            ? new Date(data.fecha_llegada_programada)
-            : new Date(),
-          estado: "PENDIENTE",
-        },
-      });
-
-      const recursosActualizados = await tx.solicitud_recurso.findMany({
-        where: { id_solicitud: idSolicitud },
-      });
-
-      for (const recurso of recursosActualizados) {
-        await tx.envio_recurso.create({
-          data: {
-            id_envio: envio.id_envio,
-            id_recurso: recurso.id_recurso,
-            cantidad_enviada:
-              recurso.cantidad_aprobada ?? recurso.cantidad_pedida,
-          },
-        });
-      }
-
-      for (const personaSolicitada of solicitud.solicitud_persona) {
-        const personas = await tx.persona.findMany({
-          where: {
-            id_campamento: solicitud.id_campamento_origen,
-            id_cargo_actual: personaSolicitada.id_cargo,
-            activo: true,
-          },
-          take: personaSolicitada.cantidad_personas,
-        });
-
-        for (const persona of personas) {
-          await tx.envio_persona.create({
-            data: {
-              id_envio: envio.id_envio,
-              id_persona: persona.id_persona,
-              raciones_viaje: data.raciones_viaje ?? 0,
-            },
-          });
-        }
-      }
-    }
 
     await tx.bitacora.create({
       data: {

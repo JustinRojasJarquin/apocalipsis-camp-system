@@ -38,6 +38,35 @@ export const obtener = async (req: Request, res: Response) => {
   }
 };
 
+export const crear = async (req: Request, res: Response) => {
+  try {
+    const idUsuario = req.usuario?.id_usuario;
+    if (!idUsuario) return res.status(401).json({ mensaje: "Usuario no autenticado" });
+
+    const envio = await service.crearEnvio(req.body, idUsuario);
+    return res.status(201).json({ mensaje: "Envio creado correctamente", data: envio });
+  } catch (error) {
+    const msg = getErrorMessage(error);
+    return res.status(getErrorStatus(msg)).json({ mensaje: msg });
+  }
+};
+
+export const actualizar = async (req: Request, res: Response) => {
+  try {
+    const idUsuario = req.usuario?.id_usuario;
+    if (!idUsuario) return res.status(401).json({ mensaje: "Usuario no autenticado" });
+
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) return res.status(400).json({ mensaje: "ID invÃ¡lido" });
+
+    const envio = await service.actualizarEnvio(id, req.body, idUsuario);
+    return res.json({ mensaje: "Envio actualizado correctamente", data: envio });
+  } catch (error) {
+    const msg = getErrorMessage(error);
+    return res.status(getErrorStatus(msg)).json({ mensaje: msg });
+  }
+};
+
 export const confirmarSalida = async (req: Request, res: Response) => {
   try {
     const idUsuario = req.usuario?.id_usuario;
@@ -80,6 +109,22 @@ export const cancelar = async (req: Request, res: Response) => {
 
     const envio = await service.cancelarEnvio(id, idUsuario);
     return res.json({ mensaje: "Envío cancelado correctamente", data: envio });
+  } catch (error) {
+    const msg = getErrorMessage(error);
+    return res.status(getErrorStatus(msg)).json({ mensaje: msg });
+  }
+};
+
+export const eliminar = async (req: Request, res: Response) => {
+  try {
+    const idUsuario = req.usuario?.id_usuario;
+    if (!idUsuario) return res.status(401).json({ mensaje: "Usuario no autenticado" });
+
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) return res.status(400).json({ mensaje: "ID invÃ¡lido" });
+
+    const envio = await service.eliminarEnvio(id, idUsuario);
+    return res.json({ mensaje: "Envio eliminado correctamente", data: envio });
   } catch (error) {
     const msg = getErrorMessage(error);
     return res.status(getErrorStatus(msg)).json({ mensaje: msg });
