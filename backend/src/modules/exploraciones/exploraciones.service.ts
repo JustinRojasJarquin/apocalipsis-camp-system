@@ -99,7 +99,7 @@ export const actualizarEstado = async (
     updateData.dias_extra_usados = datos.dias_extra_usados;
   }
 
-  // Al iniciar la exploración: descontar recursos llevados del inventario
+  // Al iniciar: descontar recursos llevados del inventario
   if (datos.estado === "EN_PROGRESO" && !exploracion.fecha_inicio_real) {
     return prisma.$transaction(async (tx) => {
       const recursosLlevados = await tx.exploracion_recurso_llevado.findMany({
@@ -137,6 +137,65 @@ export const actualizarEstado = async (
             fecha_hora: ahora,
             tipo: "TRASLADO_SALIDA",
             origen: "EXPLORACION",
+            referencia: id_exploracion,
+            cantidad: recurso.cantidad_llevada,
+            id_usuario: idUsuario,
+          },
+        });
+      }
+
+      return tx.exploracion.update({ where: { id_exploracion }, data: updateData });
+    });
+  }
+
+  // Al cancelar o fallar estando EN_PROGRESO: devolver recursos al inventario
+  if (
+    (datos.estado === "CANCELADA" || datos.estado === "FALLIDA") &&
+    exploracion.estado === "EN_PROGRESO"
+  ) {
+    return prisma.$transaction(async (tx) => {
+      const recursosLlevados = await tx.exploracion_recurso_llevado.findMany({
+        where: { id_exploracion },
+      });
+
+      for (const recurso of recursosLlevados) {
+        const inv = await tx.inventario_campamento.findUnique({
+          where: {
+            id_campamento_id_recurso: {
+              id_campamento: exploracion.id_campamento,
+              id_recurso: recurso.id_recurso,
+            },
+          },
+        });
+
+        if (inv) {
+          await tx.inventario_campamento.update({
+            where: {
+              id_campamento_id_recurso: {
+                id_campamento: exploracion.id_campamento,
+                id_recurso: recurso.id_recurso,
+              },
+            },
+            data: { cantidad: Number(inv.cantidad) + Number(recurso.cantidad_llevada) },
+          });
+        } else {
+          await tx.inventario_campamento.create({
+            data: {
+              id_campamento: exploracion.id_campamento,
+              id_recurso: recurso.id_recurso,
+              cantidad: recurso.cantidad_llevada,
+              minimo_alerta: 0,
+            },
+          });
+        }
+
+        await tx.inventario_movimiento.create({
+          data: {
+            id_campamento: exploracion.id_campamento,
+            id_recurso: recurso.id_recurso,
+            fecha_hora: ahora,
+            tipo: "TRASLADO_ENTRADA",
+            origen: "EXPLORACION_CANCELADA",
             referencia: id_exploracion,
             cantidad: recurso.cantidad_llevada,
             id_usuario: idUsuario,
