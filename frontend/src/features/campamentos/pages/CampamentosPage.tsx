@@ -53,6 +53,26 @@ function CampamentosPage() {
     (resource) => resource.status === "critical",
   ).length;
 
+  const getCampamentoStats = (idCampamento?: number) => {
+    if (!idCampamento) {
+      return { personas: 0, recursos: 0, alertas: 0 };
+    }
+
+    const recursos = inventario.filter(
+      (resource) => resource.campId === idCampamento,
+    );
+
+    return {
+      personas: personas.filter(
+        (persona) =>
+          persona.activo !== false && persona.id_campamento === idCampamento,
+      ).length,
+      recursos: recursos.length,
+      alertas: recursos.filter((resource) => resource.status === "critical")
+        .length,
+    };
+  };
+
   const loadCampamentos = async () => {
     setLoading(true);
     setError(null);
@@ -232,15 +252,18 @@ function CampamentosPage() {
                 </div>
               ) : (
                 <div className="campamentos-list">
-                  {campamentosActivos.map((campamento) => (
-                    <article
-                      key={campamento.id_campamento}
-                      className={`campamento-card${
-                        campamento.id_campamento === selectedId
-                          ? " campamento-card-selected"
-                          : ""
-                      }`}
-                    >
+                  {campamentosActivos.map((campamento) => {
+                    const stats = getCampamentoStats(campamento.id_campamento);
+
+                    return (
+                      <article
+                        key={campamento.id_campamento}
+                        className={`campamento-card${
+                          campamento.id_campamento === selectedId
+                            ? " campamento-card-selected"
+                            : ""
+                        }`}
+                      >
                       <div className="campamento-card-header">
                         <div>
                           <h4>{campamento.nombre}</h4>
@@ -259,14 +282,31 @@ function CampamentosPage() {
                           "Sin descripcion registrada."}
                       </p>
 
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: "12px",
-                          marginTop: "18px",
-                          flexWrap: "wrap",
-                        }}
-                      >
+                        <div className="campamento-summary-grid">
+                          <div className="campamento-summary-item">
+                            <span>Personas</span>
+                            <strong>{stats.personas}</strong>
+                          </div>
+
+                          <div className="campamento-summary-item">
+                            <span>Recursos</span>
+                            <strong>{stats.recursos}</strong>
+                          </div>
+
+                          <div className="campamento-summary-item">
+                            <span>Alertas</span>
+                            <strong>{stats.alertas}</strong>
+                          </div>
+                        </div>
+
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "12px",
+                            marginTop: "18px",
+                            flexWrap: "wrap",
+                          }}
+                        >
                         <button
                           type="button"
                           className="button button-secondary"
@@ -306,9 +346,10 @@ function CampamentosPage() {
                             ? "Eliminando..."
                             : "Eliminar"}
                         </button>
-                      </div>
-                    </article>
-                  ))}
+                        </div>
+                      </article>
+                    );
+                  })}
                 </div>
               )}
             </section>

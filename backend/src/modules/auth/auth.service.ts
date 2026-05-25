@@ -1,10 +1,12 @@
 import { prisma } from "../../config/prisma";
 import { comparePassword } from "../../utils/hash";
-import { generateToken } from "../../utils/jwt";
+import { generateToken, JWT_EXPIRATION_SECONDS } from "../../utils/jwt";
 
 export const login = async (usuario: string, password: string) => {
+  const usuarioNormalizado = usuario.trim();
+
   const usuarioEncontrado = await prisma.usuario.findUnique({
-    where: { usuario },
+    where: { usuario: usuarioNormalizado },
     include: {
       rol: true,
       persona: {
@@ -18,7 +20,7 @@ export const login = async (usuario: string, password: string) => {
   });
 
   if (!usuarioEncontrado) {
-    throw new Error("Usuario no encontrado");
+    throw new Error("Credenciales incorrectas");
   }
 
   if (!usuarioEncontrado.activo) {
@@ -35,7 +37,7 @@ export const login = async (usuario: string, password: string) => {
   );
 
   if (!passwordValido) {
-    throw new Error("Contraseña incorrecta");
+    throw new Error("Credenciales incorrectas");
   }
 
   const token = generateToken({
@@ -51,9 +53,11 @@ export const login = async (usuario: string, password: string) => {
   return {
     mensaje: "Login exitoso",
     token,
+    expiresIn: JWT_EXPIRATION_SECONDS,
     usuario: {
       id_usuario: usuarioEncontrado.id_usuario,
       usuario: usuarioEncontrado.usuario,
+      id_rol: usuarioEncontrado.id_rol,
       rol: usuarioEncontrado.rol,
       persona: {
         id_persona: usuarioEncontrado.persona.id_persona,

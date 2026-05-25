@@ -1,5 +1,23 @@
 import { prisma } from "../../config/prisma";
 
+const ADMIN_ROLE_CODES = ["ADMIN", "ADMINISTRADOR"];
+
+const normalizeRoleCode = (codigo?: string | null) =>
+  codigo?.trim().toUpperCase() ?? "";
+
+const isAdminRole = (codigo?: string | null) =>
+  ADMIN_ROLE_CODES.includes(normalizeRoleCode(codigo));
+
+const countActiveAdmins = async () => {
+  return prisma.usuario.count({
+    where: {
+      activo: true,
+      rol: { codigo: { in: ADMIN_ROLE_CODES } },
+      persona: { activo: true },
+    },
+  });
+};
+
 export const listarRoles = async () => {
   return prisma.rol.findMany({
     orderBy: { nombre: "asc" },
@@ -44,9 +62,17 @@ export const actualizarRol = async (
   });
 };
 
-export const cambiarRolUsuario = async (idUsuario: number, idRol: number) => {
+export const cambiarRolUsuario = async (
+  idUsuario: number,
+  idRol: number,
+  idUsuarioSolicitante: number,
+) => {
   const usuario = await prisma.usuario.findUnique({
     where: { id_usuario: idUsuario },
+    include: {
+      rol: true,
+      persona: true,
+    },
   });
 
   if (!usuario) {
@@ -59,6 +85,18 @@ export const cambiarRolUsuario = async (idUsuario: number, idRol: number) => {
 
   if (!rol) {
     throw new Error("Rol no encontrado");
+  }
+
+  if (idUsuario === idUsuarioSolicitante && !isAdminRole(rol.codigo)) {
+    throw new Error("No puedes quitarte tu propio rol administrador");
+  }
+
+  if (isAdminRole(usuario.rol.codigo) && !isAdminRole(rol.codigo)) {
+    const activeAdmins = await countActiveAdmins();
+
+    if (activeAdmins <= 1) {
+      throw new Error("Debe existir al menos un administrador activo");
+    }
   }
 
   return prisma.usuario.update({

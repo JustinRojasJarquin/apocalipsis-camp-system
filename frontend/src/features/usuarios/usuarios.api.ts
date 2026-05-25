@@ -45,6 +45,11 @@ export interface UsuarioSistema {
       id_cargo: number;
       nombre: string;
     } | null;
+    estado_persona?: {
+      id_estado: number;
+      nombre: string;
+      disponible: boolean;
+    } | null;
   };
 }
 
@@ -79,6 +84,19 @@ export const changeUsuarioEstado = async (
     method: "PATCH",
     headers: getHeaders(),
     body: JSON.stringify({ activo }),
+  });
+
+  return handleResponse<UsuarioSistema>(res);
+};
+
+export const resetUsuarioPassword = async (
+  idUsuario: number,
+  password: string,
+): Promise<UsuarioSistema> => {
+  const res = await fetch(`${BASE_URL}/${idUsuario}/password`, {
+    method: "PATCH",
+    headers: getHeaders(),
+    body: JSON.stringify({ password }),
   });
 
   return handleResponse<UsuarioSistema>(res);
