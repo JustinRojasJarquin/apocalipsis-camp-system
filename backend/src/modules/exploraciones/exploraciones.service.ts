@@ -68,7 +68,8 @@ export const crearExploracion = async (datos: CrearExploracionDto) => {
 
 export const actualizarEstado = async (
   id_exploracion: number,
-  datos: ActualizarEstadoDto
+  datos: ActualizarEstadoDto,
+  idUsuario: number
 ) => {
   const exploracion = await prisma.exploracion.findUnique({
     where: { id_exploracion },
@@ -98,6 +99,55 @@ export const actualizarEstado = async (
     updateData.dias_extra_usados = datos.dias_extra_usados;
   }
 
+  // Al iniciar la exploración: descontar recursos llevados del inventario
+  if (datos.estado === "EN_PROGRESO" && !exploracion.fecha_inicio_real) {
+    return prisma.$transaction(async (tx) => {
+      const recursosLlevados = await tx.exploracion_recurso_llevado.findMany({
+        where: { id_exploracion },
+      });
+
+      for (const recurso of recursosLlevados) {
+        const inv = await tx.inventario_campamento.findUnique({
+          where: {
+            id_campamento_id_recurso: {
+              id_campamento: exploracion.id_campamento,
+              id_recurso: recurso.id_recurso,
+            },
+          },
+        });
+
+        if (!inv || Number(inv.cantidad) < Number(recurso.cantidad_llevada)) {
+          throw new Error(`Stock insuficiente para recurso ID ${recurso.id_recurso} al iniciar exploración`);
+        }
+
+        await tx.inventario_campamento.update({
+          where: {
+            id_campamento_id_recurso: {
+              id_campamento: exploracion.id_campamento,
+              id_recurso: recurso.id_recurso,
+            },
+          },
+          data: { cantidad: Number(inv.cantidad) - Number(recurso.cantidad_llevada) },
+        });
+
+        await tx.inventario_movimiento.create({
+          data: {
+            id_campamento: exploracion.id_campamento,
+            id_recurso: recurso.id_recurso,
+            fecha_hora: ahora,
+            tipo: "TRASLADO_SALIDA",
+            origen: "EXPLORACION",
+            referencia: id_exploracion,
+            cantidad: recurso.cantidad_llevada,
+            id_usuario: idUsuario,
+          },
+        });
+      }
+
+      return tx.exploracion.update({ where: { id_exploracion }, data: updateData });
+    });
+  }
+
   return await prisma.exploracion.update({
     where: { id_exploracion },
     data: updateData,
@@ -122,9 +172,11 @@ export const asignarPersona = async (
     throw new Error("Solo se pueden asignar personas a exploraciones en estado PLANIFICADA");
   }
 
-  // TODO: Validar que la persona exista cuando el módulo de Personas esté listo
-  // const persona = await prisma.persona.findUnique({ where: { id_persona: datos.id_persona } });
-  // if (!persona) throw new Error("La persona no existe");
+  const persona = await prisma.persona.findUnique({
+    where: { id_persona: datos.id_persona },
+  });
+  if (!persona) throw new Error("La persona no existe");
+  if (!persona.activo) throw new Error("La persona no está activa");
 
   const yaAsignada = await prisma.exploracion_persona.findUnique({
     where: {
@@ -201,9 +253,18 @@ export const agregarRecursoLlevado = async (
     throw new Error("Solo se pueden agregar recursos a exploraciones en estado PLANIFICADA");
   }
 
-  // TODO: Validar stock disponible cuando el módulo de Inventario esté listo
-  // const inventario = await prisma.inventario_campamento.findUnique({...});
-  // if (!inventario || inventario.cantidad < datos.cantidad_llevada) throw new Error("Stock insuficiente");
+  const inventario = await prisma.inventario_campamento.findUnique({
+    where: {
+      id_campamento_id_recurso: {
+        id_campamento: exploracion.id_campamento,
+        id_recurso: datos.id_recurso,
+      },
+    },
+  });
+
+  if (!inventario || Number(inventario.cantidad) < datos.cantidad_llevada) {
+    throw new Error("Stock insuficiente para llevar ese recurso en la exploración");
+  }
 
   return await prisma.exploracion_recurso_llevado.create({
     data: {
@@ -240,7 +301,8 @@ export const eliminarExploracion = async (id_exploracion: number) => {
 
 export const registrarRecursoEncontrado = async (
   id_exploracion: number,
-  datos: RegistrarRecursoEncontradoDto
+  datos: RegistrarRecursoEncontradoDto,
+  idUsuario: number
 ) => {
   const exploracion = await prisma.exploracion.findUnique({
     where: { id_exploracion },
@@ -256,12 +318,60 @@ export const registrarRecursoEncontrado = async (
     );
   }
 
-  return await prisma.exploracion_recurso_encontrado.create({
-    data: {
-      id_exploracion,
-      id_recurso: datos.id_recurso,
-      cantidad_encontrada: datos.cantidad_encontrada,
-      generado_aleatorio: datos.generado_aleatorio ?? false,
-    },
+  return prisma.$transaction(async (tx) => {
+    const recursoEncontrado = await tx.exploracion_recurso_encontrado.create({
+      data: {
+        id_exploracion,
+        id_recurso: datos.id_recurso,
+        cantidad_encontrada: datos.cantidad_encontrada,
+        generado_aleatorio: datos.generado_aleatorio ?? false,
+      },
+    });
+
+    // Agregar los recursos encontrados al inventario del campamento
+    const inv = await tx.inventario_campamento.findUnique({
+      where: {
+        id_campamento_id_recurso: {
+          id_campamento: exploracion.id_campamento,
+          id_recurso: datos.id_recurso,
+        },
+      },
+    });
+
+    if (inv) {
+      await tx.inventario_campamento.update({
+        where: {
+          id_campamento_id_recurso: {
+            id_campamento: exploracion.id_campamento,
+            id_recurso: datos.id_recurso,
+          },
+        },
+        data: { cantidad: Number(inv.cantidad) + datos.cantidad_encontrada },
+      });
+    } else {
+      await tx.inventario_campamento.create({
+        data: {
+          id_campamento: exploracion.id_campamento,
+          id_recurso: datos.id_recurso,
+          cantidad: datos.cantidad_encontrada,
+          minimo_alerta: 0,
+        },
+      });
+    }
+
+    await tx.inventario_movimiento.create({
+      data: {
+        id_campamento: exploracion.id_campamento,
+        id_recurso: datos.id_recurso,
+        fecha_hora: new Date(),
+        tipo: "TRASLADO_ENTRADA",
+        origen: "EXPLORACION",
+        referencia: id_exploracion,
+        cantidad: datos.cantidad_encontrada,
+        id_usuario: idUsuario,
+      },
+    });
+
+    return recursoEncontrado;
   });
 };
