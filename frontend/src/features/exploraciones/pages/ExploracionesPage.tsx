@@ -9,6 +9,7 @@ import ExploracionForm from "../components/ExploracionForm";
 import AsignarPersonas from "../components/AsignarPersonas";
 import RecursosMision from "../components/RecursosMision";
 import Navbar from "../../../shared/components/Navbar";
+import { storage } from "../../../shared/utils/storage";
 import "../../../styles/theme.css";
 
 const ESTADO_ETIQUETA: Record<ExploracionEstado, string> = {
@@ -27,9 +28,6 @@ const ESTADO_CLASE: Record<ExploracionEstado, string> = {
   FALLIDA: "badge-fallida",
 };
 
-
-const ID_CAMPAMENTO_MOCK = 1;
-
 function ExploracionesPage() {
   const [exploraciones, setExploraciones] = useState<Exploracion[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -39,11 +37,13 @@ function ExploracionesPage() {
   const [vistaDetalle, setVistaDetalle] = useState<"personas" | "recursos" | null>(null);
   const [exploracionAEliminar, setExploracionAEliminar] = useState<Exploracion | null>(null);
 
+  const idCampamento = storage.getUsuario()?.persona?.campamento?.id_campamento ?? 0;
+
   const cargarExploraciones = async () => {
     try {
       setCargando(true);
       setError("");
-      const datos = await listarExploraciones(ID_CAMPAMENTO_MOCK);
+      const datos = await listarExploraciones(idCampamento);
       setExploraciones(datos);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al cargar exploraciones");
@@ -267,7 +267,7 @@ function ExploracionesPage() {
             <div className="modal-overlay">
               <div className="modal-contenido">
                 <ExploracionForm
-                  idCampamento={ID_CAMPAMENTO_MOCK}
+                  idCampamento={idCampamento}
                   onCreada={handleCreada}
                   onCancelar={() => setMostrarFormulario(false)}
                 />
