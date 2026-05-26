@@ -1,56 +1,32 @@
+import { apiClient } from "../../services/api.client";
 import type {
   InventarioFormData,
   InventarioResource,
   RecursoOption,
+  ProduccionFormData,
+  RacionFormData,
+  MovimientoRegistro,
 } from "./types";
 
-const BASE_URL = "http://localhost:4000/api/inventario/resources";
-const RESOURCE_CATALOG_URL = "http://localhost:4000/api/recursos";
-
-const handleResponse = async <T>(res: Response): Promise<T> => {
-  const body = await res.text();
-  const data = body ? (JSON.parse(body) as unknown) : null;
-
-  if (!res.ok) {
-    const errorData = data as
-      | { error?: string; mensaje?: string; message?: string }
-      | null;
-    const message =
-      errorData?.error ||
-      errorData?.message ||
-      errorData?.mensaje ||
-      res.statusText ||
-      "Error en la petición";
-
-    throw new Error(message);
-  }
-
-  return data as T;
-};
+const BASE_INVENTARIO_URL = "/inventario";
+const RESOURCE_CATALOG_URL = "/recursos";
 
 export const getResources = async (
   campamentoId?: number,
 ): Promise<InventarioResource[]> => {
-  const url = new URL(BASE_URL);
-  if (campamentoId) {
-    url.searchParams.set("campamento", String(campamentoId));
-  }
-
-  const res = await fetch(url.toString());
-  return await handleResponse<InventarioResource[]>(res);
+  const endpoint = campamentoId
+    ? `${BASE_INVENTARIO_URL}/resources?campamento=${campamentoId}`
+    : `${BASE_INVENTARIO_URL}/resources`;
+  return await apiClient(endpoint);
 };
 
 export const createResource = async (
   data: InventarioFormData,
 ): Promise<InventarioResource> => {
-  const res = await fetch(BASE_URL, {
+  return await apiClient(`${BASE_INVENTARIO_URL}/resources`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify(data),
   });
-  return await handleResponse<InventarioResource>(res);
 };
 
 export const updateResource = async (
@@ -58,27 +34,58 @@ export const updateResource = async (
   resourceId: number,
   data: Omit<InventarioFormData, "campId" | "resourceId">,
 ): Promise<InventarioResource> => {
-  const res = await fetch(`${BASE_URL}/${campId}/${resourceId}`, {
+  return await apiClient(`${BASE_INVENTARIO_URL}/resources/${campId}/${resourceId}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify(data),
   });
-  return await handleResponse<InventarioResource>(res);
 };
 
 export const deleteResource = async (
   campId: number,
   resourceId: number,
 ): Promise<void> => {
-  const res = await fetch(`${BASE_URL}/${campId}/${resourceId}`, {
+  await apiClient(`${BASE_INVENTARIO_URL}/resources/${campId}/${resourceId}`, {
     method: "DELETE",
   });
-  await handleResponse<void>(res);
 };
 
 export const getAvailableResources = async (): Promise<RecursoOption[]> => {
-  const res = await fetch(RESOURCE_CATALOG_URL);
-  return await handleResponse<RecursoOption[]>(res);
+  return await apiClient(RESOURCE_CATALOG_URL);
+};
+
+export const createProduccion = async (
+  data: ProduccionFormData,
+): Promise<unknown> => {
+  return await apiClient(`${BASE_INVENTARIO_URL}/produccion`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+};
+
+export const createRacion = async (
+  data: RacionFormData,
+): Promise<unknown> => {
+  return await apiClient(`${BASE_INVENTARIO_URL}/racion`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+};
+
+export const recalculateInventory = async (
+  campId: number,
+  date?: string,
+): Promise<unknown> => {
+  return await apiClient(`${BASE_INVENTARIO_URL}/recalculate/${campId}`, {
+    method: "POST",
+    body: JSON.stringify({ date }),
+  });
+};
+
+export const getInventoryMovements = async (
+  campamentoId?: number,
+): Promise<MovimientoRegistro[]> => {
+  const endpoint = campamentoId
+    ? `${BASE_INVENTARIO_URL}/movimientos?campamento=${campamentoId}`
+    : `${BASE_INVENTARIO_URL}/movimientos`;
+  return await apiClient(endpoint);
 };

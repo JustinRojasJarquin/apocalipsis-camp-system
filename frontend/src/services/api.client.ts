@@ -28,7 +28,11 @@ export const apiClient = async (
   }
 
   if (!response.ok) {
-    throw new Error(data?.mensaje || data?.error || "Error en la petición");
+    const message = data?.mensaje || data?.error || data?.message || "Error en la petición";
+    const err: any = new Error(message);
+    err.status = response.status;
+    err.body = data;
+    throw err;
   }
 
   return data;
