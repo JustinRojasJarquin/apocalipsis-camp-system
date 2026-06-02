@@ -1,10 +1,12 @@
+import { storage } from "../shared/utils/storage";
+
 const BASE_URL = "http://localhost:4000/api";
 
 export const apiClient = async (
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ) => {
-  const token = localStorage.getItem("token");
+  const token = storage.getToken();
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
@@ -17,10 +19,20 @@ export const apiClient = async (
     headers,
   });
 
-  const data = await response.json();
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : null;
+
+  if (response.status === 401) {
+    storage.clearAuth();
+    window.location.assign("/");
+  }
 
   if (!response.ok) {
-    throw new Error(data.mensaje || "Error en la petición");
+    const message = data?.mensaje || data?.error || data?.message || "Error en la petición";
+    const err: any = new Error(message);
+    err.status = response.status;
+    err.body = data;
+    throw err;
   }
 
   return data;

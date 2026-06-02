@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginRequest } from "../auth.api";
+import { storage } from "../../../shared/utils/storage";
 
 import userIcon from "../../../assets/user.png";
 import lockIcon from "../../../assets/lock.png";
@@ -31,12 +32,12 @@ function LoginPage() {
       setCargando(true);
 
       const respuesta = await loginRequest({
-        usuario,
+        usuario: usuario.trim(),
         password,
       });
 
-      localStorage.setItem("token", respuesta.token);
-      localStorage.setItem("usuario", JSON.stringify(respuesta.usuario));
+      storage.setToken(respuesta.token);
+      storage.setUsuario(respuesta.usuario);
 
       if (recordarme) {
         localStorage.setItem("recordarme", "true");

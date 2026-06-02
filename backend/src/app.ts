@@ -17,6 +17,7 @@ import rolesRoutes from "./modules/roles/roles.routes";
 import enviosRoutes from "./modules/envios/envios.routes";
 import evaluacionIngresoRoutes from "./modules/evaluacion_ingreso/evaluacion-ingreso.routes";
 import { seedRecursos } from "./modules/recursos/recursos.service";
+import { errorMiddleware } from "./middlewares/error.middleware";
 
 dotenv.config();
 
@@ -57,5 +58,8 @@ app.use("/api/evaluaciones-ingreso", evaluacionIngresoRoutes);
 seedRecursos().catch((error) => {
   console.warn("No se pudieron sembrar recursos de prueba:", error.message);
 });
+
+// Global error handler (logs error and returns JSON)
+app.use(errorMiddleware);
 
 export default app;

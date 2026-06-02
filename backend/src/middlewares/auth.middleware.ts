@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
+import { verifyToken } from "../utils/jwt";
 
 interface PayloadToken {
   id_usuario: number;
@@ -10,7 +10,6 @@ interface PayloadToken {
   id_campamento?: number;
   id_cargo?: number | null;
 }
-
 
 declare global {
   namespace Express {
@@ -28,18 +27,14 @@ export const verificarToken = (
   try {
     const authHeader = req.headers.authorization;
 
-    if (!authHeader) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return res.status(401).json({
         mensaje: "Token no proporcionado",
       });
     }
 
-    const token = authHeader.replace("Bearer ", "");
-
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET || "secreto",
-    ) as PayloadToken;
+    const token = authHeader.slice("Bearer ".length).trim();
+    const decoded = verifyToken(token) as PayloadToken;
 
     req.usuario = decoded;
 

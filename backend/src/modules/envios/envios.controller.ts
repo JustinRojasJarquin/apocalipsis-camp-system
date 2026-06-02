@@ -57,7 +57,7 @@ export const actualizar = async (req: Request, res: Response) => {
     if (!idUsuario) return res.status(401).json({ mensaje: "Usuario no autenticado" });
 
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ mensaje: "ID invÃ¡lido" });
+    if (Number.isNaN(id)) return res.status(400).json({ mensaje: "ID inválido" });
 
     const envio = await service.actualizarEnvio(id, req.body, idUsuario);
     return res.json({ mensaje: "Envio actualizado correctamente", data: envio });
@@ -121,7 +121,7 @@ export const eliminar = async (req: Request, res: Response) => {
     if (!idUsuario) return res.status(401).json({ mensaje: "Usuario no autenticado" });
 
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ mensaje: "ID invÃ¡lido" });
+    if (Number.isNaN(id)) return res.status(400).json({ mensaje: "ID inválido" });
 
     const envio = await service.eliminarEnvio(id, idUsuario);
     return res.json({ mensaje: "Envio eliminado correctamente", data: envio });

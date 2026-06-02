@@ -67,9 +67,22 @@ export const deleteResource = async (req: Request, res: Response) => {
 export const createProduccion = async (req: Request, res: Response) => {
   try {
     const payload = req.body as CreateProduccionDiariaDTO;
-    const data = await service.createProduccion(payload);
+    const idUsuario = req.usuario?.id_usuario;
+
+    console.log("[inventario] createProduccion request:", {
+      usuario: req.usuario,
+      body: payload,
+    });
+
+    if (!idUsuario) {
+      console.warn("[inventario] createProduccion - usuario no autenticado");
+      return res.status(401).json({ message: "Usuario no autenticado" });
+    }
+
+    const data = await service.createProduccion(payload, idUsuario);
     res.status(201).json(data);
   } catch (error) {
+    console.error("[inventario] createProduccion error:", error);
     res.status(400).json({ message: (error as Error).message });
   }
 };
@@ -77,10 +90,53 @@ export const createProduccion = async (req: Request, res: Response) => {
 export const createRacion = async (req: Request, res: Response) => {
   try {
     const payload = req.body as CreateRacionDiariaDTO;
-    const data = await service.createRacion(payload);
+    const idUsuario = req.usuario?.id_usuario;
+
+    console.log("[inventario] createRacion request:", {
+      usuario: req.usuario,
+      body: payload,
+    });
+
+    if (!idUsuario) {
+      console.warn("[inventario] createRacion - usuario no autenticado");
+      return res.status(401).json({ message: "Usuario no autenticado" });
+    }
+
+    const data = await service.createRacion(payload, idUsuario);
     res.status(201).json(data);
   } catch (error) {
+    console.error("[inventario] createRacion error:", error);
     res.status(400).json({ message: (error as Error).message });
+  }
+};
+
+export const getProducciones = async (req: Request, res: Response) => {
+  try {
+    const campId = req.query.campamento ? Number(req.query.campamento) : undefined;
+    const data = await service.getProducciones(campId);
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ message: "Error obteniendo producciones" });
+  }
+};
+
+export const getRaciones = async (req: Request, res: Response) => {
+  try {
+    const campId = req.query.campamento ? Number(req.query.campamento) : undefined;
+    const data = await service.getRaciones(campId);
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ message: "Error obteniendo raciones" });
+  }
+};
+
+export const getInventoryMovements = async (req: Request, res: Response) => {
+  try {
+    const campId = req.query.campamento ? Number(req.query.campamento) : undefined;
+    const data = await service.getInventoryMovements(campId);
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ message: "Error obteniendo historial de movimientos" });
   }
 };
 

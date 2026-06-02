@@ -33,6 +33,7 @@ export const cambiarRolUsuario = async (req: Request, res: Response) => {
       await service.cambiarRolUsuario(
         Number(req.params.idUsuario),
         Number(req.body.id_rol),
+        Number(req.usuario?.id_usuario),
       ),
     );
   } catch (error) {

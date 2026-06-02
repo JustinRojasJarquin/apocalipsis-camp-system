@@ -146,7 +146,10 @@ export const deleteResource = async (campId: number, resourceId: number) => {
   });
 };
 
-export const createProduccion = async (payload: CreateProduccionDiariaDTO) => {
+export const createProduccion = async (
+  payload: CreateProduccionDiariaDTO,
+  idUsuario: number,
+) => {
   const validationError = validateProduccion(payload);
   if (validationError) throw new Error(validationError);
 
@@ -204,7 +207,7 @@ export const createProduccion = async (payload: CreateProduccionDiariaDTO) => {
         origen: "Produccion",
         referencia: prod.id_produccion,
         cantidad: payload.cantidad,
-        id_usuario: payload.personaId,
+        id_usuario: idUsuario,
       },
     });
 
@@ -212,7 +215,10 @@ export const createProduccion = async (payload: CreateProduccionDiariaDTO) => {
   });
 };
 
-export const createRacion = async (payload: CreateRacionDiariaDTO) => {
+export const createRacion = async (
+  payload: CreateRacionDiariaDTO,
+  idUsuario: number,
+) => {
   const validationError = validateRacion(payload);
   if (validationError) throw new Error(validationError);
 
@@ -261,12 +267,71 @@ export const createRacion = async (payload: CreateRacionDiariaDTO) => {
         origen: "Racion",
         referencia: racion.id_racion,
         cantidad: payload.cantidad,
-        id_usuario: payload.personaId,
+        id_usuario: idUsuario,
       },
     });
 
     return racion;
   });
+};
+
+export const getProducciones = async (campId?: number) => {
+  return await prisma.produccion_diaria.findMany({
+    where: campId ? { id_campamento: campId } : undefined,
+    include: {
+      persona: true,
+      recurso: true,
+      campamento: true,
+    },
+    orderBy: {
+      fecha: "desc",
+    },
+  });
+};
+
+export const getRaciones = async (campId?: number) => {
+  return await prisma.racion_diaria.findMany({
+    where: campId ? { id_campamento: campId } : undefined,
+    include: {
+      persona: true,
+      recurso: true,
+      campamento: true,
+    },
+    orderBy: {
+      fecha: "desc",
+    },
+  });
+};
+
+export const getInventoryMovements = async (campId?: number) => {
+  const movements = await prisma.inventario_movimiento.findMany({
+    where: campId ? { id_campamento: campId } : undefined,
+    include: {
+      recurso: true,
+      campamento: true,
+      usuario: { include: { persona: true } },
+    },
+    orderBy: {
+      fecha_hora: "desc",
+    },
+    take: 50,
+  });
+
+  return movements.map((item) => ({
+    id_movimiento: item.id_movimiento,
+    campamento: item.campamento.nombre,
+    recurso: item.recurso.nombre,
+    fecha_hora: item.fecha_hora,
+    tipo: item.tipo,
+    origen: item.origen,
+    referencia: item.referencia,
+    cantidad: Number(item.cantidad),
+    usuario: item.usuario.usuario,
+    persona:
+      item.usuario.persona != null
+        ? `${item.usuario.persona.nombre} ${item.usuario.persona.apellidos}`
+        : null,
+  }));
 };
 
 export const recalculateInventoryForDate = async (campId: number, dateIso?: string) => {

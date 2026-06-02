@@ -8,10 +8,11 @@ interface LoginRequest {
 export interface LoginResponse {
   mensaje: string;
   token: string;
+  expiresIn: number;
   usuario: {
     id_usuario: number;
     usuario: string;
-    id_rol?: number;
+    id_rol: number;
     rol?: {
       id_rol: number;
       nombre: string;
