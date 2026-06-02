@@ -10,10 +10,12 @@ import recursosRoutes from "./modules/recursos/recursos.routes";
 import solicitudesRoutes from "./modules/solicitudes/solicitudes.routes";
 import cargosRoutes from "./modules/cargos/cargos.routes";
 import estadosPersonaRoutes from "./modules/estados-persona/estados-persona.routes";
+import estadoFisicoRoutes from "./modules/estado_persona/estado-fisico.routes";
 import { verificarToken } from "./middlewares/auth.middleware";
 import usuariosRoutes from "./modules/usuarios/usuarios.routes";
 import rolesRoutes from "./modules/roles/roles.routes";
 import enviosRoutes from "./modules/envios/envios.routes";
+import evaluacionIngresoRoutes from "./modules/evaluacion_ingreso/evaluacion-ingreso.routes";
 import { seedRecursos } from "./modules/recursos/recursos.service";
 
 dotenv.config();
@@ -42,6 +44,7 @@ app.use("/api/campamentos", campamentosRoutes);
 app.use("/api/personas", personasRoutes);
 app.use("/api/cargos", cargosRoutes);
 app.use("/api/estados-persona", estadosPersonaRoutes);
+app.use("/api/estados-persona", estadoFisicoRoutes);
 app.use("/api/inventario", inventarioRoutes);
 app.use("/api/recursos", recursosRoutes);
 app.use("/api/exploraciones", exploracionesRoutes);
@@ -49,6 +52,7 @@ app.use("/api/solicitudes", solicitudesRoutes);
 app.use("/api/usuarios", usuariosRoutes);
 app.use("/api/roles", rolesRoutes);
 app.use("/api/envios", enviosRoutes);
+app.use("/api/evaluaciones-ingreso", evaluacionIngresoRoutes);
 
 seedRecursos().catch((error) => {
   console.warn("No se pudieron sembrar recursos de prueba:", error.message);

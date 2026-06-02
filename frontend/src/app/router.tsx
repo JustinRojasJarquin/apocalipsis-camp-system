@@ -6,6 +6,7 @@ import DashboardPage from "../pages/DashboardPage";
 import ExploracionesPage from "../features/exploraciones/pages/ExploracionesPage";
 import CampamentosPage from "../features/campamentos/pages/CampamentosPage";
 import PersonasPage from "../features/personas/pages/PersonasPage";
+import EvaluacionesPage from "../features/evaluaciones/pages/EvaluacionesPage";
 import InventarioPage from "../features/inventario/InventarioPage";
 import RecursosPage from "../features/recursos/RecursosPage";
 import UsuariosPage from "../features/usuarios/pages/UsuariosPage";
@@ -53,8 +54,18 @@ const router = createBrowserRouter([
         path: "personas",
         element: (
           <ProtectedRoute>
-            <RoleRoute roles={ADMIN}>
+            <RoleRoute roles={[...ADMIN, ...VIAJES]}>
               <PersonasPage />
+            </RoleRoute>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "evaluaciones",
+        element: (
+          <ProtectedRoute>
+            <RoleRoute roles={[...ADMIN, ...VIAJES]}>
+              <EvaluacionesPage />
             </RoleRoute>
           </ProtectedRoute>
         ),

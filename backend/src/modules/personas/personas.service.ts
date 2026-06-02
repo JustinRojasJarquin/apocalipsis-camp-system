@@ -1,4 +1,5 @@
 import { prisma } from "../../config/prisma";
+import { recomendarCargoPorIA } from "../estado_persona/openrouter.service";
 import {
   validateCreatePersona,
   validateUpdatePersona,
@@ -208,6 +209,40 @@ const buildPersonaWhere = (filters: PersonaFiltersDTO = {}) => {
   return where;
 };
 
+const parseRecomendacionCargoIA = (text: string) => {
+  const trimmed = text.trim();
+  if (!trimmed) {
+    throw new Error("Respuesta vacía de la IA");
+  }
+
+  let jsonText = trimmed;
+  if (!jsonText.startsWith("{")) {
+    const match = jsonText.match(/\{[\s\S]*\}/);
+    if (!match) {
+      throw new Error("No se pudo parsear la respuesta de la IA");
+    }
+    jsonText = match[0];
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(jsonText);
+  } catch {
+    throw new Error("La respuesta de la IA no es JSON válido");
+  }
+
+  const recommendedCargoId = Number(parsed.recommendedCargoId ?? parsed.id);
+  const recommendedCargoName =
+    parsed.recommendedCargoName ?? parsed.nombre ?? "";
+  const reason = parsed.reason ?? parsed.motivo ?? "Sin motivo disponible";
+
+  if (!recommendedCargoName || !Number.isInteger(recommendedCargoId)) {
+    throw new Error("Respuesta de IA incompleta o inválida");
+  }
+
+  return { recommendedCargoId, recommendedCargoName, reason };
+};
+
 type CargoAssignmentClient = Pick<
   typeof prisma,
   "asignacion_cargo"
@@ -371,6 +406,102 @@ export const updatePersona = async (id: number, data: UpdatePersonaDTO) => {
 
     return persona;
   });
+};
+
+export const assignCargoByIA = async (id_persona: number) => {
+  ensurePositiveId(id_persona);
+
+  const persona = await prisma.persona.findUnique({
+    where: { id_persona },
+    include: personaInclude,
+  });
+
+  if (!persona) {
+    throw new Error("La persona no existe");
+  }
+
+  const cargos = await getCargos();
+  if (cargos.length === 0) {
+    throw new Error("No hay cargos disponibles para recomendar");
+  }
+
+  let recommendation;
+  try {
+    const raw = await recomendarCargoPorIA({
+      persona: `${persona.nombre} ${persona.apellidos}`,
+      estado: persona.estado_persona?.nombre,
+      cargoActual: persona.cargo?.nombre ?? null,
+      campamento: persona.campamento?.nombre ?? "",
+      cargosDisponibles: cargos.map(
+        (cargo) => `${cargo.id_cargo}: ${cargo.nombre}`,
+      ),
+    });
+
+    recommendation = parseRecomendacionCargoIA(raw);
+  } catch (error) {
+    recommendation = {
+      recommendedCargoId: persona.id_cargo_actual ?? cargos[0].id_cargo,
+      recommendedCargoName:
+        persona.cargo?.nombre ?? cargos[0].nombre,
+      reason:
+        error instanceof Error
+          ? error.message
+          : "No fue posible generar una recomendación IA.",
+    };
+  }
+
+  const suggestedCargo =
+    cargos.find((cargo) => cargo.id_cargo === recommendation.recommendedCargoId) ??
+    cargos.find(
+      (cargo) =>
+        cargo.nombre.toLowerCase() ===
+        recommendation.recommendedCargoName.toLowerCase(),
+    ) ?? cargos[0];
+
+  const cargoChanged = suggestedCargo.id_cargo !== persona.id_cargo_actual;
+  let updatedPersona = persona;
+
+  if (cargoChanged) {
+    updatedPersona = await prisma.$transaction(async (tx) => {
+      await tx.persona.update({
+        where: { id_persona },
+        data: { id_cargo_actual: suggestedCargo.id_cargo },
+      });
+
+      await closeCurrentCargoAssignment(tx, id_persona, new Date());
+
+      const asignacion = await tx.asignacion_cargo.create({
+        data: {
+          id_persona,
+          id_campamento: persona.id_campamento,
+          id_cargo: suggestedCargo.id_cargo,
+          fecha_inicio: new Date(),
+          temporal: false,
+        },
+      });
+
+      await tx.asignacion_cargo_ia.create({
+        data: {
+          id_asignacion: asignacion.id_asignacion,
+          sugerido_por_ia: true,
+          motivo_sugerencia_ia: recommendation.reason,
+        },
+      });
+
+      return tx.persona.findUniqueOrThrow({
+        where: { id_persona },
+        include: personaInclude,
+      });
+    });
+  }
+
+  return {
+    recommendedCargoId: suggestedCargo.id_cargo,
+    recommendedCargoName: suggestedCargo.nombre,
+    reason: recommendation.reason,
+    changed: cargoChanged,
+    persona: updatedPersona,
+  };
 };
 
 export const deletePersona = async (id: number) => {

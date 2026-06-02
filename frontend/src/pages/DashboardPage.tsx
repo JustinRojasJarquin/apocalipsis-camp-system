@@ -333,7 +333,7 @@ function DashboardPage() {
         description:
           "Gestiona expedientes, cargos y personal registrado en el sistema.",
         status: "Disponible",
-        roles: ["ADMIN", "ADMINISTRADOR"],
+        roles: ["ADMIN", "ADMINISTRADOR", "VIAJES", "ENCARGADO_VIAJES"],
       },
       {
         title: "Inventario",

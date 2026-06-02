@@ -94,6 +94,18 @@ export const remove = async (req: Request, res: Response) => {
     res.status(getErrorStatus(message)).json({ error: message });
   }
 };
+
+export const assignCargoByIA = async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    const data = await service.assignCargoByIA(id);
+    res.json(data);
+  } catch (error) {
+    const message = (error as Error).message;
+    res.status(getErrorStatus(message)).json({ error: message });
+  }
+};
+
 export const getCargos = async (_req: Request, res: Response) => {
   try {
     const data = await service.getCargos();

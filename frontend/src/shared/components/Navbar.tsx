@@ -40,7 +40,12 @@ function Navbar() {
     {
       to: "/personas",
       label: "Personas",
-      roles: [...ROLES.ADMIN],
+      roles: [...ROLES.ADMIN, ...ROLES.VIAJES],
+    },
+    {
+      to: "/evaluaciones",
+      label: "Evaluaciones",
+      roles: [...ROLES.ADMIN, ...ROLES.VIAJES],
     },
     {
       to: "/usuarios",

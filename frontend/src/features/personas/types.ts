@@ -60,6 +60,14 @@ export interface PersonaFormData {
   id_estado_actual: string;
 }
 
+export interface CargoIARecommendation {
+  recommendedCargoId: number;
+  recommendedCargoName: string;
+  reason: string;
+  changed: boolean;
+  persona: Persona;
+}
+
 export interface PersonaFilters {
   buscar: string;
   id_campamento: string;

@@ -4,6 +4,7 @@ import type {
   PersonaEstado,
   PersonaFilters,
   PersonaFormData,
+  CargoIARecommendation,
 } from "./types";
 
 const BASE_URL = "http://localhost:4000/api/personas";
@@ -116,4 +117,13 @@ export const deletePersona = async (id: number) => {
 export const getPersonaById = async (id: number): Promise<Persona> => {
   const res = await fetch(`${BASE_URL}/${id}`);
   return await handleResponse<Persona>(res);
+};
+
+export const assignCargoByIA = async (
+  id: number,
+): Promise<CargoIARecommendation> => {
+  const res = await fetch(`${BASE_URL}/${id}/asignar-cargo-ia`, {
+    method: "POST",
+  });
+  return await handleResponse<CargoIARecommendation>(res);
 };

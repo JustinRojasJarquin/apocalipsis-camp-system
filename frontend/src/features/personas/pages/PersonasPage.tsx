@@ -460,6 +460,10 @@ function PersonasPage() {
       <PersonaDetalle
         persona={personaDetalle}
         onClose={() => setPersonaDetalle(null)}
+        onCargoAssigned={(updatedPersona) => {
+          setPersonaDetalle(updatedPersona);
+          void loadData(filters);
+        }}
       />
     </div>
   );

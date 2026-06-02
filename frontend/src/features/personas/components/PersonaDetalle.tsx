@@ -1,8 +1,12 @@
-import type { Persona } from "../types";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { assignCargoByIA } from "../personas.api";
+import type { CargoIARecommendation, Persona } from "../types";
 
 interface Props {
   persona: Persona | null;
   onClose: () => void;
+  onCargoAssigned?: (persona: Persona) => void;
 }
 
 const formatDate = (value?: string | null) => {
@@ -17,10 +21,37 @@ const formatDate = (value?: string | null) => {
   return `${Number(day)}/${Number(month)}/${year}`;
 };
 
-export default function PersonaDetalle({ persona, onClose }: Props) {
+export default function PersonaDetalle({ persona, onClose, onCargoAssigned }: Props) {
+  const navigate = useNavigate();
+  const [iaLoading, setIaLoading] = useState(false);
+  const [iaError, setIaError] = useState<string | null>(null);
+  const [iaResult, setIaResult] = useState<CargoIARecommendation | null>(null);
+
   if (!persona) return null;
 
   const historial = persona.asignacion_cargo ?? [];
+
+  const handleAssignCargoIA = async () => {
+    if (!persona.id_persona) return;
+
+    setIaLoading(true);
+    setIaError(null);
+    setIaResult(null);
+
+    try {
+      const result = await assignCargoByIA(persona.id_persona);
+      setIaResult(result);
+      onCargoAssigned?.(result.persona);
+    } catch (error) {
+      setIaError(
+        error instanceof Error
+          ? error.message
+          : "No se pudo asignar cargo con IA.",
+      );
+    } finally {
+      setIaLoading(false);
+    }
+  };
 
   return (
     <div className="personas-modal-backdrop" role="dialog" aria-modal="true">
@@ -61,6 +92,48 @@ export default function PersonaDetalle({ persona, onClose }: Props) {
             <strong>{persona.codigo_campamento?.trim() || "Sin codigo"}</strong>
           </div>
         </div>
+
+        <section className="campamento-detail-section">
+          <div className="detail-section-title">
+            <h4>IA para asignar cargo</h4>
+<div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              className="button button-primary"
+              onClick={handleAssignCargoIA}
+              disabled={iaLoading}
+            >
+              {iaLoading ? "Consultando IA..." : "Asignar cargo con IA"}
+            </button>
+            <button
+              type="button"
+              className="button button-secondary"
+              onClick={() => navigate(`/evaluaciones?persona=${persona.id_persona}`)}
+            >
+              Evaluación de ingreso
+            </button>
+          </div>
+          </div>
+
+          {iaError && <div className="error-box">{iaError}</div>}
+
+          {iaResult && (
+            <div className="ia-result-card">
+              <p>
+                <strong>Cargo recomendado:</strong> {iaResult.recommendedCargoName}
+              </p>
+              <p>
+                <strong>Motivo:</strong> {iaResult.reason}
+              </p>
+              <p>
+                <strong>Resultado:</strong>{" "}
+                {iaResult.changed
+                  ? "Cargo actualizado con la recomendación IA."
+                  : "El cargo actual no cambió."}
+              </p>
+            </div>
+          )}
+        </section>
 
         <section className="campamento-detail-section">
           <div className="detail-section-title">
