@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { storage } from "../utils/storage";
+import { useInactivityTimer } from "../hooks/useInactivityTimer";
 
 const ROLES = {
   ADMIN: ["ADMIN", "ADMINISTRADOR"],
@@ -16,9 +17,17 @@ function Navbar() {
   const cargoNombre = usuario?.persona?.cargo?.nombre;
   const campamentoNombre = usuario?.persona?.campamento?.nombre;
 
+  const { secondsLeft, isActive, logout } = useInactivityTimer();
+
   const handleLogout = () => {
     storage.clearAuth();
     window.location.href = "/";
+  };
+
+  const formatTime = (totalSeconds: number) => {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
   };
 
   const menuItems = [
@@ -63,7 +72,7 @@ function Navbar() {
     },
     {
       to: "/recursos",
-      label: "Catálogo de recursos",
+      label: "Catalogo de recursos",
       roles: [
         ...ROLES.ADMIN,
         ...ROLES.GESTOR_RECURSOS,
@@ -83,78 +92,24 @@ function Navbar() {
   });
 
   return (
-    <header
-      style={{
-        height: "84px",
-        background: "rgba(2, 6, 23, 0.92)",
-        color: "white",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "0 28px",
-        borderBottom: "1px solid rgba(148, 163, 184, 0.12)",
-        backdropFilter: "blur(10px)",
-        position: "sticky",
-        top: 0,
-        zIndex: 30,
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "1400px",
-          display: "grid",
-          gridTemplateColumns: "260px 1fr 260px",
-          alignItems: "center",
-          gap: "20px",
-        }}
-      >
-        {/* IZQUIERDA */}
-        <div>
-          <h1
-            style={{
-              margin: 0,
-              fontSize: "20px",
-              fontWeight: 700,
-              color: "#f8fafc",
-            }}
-          >
-            Apocalipsis Camp
-          </h1>
+    <header className="admin-navbar">
+      <div className="admin-navbar__inner">
+        <div className="admin-navbar__brand">
+          <span className="admin-navbar__mark">AC</span>
 
-          <p
-            style={{
-              margin: "4px 0 0 0",
-              color: "#94a3b8",
-              fontSize: "13px",
-            }}
-          >
-            {rolCodigo ? `Rol: ${rolCodigo}` : "Sistema de administración"}
-          </p>
-
-          {cargoNombre && (
-            <p
-              style={{
-                margin: "2px 0 0 0",
-                color: "#64748b",
-                fontSize: "12px",
-              }}
-            >
-              Cargo: {cargoNombre}
-              {campamentoNombre ? ` · ${campamentoNombre}` : ""}
-            </p>
-          )}
+          <div>
+            <h1>Apocalipsis Camp</h1>
+            <p>{rolCodigo ? `Rol: ${rolCodigo}` : "Sistema de administracion"}</p>
+            {cargoNombre && (
+              <small>
+                Cargo: {cargoNombre}
+                {campamentoNombre ? ` / ${campamentoNombre}` : ""}
+              </small>
+            )}
+          </div>
         </div>
 
-        {/* CENTRO */}
-        <nav
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            gap: "12px",
-            flexWrap: "wrap",
-          }}
-        >
+        <nav className="admin-navbar__links">
           {visibleMenuItems.map((item) => {
             const isActive = location.pathname === item.to;
 
@@ -162,21 +117,11 @@ function Navbar() {
               <Link
                 key={item.to}
                 to={item.to}
-                style={{
-                  textDecoration: "none",
-                  color: isActive ? "#f8fafc" : "#cbd5e1",
-                  background: isActive
-                    ? "linear-gradient(135deg, rgba(59,130,246,0.22), rgba(59,130,246,0.10))"
-                    : "transparent",
-                  border: isActive
-                    ? "1px solid rgba(59,130,246,0.28)"
-                    : "1px solid transparent",
-                  padding: "12px 18px",
-                  borderRadius: "999px",
-                  fontSize: "15px",
-                  fontWeight: isActive ? 700 : 500,
-                  transition: "all 0.25s ease",
-                }}
+                className={
+                  isActive
+                    ? "admin-navbar__link is-active"
+                    : "admin-navbar__link"
+                }
               >
                 {item.label}
               </Link>
@@ -184,22 +129,22 @@ function Navbar() {
           })}
         </nav>
 
-        {/* DERECHA */}
-        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <div className="admin-navbar__actions">
+          <div className="inactivity-timer" title="Tiempo restante de sesion">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <span className={`inactivity-timer__value${secondsLeft <= 60 ? " is-warning" : ""}`}>
+              {formatTime(secondsLeft)}
+            </span>
+          </div>
           <button
+            className="admin-navbar__logout"
+            type="button"
             onClick={handleLogout}
-            style={{
-              background: "linear-gradient(135deg, #dc2626, #b91c1c)",
-              border: "none",
-              padding: "12px 18px",
-              borderRadius: "14px",
-              color: "white",
-              cursor: "pointer",
-              fontWeight: 700,
-              boxShadow: "0 8px 18px rgba(185, 28, 28, 0.25)",
-            }}
           >
-            Cerrar sesión
+            Cerrar sesion
           </button>
         </div>
       </div>

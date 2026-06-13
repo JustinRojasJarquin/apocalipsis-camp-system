@@ -1,4 +1,11 @@
 import { useEffect, useState } from "react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
+import { PageModal } from "../../../shared/components/PageModal";
+import {
+  CrudAction,
+  CrudActionGroup,
+  CrudActions,
+} from "../../../shared/components/CrudActions";
 import {
   createEstadoPersona,
   deleteEstadoPersona,
@@ -22,6 +29,7 @@ export default function EstadosManager({ onChanged }: Props) {
   const [estadoEditando, setEstadoEditando] = useState<PersonaEstado | null>(
     null,
   );
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [form, setForm] = useState<EstadoPersonaFormData>(emptyForm);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -48,6 +56,13 @@ export default function EstadosManager({ onChanged }: Props) {
   const resetForm = () => {
     setEstadoEditando(null);
     setForm(emptyForm);
+    setMostrarFormulario(false);
+  };
+
+  const abrirCrear = () => {
+    setEstadoEditando(null);
+    setForm(emptyForm);
+    setMostrarFormulario(true);
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -85,6 +100,7 @@ export default function EstadosManager({ onChanged }: Props) {
       descripcion: estado.descripcion ?? "",
       disponible: estado.disponible ?? true,
     });
+    setMostrarFormulario(true);
   };
 
   const handleDelete = async (estado: PersonaEstado) => {
@@ -113,135 +129,150 @@ export default function EstadosManager({ onChanged }: Props) {
   };
 
   return (
-    <section className="campamentos-grid">
-      <div className="campamentos-list-card">
-        <div className="card-header">
-          <div>
-            <h3>Estados registrados</h3>
-            <p className="small-text">
-              Administra la disponibilidad y condicion de las personas.
-            </p>
-          </div>
+    <section className="campamentos-list-card">
+      <div className="card-header">
+        <div>
+          <h3>Estados registrados</h3>
+          <p className="small-text">
+            Administra la disponibilidad y condicion de las personas.
+          </p>
         </div>
 
-        {error && <div className="error-box">{error}</div>}
-
-        {loading ? (
-          <div className="empty-state">Cargando estados...</div>
-        ) : estados.length === 0 ? (
-          <div className="empty-state">No hay estados registrados.</div>
-        ) : (
-          <div className="campamentos-list">
-            {estados.map((estado) => (
-              <article key={estado.id_estado} className="campamento-card">
-                <div className="campamento-card-header">
-                  <div>
-                    <h4>{estado.nombre}</h4>
-                    <p className="campamento-meta">
-                      {estado.descripcion?.trim() || "Sin descripcion"}
-                    </p>
-                  </div>
-                  <span
-                    className={
-                      estado.disponible
-                        ? "status-badge status-active"
-                        : "status-badge status-inactive"
-                    }
-                  >
-                    {estado.disponible ? "Disponible" : "No disponible"}
-                  </span>
-                </div>
-
-                <div className="personas-actions">
-                  <button
-                    type="button"
-                    className="button button-primary"
-                    onClick={() => handleEdit(estado)}
-                  >
-                    Editar
-                  </button>
-
-                  <button
-                    type="button"
-                    className="button button-danger"
-                    disabled={deletingId === estado.id_estado}
-                    onClick={() => void handleDelete(estado)}
-                  >
-                    {deletingId === estado.id_estado
-                      ? "Eliminando..."
-                      : "Eliminar"}
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
+        <button type="button" className="button button-primary" onClick={abrirCrear}>
+          <Plus size={16} style={{ marginRight: 6, verticalAlign: -2 }} />
+          Nuevo estado
+        </button>
       </div>
 
-      <form className="campamentos-form-card" onSubmit={handleSubmit}>
-        <div className="card-header">
-          <div>
-            <h3>{estadoEditando ? "Editar estado" : "Nuevo estado"}</h3>
-            <p className="small-text">
+      {error && !mostrarFormulario && <div className="error-box">{error}</div>}
+
+      {loading ? (
+        <div className="empty-state">Cargando estados...</div>
+      ) : estados.length === 0 ? (
+        <div className="empty-state">No hay estados registrados.</div>
+      ) : (
+        <div className="campamentos-list">
+          {estados.map((estado) => (
+            <article key={estado.id_estado} className="campamento-card">
+              <div className="campamento-card-header">
+                <div>
+                  <h4>{estado.nombre}</h4>
+                  <p className="campamento-meta">
+                    {estado.descripcion?.trim() || "Sin descripcion"}
+                  </p>
+                </div>
+                <span
+                  className={
+                    estado.disponible
+                      ? "status-badge status-active"
+                      : "status-badge status-inactive"
+                  }
+                >
+                  {estado.disponible ? "Disponible" : "No disponible"}
+                </span>
+              </div>
+
+              <CrudActions layout="card">
+                <CrudActionGroup>
+                  <CrudAction
+                    label="Editar"
+                    icon={Pencil}
+                    variant="primary"
+                    onClick={() => handleEdit(estado)}
+                  />
+                </CrudActionGroup>
+                <CrudActionGroup>
+                  <CrudAction
+                    label={
+                      deletingId === estado.id_estado
+                        ? "Eliminando..."
+                        : "Eliminar"
+                    }
+                    icon={Trash2}
+                    variant="danger"
+                    disabled={deletingId === estado.id_estado}
+                    loading={deletingId === estado.id_estado}
+                    onClick={() => void handleDelete(estado)}
+                  />
+                </CrudActionGroup>
+              </CrudActions>
+            </article>
+          ))}
+        </div>
+      )}
+
+      {mostrarFormulario && (
+        <PageModal
+          title={estadoEditando ? "Editar estado" : "Nuevo estado"}
+          onClose={resetForm}
+          size="sm"
+        >
+          <form className="modal-form" onSubmit={handleSubmit}>
+            <p className="section-description">
               Define estados como disponible, herido, en mision o enfermo.
             </p>
-          </div>
-        </div>
 
-        <label className="form-field">
-          <span>Nombre</span>
-          <input
-            value={form.nombre}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, nombre: event.target.value }))
-            }
-          />
-        </label>
+            <div className="modal-form__section">
+              <h3 className="modal-form__section-title">Datos del estado</h3>
 
-        <label className="form-field">
-          <span>Descripcion</span>
-          <textarea
-            rows={4}
-            value={form.descripcion}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                descripcion: event.target.value,
-              }))
-            }
-          />
-        </label>
+              <label className="form-field">
+                <span>Nombre *</span>
+                <input
+                  value={form.nombre}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, nombre: event.target.value }))
+                  }
+                  autoFocus
+                />
+              </label>
 
-        <label className="filter-flag" style={{ marginTop: "14px" }}>
-          <input
-            type="checkbox"
-            checked={form.disponible}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                disponible: event.target.checked,
-              }))
-            }
-          />
-          <span>Disponible para asignaciones</span>
-        </label>
+              <label className="form-field">
+                <span>Descripcion</span>
+                <textarea
+                  rows={4}
+                  value={form.descripcion}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      descripcion: event.target.value,
+                    }))
+                  }
+                  placeholder="Condiciones o restricciones del estado"
+                />
+              </label>
 
-        <div className="personas-actions" style={{ marginTop: "18px" }}>
-          <button type="submit" className="button button-primary" disabled={saving}>
-            {saving ? "Guardando..." : estadoEditando ? "Actualizar" : "Crear"}
-          </button>
+              <label className="filter-flag">
+                <input
+                  type="checkbox"
+                  checked={form.disponible}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      disponible: event.target.checked,
+                    }))
+                  }
+                />
+                <span>Disponible para asignaciones</span>
+              </label>
+            </div>
 
-          {estadoEditando && (
-            <button
-              type="button"
-              className="button button-secondary"
-              onClick={resetForm}
-            >
-              Cancelar
-            </button>
-          )}
-        </div>
-      </form>
+            {error && <div className="error-box">{error}</div>}
+
+            <div className="modal-form__actions">
+              <button
+                type="button"
+                className="button button-secondary"
+                onClick={resetForm}
+              >
+                Cancelar
+              </button>
+              <button type="submit" className="button button-primary" disabled={saving}>
+                {saving ? "Guardando..." : estadoEditando ? "Actualizar" : "Crear"}
+              </button>
+            </div>
+          </form>
+        </PageModal>
+      )}
     </section>
   );
 }

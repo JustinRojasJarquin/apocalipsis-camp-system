@@ -1,4 +1,10 @@
 import type { Persona } from "../types";
+import {
+  CrudAction,
+  CrudActionGroup,
+  CrudActions,
+} from "../../../shared/components/CrudActions";
+import { Eye, Pencil, Trash2 } from "lucide-react";
 
 interface Props {
   personas: Persona[];
@@ -81,34 +87,35 @@ export default function PersonaTabla({
               <td>{formatDate(persona.fecha_nacimiento)}</td>
 
               <td>
-                <div className="personas-actions">
-                  <button
-                    type="button"
-                    className="button button-secondary"
-                    onClick={() => onView(persona)}
-                  >
-                    Ver
-                  </button>
-
-                  <button
-                    type="button"
-                    className="button button-primary"
-                    onClick={() => onEdit(persona)}
-                  >
-                    Editar
-                  </button>
-
-                  <button
-                    type="button"
-                    className="button button-danger"
-                    disabled={deletingId === persona.id_persona}
-                    onClick={() => onDelete(persona)}
-                  >
-                    {deletingId === persona.id_persona
-                      ? "Eliminando..."
-                      : "Eliminar"}
-                  </button>
-                </div>
+                <CrudActions layout="table">
+                  <CrudActionGroup>
+                    <CrudAction
+                      label="Ver"
+                      icon={Eye}
+                      onClick={() => onView(persona)}
+                    />
+                    <CrudAction
+                      label="Editar"
+                      icon={Pencil}
+                      variant="primary"
+                      onClick={() => onEdit(persona)}
+                    />
+                  </CrudActionGroup>
+                  <CrudActionGroup>
+                    <CrudAction
+                      label={
+                        deletingId === persona.id_persona
+                          ? "Eliminando..."
+                          : "Eliminar"
+                      }
+                      icon={Trash2}
+                      variant="danger"
+                      disabled={deletingId === persona.id_persona}
+                      loading={deletingId === persona.id_persona}
+                      onClick={() => onDelete(persona)}
+                    />
+                  </CrudActionGroup>
+                </CrudActions>
               </td>
             </tr>
           ))}

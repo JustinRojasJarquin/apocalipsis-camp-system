@@ -1,5 +1,19 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import Navbar from "../../shared/components/Navbar";
+import { PageModal } from "../../shared/components/PageModal";
+import {
+  CrudAction,
+  CrudActionGroup,
+  CrudActions,
+} from "../../shared/components/CrudActions";
+import { useDebouncedValue } from "../../shared/hooks/useDebouncedValue";
 import {
   createRecurso,
   deleteRecurso,
@@ -28,9 +42,28 @@ function RecursosPage() {
   const [recursos, setRecursos] = useState<RecursoItem[]>([]);
   const [form, setForm] = useState<CreateRecursoFormData>(emptyForm);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [filters, setFilters] = useState({
+    buscar: "",
+    categoria: "",
+  });
+
+  const debouncedBuscar = useDebouncedValue(filters.buscar);
+
+  const recursosFiltrados = useMemo(() => {
+    const buscar = debouncedBuscar.trim().toLowerCase();
+
+    return recursos.filter((recurso) => {
+      return (
+        (!buscar || recurso.nombre.toLowerCase().includes(buscar)) &&
+        (!filters.categoria || recurso.categoria === filters.categoria)
+      );
+    });
+  }, [recursos, debouncedBuscar, filters.categoria]);
 
   const loadRecursos = async () => {
     setLoading(true);
@@ -53,6 +86,13 @@ function RecursosPage() {
   const resetForm = () => {
     setForm(emptyForm);
     setEditingId(null);
+    setShowForm(false);
+  };
+
+  const openCreateForm = () => {
+    setForm(emptyForm);
+    setEditingId(null);
+    setShowForm(true);
   };
 
   const handleChange = (
@@ -94,6 +134,7 @@ function RecursosPage() {
       categoria: recurso.categoria,
       unidad: recurso.unidad,
     });
+    setShowForm(true);
   };
 
   const handleDelete = async (recurso: RecursoItem) => {
@@ -105,23 +146,25 @@ function RecursosPage() {
       return;
     }
 
-    setLoading(true);
+    setDeletingId(recurso.id_recurso);
     setError(null);
 
     try {
       await deleteRecurso(recurso.id_recurso);
-      await loadRecursos();
+      setRecursos((current) =>
+        current.filter((item) => item.id_recurso !== recurso.id_recurso),
+      );
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "No se pudo eliminar el recurso.",
       );
     } finally {
-      setLoading(false);
+      setDeletingId(null);
     }
   };
 
   return (
-    <div style={{ display: "flex", background: "#0f172a", minHeight: "100vh" }}>
+    <div style={{ display: "flex", background: "#09110f", minHeight: "100vh" }}>
       <div style={{ flex: 1 }}>
         <Navbar />
 
@@ -131,22 +174,71 @@ function RecursosPage() {
               <span className="page-badge">Catálogo de recursos</span>
               <h1>Recursos disponibles</h1>
               <p className="page-description">
-                Gestiona el catálogo de recursos que pueden asignarse a inventarios
-                y solicitudes.
+                Gestiona el catálogo de recursos que pueden asignarse a
+                inventarios y solicitudes.
               </p>
             </div>
 
-            <div className="campamentos-stat">
-              <span className="stat-label">Total</span>
-              <strong className="stat-value">{recursos.length}</strong>
+            <div className="page-header-actions">
+              <div className="campamentos-stat">
+                <span className="stat-label">Total</span>
+                <strong className="stat-value">{recursos.length}</strong>
+              </div>
+
+              <button
+                type="button"
+                className="button button-primary"
+                onClick={openCreateForm}
+              >
+                <Plus size={16} style={{ marginRight: 6, verticalAlign: -2 }} />
+                Agregar recurso
+              </button>
             </div>
           </section>
 
           {error && <div className="error-box">{error}</div>}
 
-          <section className="campamentos-grid">
-            <div className="campamentos-list-card" style={{ minHeight: 320 }}>
-              <div className="card-header" style={{ gap: 12 }}>
+          <section className="campamentos-filter-card">
+            <div className="campamentos-filter-row">
+              <label className="filter-field">
+                <span>Buscar</span>
+                <input
+                  value={filters.buscar}
+                  onChange={(event) =>
+                    setFilters((current) => ({
+                      ...current,
+                      buscar: event.target.value,
+                    }))
+                  }
+                  placeholder="Nombre del recurso"
+                />
+              </label>
+
+              <label className="filter-field">
+                <span>Categoría</span>
+                <select
+                  value={filters.categoria}
+                  onChange={(event) =>
+                    setFilters((current) => ({
+                      ...current,
+                      categoria: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="">Todas</option>
+                  {categories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </section>
+
+          <section className="page-list-full">
+            <div className="campamentos-list-card">
+              <div className="card-header">
                 <div>
                   <h3>Listado de recursos</h3>
                   <p className="small-text">
@@ -155,11 +247,20 @@ function RecursosPage() {
                 </div>
               </div>
 
+              <div className="filter-results-meta">
+                <span>
+                  Mostrando <strong>{recursosFiltrados.length}</strong> de{" "}
+                  <strong>{recursos.length}</strong> recursos
+                </span>
+              </div>
+
               {loading ? (
                 <div className="empty-state">Cargando recursos...</div>
-              ) : recursos.length === 0 ? (
+              ) : recursosFiltrados.length === 0 ? (
                 <div className="empty-state">
-                  No hay recursos registrados. Agrega uno nuevo.
+                  {recursos.length === 0
+                    ? "No hay recursos registrados. Agrega uno nuevo."
+                    : "No hay recursos que coincidan con los filtros."}
                 </div>
               ) : (
                 <div className="table-responsive">
@@ -173,27 +274,30 @@ function RecursosPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {recursos.map((recurso) => (
+                      {recursosFiltrados.map((recurso) => (
                         <tr key={recurso.id_recurso}>
                           <td>{recurso.nombre}</td>
                           <td>{recurso.categoria}</td>
                           <td>{recurso.unidad}</td>
-                          <td>
-                            <button
-                              type="button"
-                              className="button button-secondary"
-                              onClick={() => handleEdit(recurso)}
-                            >
-                              Editar
-                            </button>
-                            <button
-                              type="button"
-                              className="button button-danger"
-                              style={{ marginLeft: 8 }}
-                              onClick={() => void handleDelete(recurso)}
-                            >
-                              Eliminar
-                            </button>
+                          <td className="table-actions-cell">
+                            <CrudActions layout="table">
+                              <CrudActionGroup>
+                                <CrudAction
+                                  label="Editar"
+                                  icon={Pencil}
+                                  variant="primary"
+                                  onClick={() => handleEdit(recurso)}
+                                />
+                                <CrudAction
+                                  label="Eliminar"
+                                  icon={Trash2}
+                                  variant="danger"
+                                  loading={deletingId === recurso.id_recurso}
+                                  loadingLabel="Eliminando..."
+                                  onClick={() => void handleDelete(recurso)}
+                                />
+                              </CrudActionGroup>
+                            </CrudActions>
                           </td>
                         </tr>
                       ))}
@@ -202,73 +306,86 @@ function RecursosPage() {
                 </div>
               )}
             </div>
+          </section>
 
-            <aside className="campamentos-form-card">
-              <form className="campamentos-form" onSubmit={handleSubmit}>
-                <div className="form-section-header">
-                  <h3>{editingId != null ? "Editar recurso" : "Agregar recurso"}</h3>
-                  <p className="section-description">
-                    {editingId != null
-                      ? "Actualiza la categoría o unidad del recurso."
-                      : "Crea un nuevo recurso disponible para inventario y solicitudes."}
-                  </p>
+          {showForm && (
+            <PageModal
+              title={editingId != null ? "Editar recurso" : "Agregar recurso"}
+              onClose={resetForm}
+              size="sm"
+            >
+              <form className="modal-form" onSubmit={handleSubmit}>
+                <p className="section-description">
+                  {editingId != null
+                    ? "Actualiza la categoría o unidad del recurso."
+                    : "Crea un nuevo recurso disponible para inventario y solicitudes."}
+                </p>
+
+                <div className="modal-form__section">
+                  <h3 className="modal-form__section-title">Datos del recurso</h3>
+
+                  <label className="form-field">
+                    <span>Nombre *</span>
+                    <input
+                      name="nombre"
+                      type="text"
+                      value={form.nombre}
+                      onChange={handleChange}
+                      required
+                      autoFocus
+                    />
+                  </label>
+
+                  <div className="modal-form__row">
+                    <label className="form-field">
+                      <span>Categoría *</span>
+                      <select
+                        name="categoria"
+                        value={form.categoria}
+                        onChange={handleChange}
+                        required
+                      >
+                        {categories.map((category) => (
+                          <option key={category} value={category}>
+                            {category}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="form-field">
+                      <span>Unidad *</span>
+                      <input
+                        name="unidad"
+                        type="text"
+                        value={form.unidad}
+                        onChange={handleChange}
+                        required
+                        placeholder="Ej: kg, litros, unidades"
+                      />
+                    </label>
+                  </div>
                 </div>
 
-                <label className="form-field">
-                  <span>Nombre</span>
-                  <input
-                    name="nombre"
-                    type="text"
-                    value={form.nombre}
-                    onChange={handleChange}
-                    required
-                  />
-                </label>
-
-                <label className="form-field">
-                  <span>Categoría</span>
-                  <select
-                    name="categoria"
-                    value={form.categoria}
-                    onChange={handleChange}
-                    required
+                <div className="modal-form__actions">
+                  <button
+                    type="button"
+                    className="button button-secondary"
+                    onClick={resetForm}
                   >
-                    {categories.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="form-field">
-                  <span>Unidad</span>
-                  <input
-                    name="unidad"
-                    type="text"
-                    value={form.unidad}
-                    onChange={handleChange}
-                    required
-                  />
-                </label>
-
-                <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                  <button className="button button-primary" disabled={saving}>
-                    {saving ? "Guardando..." : editingId != null ? "Actualizar" : "Crear"}
+                    Cancelar
                   </button>
-                  {editingId != null && (
-                    <button
-                      type="button"
-                      className="button button-secondary"
-                      onClick={resetForm}
-                    >
-                      Cancelar
-                    </button>
-                  )}
+                  <button className="button button-primary" disabled={saving}>
+                    {saving
+                      ? "Guardando..."
+                      : editingId != null
+                        ? "Actualizar"
+                        : "Crear"}
+                  </button>
                 </div>
               </form>
-            </aside>
-          </section>
+            </PageModal>
+          )}
         </main>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Navbar from "../../../shared/components/Navbar";
+import { PageModal } from "../../../shared/components/PageModal";
 import { getCampamentos } from "../../campamentos/campamentos.api";
 import CargosManager from "../components/CargosManager";
 import EstadosManager from "../components/EstadosManager";
@@ -21,7 +22,7 @@ import type {
   PersonaFilters,
 } from "../types";
 
-type PersonasTab = "lista" | "formulario" | "cargos" | "estados";
+type PersonasTab = "lista" | "cargos" | "estados";
 
 const emptyFilters: PersonaFilters = {
   buscar: "",
@@ -37,6 +38,7 @@ function PersonasPage() {
   const [estados, setEstados] = useState<PersonaEstado[]>([]);
   const [filters, setFilters] = useState<PersonaFilters>(emptyFilters);
   const [personaEditando, setPersonaEditando] = useState<Persona | null>(null);
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [personaDetalle, setPersonaDetalle] = useState<Persona | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -123,7 +125,7 @@ function PersonasPage() {
 
   const handleEdit = (persona: Persona) => {
     setPersonaEditando(persona);
-    setActiveTab("formulario");
+    setMostrarFormulario(true);
   };
 
   const handleDelete = async (persona: Persona) => {
@@ -156,16 +158,20 @@ function PersonasPage() {
   };
 
   const tabButtonStyle = (tab: PersonasTab): React.CSSProperties => ({
-    border: activeTab === tab ? "1px solid #3b82f6" : "1px solid #334155",
+    border:
+      activeTab === tab
+        ? "1px solid rgba(159,239,0,0.38)"
+        : "1px solid rgba(215,226,218,0.12)",
     background:
       activeTab === tab
-        ? "linear-gradient(135deg, rgba(59,130,246,0.25), rgba(59,130,246,0.08))"
-        : "rgba(15,23,42,0.88)",
-    color: activeTab === tab ? "#f8fafc" : "#cbd5e1",
+        ? "linear-gradient(135deg, rgba(159,239,0,0.18), rgba(159,239,0,0.06))"
+        : "rgba(16,24,20,0.88)",
+    color: activeTab === tab ? "#f7ffe8" : "#cbd5ce",
     padding: "14px 18px",
-    borderRadius: "16px",
+    borderRadius: "8px",
     cursor: "pointer",
-    fontWeight: 800,
+    fontWeight: 900,
+    letterSpacing: "0.02em",
   });
 
   const exportCsv = () => {
@@ -204,7 +210,7 @@ function PersonasPage() {
   };
 
   return (
-    <div style={{ display: "flex", background: "#0f172a", minHeight: "100vh" }}>
+    <div style={{ display: "flex", background: "#09110f", minHeight: "100vh" }}>
       <div style={{ flex: 1 }}>
         <Navbar />
 
@@ -219,9 +225,22 @@ function PersonasPage() {
               </p>
             </div>
 
-            <div className="campamentos-stat">
-              <span className="stat-label">Activas</span>
-              <strong className="stat-value">{personas.length}</strong>
+            <div className="page-header-actions">
+              <div className="campamentos-stat">
+                <span className="stat-label">Activas</span>
+                <strong className="stat-value">{personas.length}</strong>
+              </div>
+
+              <button
+                type="button"
+                className="button button-primary"
+                onClick={() => {
+                  setPersonaEditando(null);
+                  setMostrarFormulario(true);
+                }}
+              >
+                + Nueva persona
+              </button>
             </div>
           </section>
 
@@ -248,22 +267,8 @@ function PersonasPage() {
 
             <button
               type="button"
-              style={tabButtonStyle("formulario")}
-              onClick={() => {
-                setPersonaEditando(null);
-                setActiveTab("formulario");
-              }}
-            >
-              Crear persona
-            </button>
-
-            <button
-              type="button"
               style={tabButtonStyle("cargos")}
-              onClick={() => {
-                setPersonaEditando(null);
-                setActiveTab("cargos");
-              }}
+              onClick={() => setActiveTab("cargos")}
             >
               Cargos
             </button>
@@ -271,10 +276,7 @@ function PersonasPage() {
             <button
               type="button"
               style={tabButtonStyle("estados")}
-              onClick={() => {
-                setPersonaEditando(null);
-                setActiveTab("estados");
-              }}
+              onClick={() => setActiveTab("estados")}
             >
               Estados
             </button>
@@ -421,24 +423,6 @@ function PersonasPage() {
             </section>
           )}
 
-          {activeTab === "formulario" && (
-            <section className="campamentos-form-card">
-              <PersonaForm
-                campamentos={campamentos}
-                personaEditando={personaEditando}
-                onCancelEdit={() => {
-                  setPersonaEditando(null);
-                  setActiveTab("lista");
-                }}
-                onSuccess={() => {
-                  setPersonaEditando(null);
-                  setActiveTab("lista");
-                  void loadData();
-                }}
-              />
-            </section>
-          )}
-
           {activeTab === "cargos" && (
             <CargosManager
               onChanged={() => {
@@ -453,6 +437,30 @@ function PersonasPage() {
                 void loadData(filters);
               }}
             />
+          )}
+          {mostrarFormulario && (
+            <PageModal
+              title={personaEditando ? "Editar persona" : "Nueva persona"}
+              onClose={() => {
+                setMostrarFormulario(false);
+                setPersonaEditando(null);
+              }}
+              size="lg"
+            >
+              <PersonaForm
+                campamentos={campamentos}
+                personaEditando={personaEditando}
+                onCancelEdit={() => {
+                  setMostrarFormulario(false);
+                  setPersonaEditando(null);
+                }}
+                onSuccess={() => {
+                  setMostrarFormulario(false);
+                  setPersonaEditando(null);
+                  void loadData();
+                }}
+              />
+            </PageModal>
           )}
         </main>
       </div>

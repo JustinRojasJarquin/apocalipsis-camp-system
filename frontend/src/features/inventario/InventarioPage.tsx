@@ -1,5 +1,13 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import Navbar from "../../shared/components/Navbar";
+import { PageModal } from "../../shared/components/PageModal";
+import {
+  CrudAction,
+  CrudActionGroup,
+  CrudActions,
+} from "../../shared/components/CrudActions";
+import { useDebouncedValue } from "../../shared/hooks/useDebouncedValue";
 import { mapInventoryError } from "../../shared/utils/errorMapper";
 import {
   createResource,
@@ -36,6 +44,8 @@ const emptyForm: InventarioFormData = {
   minThreshold: 0,
 };
 
+type InventarioTab = "registros" | "operaciones" | "historial";
+
 function InventarioPage() {
   const [resources, setResources] = useState<InventarioResource[]>([]);
   const [campamentos, setCampamentos] = useState<CampamentoOption[]>([]);
@@ -71,6 +81,31 @@ function InventarioPage() {
   const [isRationing, setIsRationing] = useState(false);
   const [campamentoFilter, setCampamentoFilter] = useState<number | undefined>(undefined);
   const [recalculateDate, setRecalculateDate] = useState<string>(new Date().toISOString().split("T")[0]);
+  const [activeTab, setActiveTab] = useState<InventarioTab>("registros");
+  const [showForm, setShowForm] = useState(false);
+  const [showProductionForm, setShowProductionForm] = useState(false);
+  const [showRationForm, setShowRationForm] = useState(false);
+  const [deletingKey, setDeletingKey] = useState<string | null>(null);
+  const [filters, setFilters] = useState({
+    buscar: "",
+    estado: "" as "" | "critical" | "stable",
+  });
+
+  const debouncedBuscar = useDebouncedValue(filters.buscar);
+
+  const resourcesFiltrados = useMemo(() => {
+    const buscar = debouncedBuscar.trim().toLowerCase();
+
+    return resources.filter((resource) => {
+      const nombre = resource.name.toLowerCase();
+      const campamento = (resource.campamentoNombre || "").toLowerCase();
+
+      return (
+        (!buscar || nombre.includes(buscar) || campamento.includes(buscar)) &&
+        (!filters.estado || resource.status === filters.estado)
+      );
+    });
+  }, [resources, debouncedBuscar, filters.estado]);
 
   const loadResources = async () => {
     setLoading(true);
@@ -171,6 +206,16 @@ function InventarioPage() {
   const resetForm = () => {
     setForm(emptyForm);
     setEditingKey(null);
+    setShowForm(false);
+  };
+
+  const openCreateForm = () => {
+    setForm({
+      ...emptyForm,
+      campId: campamentoFilter ?? 0,
+    });
+    setEditingKey(null);
+    setShowForm(true);
   };
 
   const handleChange = (
@@ -225,6 +270,7 @@ function InventarioPage() {
       minThreshold: resource.minThreshold,
     });
     setEditingKey(`${resource.campId}-${resource.id}`);
+    setShowForm(true);
   };
 
   const handleDelete = async (resource: InventarioResource) => {
@@ -237,11 +283,16 @@ function InventarioPage() {
     }
 
     setError(null);
-    setLoading(true);
+    const resourceKey = `${resource.campId}-${resource.id}`;
+    setDeletingKey(resourceKey);
 
     try {
       await deleteResource(resource.campId, resource.id);
-      await loadResources();
+      setResources((current) =>
+        current.filter(
+          (item) => `${item.campId}-${item.id}` !== resourceKey,
+        ),
+      );
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
@@ -255,12 +306,12 @@ function InventarioPage() {
         setErrorSummary(null);
       }
     } finally {
-      setLoading(false);
+      setDeletingKey(null);
     }
   };
 
   const handleProductionChange = (
-    event: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+    event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = event.target;
     const numericFields = ["cantidad", "campId", "resourceId", "personaId"];
@@ -298,6 +349,7 @@ function InventarioPage() {
         ajusteRazon: "",
         observaciones: "",
       }));
+      setShowProductionForm(false);
       await loadResources();
       await loadMovements(productionForm.campId || campamentoFilter);
     } catch (err) {
@@ -330,6 +382,7 @@ function InventarioPage() {
         ...current,
         cantidad: 0,
       }));
+      setShowRationForm(false);
       await loadResources();
       await loadMovements(rationForm.campId || campamentoFilter);
     } catch (err) {
@@ -379,8 +432,7 @@ function InventarioPage() {
   };
 
   return (
-    <div style={{ display: "flex", background: "#0f172a", minHeight: "100vh" }}>
-      
+    <div style={{ display: "flex", background: "#09110f", minHeight: "100vh" }}>
       <div style={{ flex: 1 }}>
         <Navbar />
 
@@ -390,14 +442,27 @@ function InventarioPage() {
               <span className="page-badge">Modulo inventario</span>
               <h1>Inventario de campamentos</h1>
               <p className="page-description">
-                Administra el inventario por campamento. Solo el inventario de
-                campamentos está activo en este módulo.
+                Administra registros, operaciones diarias e historial de
+                movimientos por campamento.
               </p>
             </div>
 
-            <div className="campamentos-stat">
-              <span className="stat-label">Registros</span>
-              <strong className="stat-value">{resources.length}</strong>
+            <div className="page-header-actions">
+              <div className="campamentos-stat">
+                <span className="stat-label">Registros</span>
+                <strong className="stat-value">{resources.length}</strong>
+              </div>
+
+              {activeTab === "registros" && (
+                <button
+                  type="button"
+                  className="button button-primary"
+                  onClick={openCreateForm}
+                >
+                  <Plus size={16} style={{ marginRight: 6, verticalAlign: -2 }} />
+                  Agregar recurso
+                </button>
+              )}
             </div>
           </section>
 
@@ -405,7 +470,9 @@ function InventarioPage() {
             <div className="error-box">
               <div>{error}</div>
               {errorSummary && (
-                <div style={{ marginTop: 6, fontStyle: "italic" }}>{errorSummary}</div>
+                <div className="small-text" style={{ marginTop: 6 }}>
+                  {errorSummary}
+                </div>
               )}
               {errorDetails && (
                 <div style={{ marginTop: 8 }}>
@@ -426,40 +493,112 @@ function InventarioPage() {
             </div>
           )}
 
-          <section className="campamentos-grid">
-            <div className="campamentos-list-card" style={{ minHeight: 320 }}>
-              <div className="card-header" style={{ gap: 12 }}>
+          {message && <div className="success-box">{message}</div>}
+
+          <section className="module-tabs">
+            <button
+              type="button"
+              className={`module-tab${activeTab === "registros" ? " module-tab--active" : ""}`}
+              onClick={() => setActiveTab("registros")}
+            >
+              Registros
+            </button>
+            <button
+              type="button"
+              className={`module-tab${activeTab === "operaciones" ? " module-tab--active" : ""}`}
+              onClick={() => setActiveTab("operaciones")}
+            >
+              Operaciones
+            </button>
+            <button
+              type="button"
+              className={`module-tab${activeTab === "historial" ? " module-tab--active" : ""}`}
+              onClick={() => setActiveTab("historial")}
+            >
+              Historial
+            </button>
+          </section>
+
+          {activeTab === "registros" && (
+          <>
+          <section className="campamentos-filter-card">
+            <div className="campamentos-filter-row">
+              <label className="filter-field">
+                <span>Campamento</span>
+                <select
+                  value={campamentoFilter ?? ""}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setCampamentoFilter(value ? Number(value) : undefined);
+                  }}
+                >
+                  <option value="">Todos</option>
+                  {campamentos.map((camp) => (
+                    <option key={camp.id_campamento} value={camp.id_campamento}>
+                      {camp.nombre}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="filter-field">
+                <span>Buscar</span>
+                <input
+                  value={filters.buscar}
+                  onChange={(event) =>
+                    setFilters((current) => ({
+                      ...current,
+                      buscar: event.target.value,
+                    }))
+                  }
+                  placeholder="Recurso o campamento"
+                />
+              </label>
+
+              <label className="filter-field">
+                <span>Estado</span>
+                <select
+                  value={filters.estado}
+                  onChange={(event) =>
+                    setFilters((current) => ({
+                      ...current,
+                      estado: event.target.value as "" | "critical" | "stable",
+                    }))
+                  }
+                >
+                  <option value="">Todos</option>
+                  <option value="stable">Estable</option>
+                  <option value="critical">Crítico</option>
+                </select>
+              </label>
+            </div>
+          </section>
+
+          <section className="page-list-full">
+            <div className="campamentos-list-card">
+              <div className="card-header">
                 <div>
-                  <h3>Recursos</h3>
+                  <h3>Recursos en inventario</h3>
                   <p className="small-text">
                     Listado de recursos disponibles por campamento.
                   </p>
                 </div>
+              </div>
 
-                <label className="form-field" style={{ margin: 0 }}>
-                  <span>Filtro campamento</span>
-                  <select
-                    value={campamentoFilter ?? ""}
-                    onChange={(event) => {
-                      const value = event.target.value;
-                      setCampamentoFilter(value ? Number(value) : undefined);
-                    }}
-                  >
-                    <option value="">Todos</option>
-                    {campamentos.map((camp) => (
-                      <option key={camp.id_campamento} value={camp.id_campamento}>
-                        {camp.nombre}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+              <div className="filter-results-meta">
+                <span>
+                  Mostrando <strong>{resourcesFiltrados.length}</strong> de{" "}
+                  <strong>{resources.length}</strong> registros
+                </span>
               </div>
 
               {loading ? (
                 <div className="empty-state">Cargando recursos...</div>
-              ) : resources.length === 0 ? (
+              ) : resourcesFiltrados.length === 0 ? (
                 <div className="empty-state">
-                  No hay registros de inventario disponibles.
+                  {resources.length === 0
+                    ? "No hay registros de inventario disponibles."
+                    : "No hay registros que coincidan con los filtros."}
                 </div>
               ) : (
                 <div className="table-responsive">
@@ -475,333 +614,356 @@ function InventarioPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {resources.map((resource) => (
-                        <tr key={`${resource.campId}-${resource.id}`}>
+                      {resourcesFiltrados.map((resource) => {
+                        const resourceKey = `${resource.campId}-${resource.id}`;
+
+                        return (
+                        <tr key={resourceKey}>
                           <td>{resource.name}</td>
                           <td>{resource.campamentoNombre || resource.campId}</td>
                           <td>{resource.quantity}</td>
                           <td>{resource.minThreshold}</td>
-                          <td>{resource.status}</td>
                           <td>
-                            <button
-                              type="button"
-                              className="button button-secondary"
-                              onClick={() => handleEdit(resource)}
+                            <span
+                              className={
+                                resource.status === "critical"
+                                  ? "inventory-status-badge inventory-status-badge--critical"
+                                  : "inventory-status-badge inventory-status-badge--stable"
+                              }
                             >
-                              Editar
-                            </button>
-                            <button
-                              type="button"
-                              className="button button-danger"
-                              onClick={() => void handleDelete(resource)}
-                              style={{ marginLeft: 8 }}
-                            >
-                              Eliminar
-                            </button>
+                              {resource.status === "critical" ? "Critico" : "Estable"}
+                            </span>
+                          </td>
+                          <td className="table-actions-cell">
+                            <CrudActions layout="table">
+                              <CrudActionGroup>
+                                <CrudAction
+                                  label="Editar"
+                                  icon={Pencil}
+                                  variant="primary"
+                                  onClick={() => handleEdit(resource)}
+                                />
+                                <CrudAction
+                                  label="Eliminar"
+                                  icon={Trash2}
+                                  variant="danger"
+                                  loading={deletingKey === resourceKey}
+                                  loadingLabel="Eliminando..."
+                                  onClick={() => void handleDelete(resource)}
+                                />
+                              </CrudActionGroup>
+                            </CrudActions>
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
               )}
             </div>
-
-            <aside className="campamentos-form-card">
-              <form className="campamentos-form" onSubmit={handleSubmit}>
-                <div className="form-section-header">
-                  <h3>{editingKey ? "Editar recurso" : "Agregar recurso"}</h3>
-                  <p className="section-description">
-                    {editingKey
-                      ? "Actualiza la cantidad o el umbral del inventario."
-                      : "Registra un nuevo recurso en un campamento."}
-                  </p>
-                </div>
-
-                <label className="form-field">
-                  <span>Campamento</span>
-                  <select
-                    name="campId"
-                    value={form.campId}
-                    onChange={handleChange}
-                    required
-                    disabled={Boolean(editingKey)}
-                  >
-                    <option value={0}>Selecciona un campamento</option>
-                    {campamentos.map((camp) => (
-                      <option key={camp.id_campamento} value={camp.id_campamento}>
-                        {camp.nombre}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="form-field">
-                  <span>Recurso</span>
-                  <select
-                    name="resourceId"
-                    value={form.resourceId}
-                    onChange={handleChange}
-                    required
-                    disabled={Boolean(editingKey)}
-                  >
-                    <option value={0}>Selecciona un recurso</option>
-                    {availableResources.map((resource) => (
-                      <option key={resource.id_recurso} value={resource.id_recurso}>
-                        {resource.nombre}
-                      </option>
-                    ))}
-                  </select>
-                  <small>
-                    Selecciona el recurso existente. Solo se edita cantidad y umbral.
-                  </small>
-                </label>
-
-                <label className="form-field">
-                  <span>Cantidad</span>
-                  <input
-                    name="quantity"
-                    type="number"
-                    min={0}
-                    value={form.quantity}
-                    onChange={handleChange}
-                    required
-                  />
-                </label>
-
-                <label className="form-field">
-                  <span>Umbral mínimo</span>
-                  <input
-                    name="minThreshold"
-                    type="number"
-                    min={0}
-                    value={form.minThreshold}
-                    onChange={handleChange}
-                    required
-                  />
-                </label>
-
-                <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                  <button className="button button-primary" disabled={isSaving}>
-                    {isSaving ? "Guardando..." : editingKey ? "Actualizar" : "Crear"}
-                  </button>
-
-                  {editingKey && (
-                    <button
-                      type="button"
-                      className="button button-secondary"
-                      onClick={resetForm}
-                    >
-                      Cancelar
-                    </button>
-                  )}
-                </div>
-              </form>
-            </aside>
           </section>
+          </>
+          )}
 
-          {message && <div className="success-box">{message}</div>}
+          {activeTab === "operaciones" && (
+          <section className="campamentos-list-card">
+            <div className="card-header">
+              <div>
+                <h3>Operaciones diarias</h3>
+                <p className="small-text">
+                  Registra producción y consumo diario para actualizar el
+                  inventario automáticamente.
+                </p>
+              </div>
+            </div>
 
-          <section className="campamentos-grid">
-            <aside className="campamentos-form-card">
-              <form className="campamentos-form" onSubmit={handleProductionSubmit}>
-                <div className="form-section-header">
-                  <h3>Producción diaria</h3>
-                  <p className="section-description">
-                    Registra la producción por persona y actualiza el inventario.
-                  </p>
+            <div className="campamentos-list" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
+              <article className="campamento-card">
+                <h4>Producción diaria</h4>
+                <p className="small-text">
+                  Registra la producción por persona y actualiza el inventario.
+                </p>
+                <button
+                  type="button"
+                  className="button button-primary"
+                  style={{ marginTop: 16 }}
+                  onClick={() => setShowProductionForm(true)}
+                >
+                  <Plus size={16} style={{ marginRight: 6, verticalAlign: -2 }} />
+                  Registrar producción
+                </button>
+              </article>
+
+              <article className="campamento-card">
+                <h4>Ración diaria</h4>
+                <p className="small-text">
+                  Registra el consumo diario y ajusta el inventario
+                  automáticamente.
+                </p>
+                <button
+                  type="button"
+                  className="button button-primary"
+                  style={{ marginTop: 16 }}
+                  onClick={() => setShowRationForm(true)}
+                >
+                  <Plus size={16} style={{ marginRight: 6, verticalAlign: -2 }} />
+                  Registrar ración
+                </button>
+              </article>
+            </div>
+          </section>
+          )}
+
+          {showProductionForm && (
+            <PageModal
+              title="Producción diaria"
+              onClose={() => setShowProductionForm(false)}
+              size="md"
+            >
+              <form className="modal-form" onSubmit={handleProductionSubmit}>
+                <p className="section-description">
+                  Registra la producción por persona y actualiza el inventario.
+                </p>
+
+                <div className="modal-form__section">
+                  <h3 className="modal-form__section-title">Contexto</h3>
+
+                  <label className="form-field">
+                    <span>Campamento *</span>
+                    <select
+                      name="campId"
+                      value={productionForm.campId}
+                      onChange={handleProductionChange}
+                      required
+                    >
+                      <option value={0}>Selecciona un campamento</option>
+                      {campamentos.map((camp) => (
+                        <option key={camp.id_campamento} value={camp.id_campamento}>
+                          {camp.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <div className="modal-form__row">
+                    <label className="form-field">
+                      <span>Persona *</span>
+                      <select
+                        name="personaId"
+                        value={productionForm.personaId}
+                        onChange={handleProductionChange}
+                        required
+                      >
+                        <option value={0}>Selecciona una persona</option>
+                        {personas.map((persona) => (
+                          <option key={persona.id_persona} value={persona.id_persona}>
+                            {persona.nombre} {persona.apellidos}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="form-field">
+                      <span>Recurso *</span>
+                      <select
+                        name="resourceId"
+                        value={productionForm.resourceId}
+                        onChange={handleProductionChange}
+                        required
+                      >
+                        <option value={0}>Selecciona un recurso</option>
+                        {availableResources.map((resource) => (
+                          <option key={resource.id_recurso} value={resource.id_recurso}>
+                            {resource.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
                 </div>
 
-                <label className="form-field">
-                  <span>Campamento</span>
-                  <select
-                    name="campId"
-                    value={productionForm.campId}
-                    onChange={handleProductionChange}
-                    required
-                  >
-                    <option value={0}>Selecciona un campamento</option>
-                    {campamentos.map((camp) => (
-                      <option key={camp.id_campamento} value={camp.id_campamento}>
-                        {camp.nombre}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <div className="modal-form__section">
+                  <h3 className="modal-form__section-title">Registro</h3>
 
-                <label className="form-field">
-                  <span>Persona</span>
-                  <select
-                    name="personaId"
-                    value={productionForm.personaId}
-                    onChange={handleProductionChange}
-                    required
-                  >
-                    <option value={0}>Selecciona una persona</option>
-                    {personas.map((persona) => (
-                      <option key={persona.id_persona} value={persona.id_persona}>
-                        {persona.nombre} {persona.apellidos}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                  <div className="modal-form__row">
+                    <label className="form-field">
+                      <span>Fecha *</span>
+                      <input
+                        name="fecha"
+                        type="date"
+                        value={productionForm.fecha}
+                        onChange={handleProductionChange}
+                        required
+                      />
+                    </label>
 
-                <label className="form-field">
-                  <span>Recurso</span>
-                  <select
-                    name="resourceId"
-                    value={productionForm.resourceId}
-                    onChange={handleProductionChange}
-                    required
-                  >
-                    <option value={0}>Selecciona un recurso</option>
-                    {availableResources.map((resource) => (
-                      <option key={resource.id_recurso} value={resource.id_recurso}>
-                        {resource.nombre}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                    <label className="form-field">
+                      <span>Cantidad *</span>
+                      <input
+                        name="cantidad"
+                        type="number"
+                        min={0}
+                        value={productionForm.cantidad}
+                        onChange={handleProductionChange}
+                        required
+                      />
+                    </label>
+                  </div>
 
-                <label className="form-field">
-                  <span>Fecha</span>
-                  <input
-                    name="fecha"
-                    type="date"
-                    value={productionForm.fecha}
-                    onChange={handleProductionChange}
-                    required
-                  />
-                </label>
+                  <label className="form-field">
+                    <span>Motivo / Ajuste</span>
+                    <input
+                      name="ajusteRazon"
+                      type="text"
+                      value={productionForm.ajusteRazon}
+                      onChange={handleProductionChange}
+                    />
+                  </label>
 
-                <label className="form-field">
-                  <span>Cantidad</span>
-                  <input
-                    name="cantidad"
-                    type="number"
-                    min={0}
-                    value={productionForm.cantidad}
-                    onChange={handleProductionChange}
-                    required
-                  />
-                </label>
-
-                <label className="form-field">
-                  <span>Motivo / Ajuste</span>
-                  <input
-                    name="ajusteRazon"
-                    type="text"
-                    value={productionForm.ajusteRazon}
-                    onChange={handleProductionChange}
-                  />
-                </label>
-
-                <label className="form-field">
-                  <span>Observaciones</span>
-                  <textarea
-                    name="observaciones"
-                    value={productionForm.observaciones}
-                    onChange={handleProductionChange}
-                  />
-                </label>
-
-                <button className="button button-primary" disabled={isProducing}>
-                  {isProducing ? "Registrando..." : "Registrar producción"}
-                </button>
-              </form>
-            </aside>
-
-            <aside className="campamentos-form-card">
-              <form className="campamentos-form" onSubmit={handleRationSubmit}>
-                <div className="form-section-header">
-                  <h3>Ración diaria</h3>
-                  <p className="section-description">
-                    Registra el consumo diario y ajusta el inventario automáticamente.
-                  </p>
+                  <label className="form-field">
+                    <span>Observaciones</span>
+                    <textarea
+                      name="observaciones"
+                      value={productionForm.observaciones}
+                      onChange={handleProductionChange}
+                      rows={3}
+                    />
+                  </label>
                 </div>
 
-                <label className="form-field">
-                  <span>Campamento</span>
-                  <select
-                    name="campId"
-                    value={rationForm.campId}
-                    onChange={handleRationChange}
-                    required
+                <div className="modal-form__actions">
+                  <button
+                    type="button"
+                    className="button button-secondary"
+                    onClick={() => setShowProductionForm(false)}
                   >
-                    <option value={0}>Selecciona un campamento</option>
-                    {campamentos.map((camp) => (
-                      <option key={camp.id_campamento} value={camp.id_campamento}>
-                        {camp.nombre}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="form-field">
-                  <span>Persona</span>
-                  <select
-                    name="personaId"
-                    value={rationForm.personaId}
-                    onChange={handleRationChange}
-                    required
-                  >
-                    <option value={0}>Selecciona una persona</option>
-                    {personas.map((persona) => (
-                      <option key={persona.id_persona} value={persona.id_persona}>
-                        {persona.nombre} {persona.apellidos}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="form-field">
-                  <span>Recurso</span>
-                  <select
-                    name="resourceId"
-                    value={rationForm.resourceId}
-                    onChange={handleRationChange}
-                    required
-                  >
-                    <option value={0}>Selecciona un recurso</option>
-                    {availableResources.map((resource) => (
-                      <option key={resource.id_recurso} value={resource.id_recurso}>
-                        {resource.nombre}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="form-field">
-                  <span>Fecha</span>
-                  <input
-                    name="fecha"
-                    type="date"
-                    value={rationForm.fecha}
-                    onChange={handleRationChange}
-                    required
-                  />
-                </label>
-
-                <label className="form-field">
-                  <span>Cantidad</span>
-                  <input
-                    name="cantidad"
-                    type="number"
-                    min={0}
-                    value={rationForm.cantidad}
-                    onChange={handleRationChange}
-                    required
-                  />
-                </label>
-
-                <button className="button button-primary" disabled={isRationing}>
-                  {isRationing ? "Registrando..." : "Registrar ración"}
-                </button>
+                    Cancelar
+                  </button>
+                  <button className="button button-primary" disabled={isProducing}>
+                    {isProducing ? "Registrando..." : "Registrar producción"}
+                  </button>
+                </div>
               </form>
-            </aside>
+            </PageModal>
+          )}
 
-            <div className="campamentos-list-card" style={{ minHeight: 320 }}>
-              <div className="card-header" style={{ gap: 12 }}>
+          {showRationForm && (
+            <PageModal
+              title="Ración diaria"
+              onClose={() => setShowRationForm(false)}
+              size="md"
+            >
+              <form className="modal-form" onSubmit={handleRationSubmit}>
+                <p className="section-description">
+                  Registra el consumo diario y ajusta el inventario automáticamente.
+                </p>
+
+                <div className="modal-form__section">
+                  <h3 className="modal-form__section-title">Contexto</h3>
+
+                  <label className="form-field">
+                    <span>Campamento *</span>
+                    <select
+                      name="campId"
+                      value={rationForm.campId}
+                      onChange={handleRationChange}
+                      required
+                    >
+                      <option value={0}>Selecciona un campamento</option>
+                      {campamentos.map((camp) => (
+                        <option key={camp.id_campamento} value={camp.id_campamento}>
+                          {camp.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <div className="modal-form__row">
+                    <label className="form-field">
+                      <span>Persona *</span>
+                      <select
+                        name="personaId"
+                        value={rationForm.personaId}
+                        onChange={handleRationChange}
+                        required
+                      >
+                        <option value={0}>Selecciona una persona</option>
+                        {personas.map((persona) => (
+                          <option key={persona.id_persona} value={persona.id_persona}>
+                            {persona.nombre} {persona.apellidos}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="form-field">
+                      <span>Recurso *</span>
+                      <select
+                        name="resourceId"
+                        value={rationForm.resourceId}
+                        onChange={handleRationChange}
+                        required
+                      >
+                        <option value={0}>Selecciona un recurso</option>
+                        {availableResources.map((resource) => (
+                          <option key={resource.id_recurso} value={resource.id_recurso}>
+                            {resource.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="modal-form__section">
+                  <h3 className="modal-form__section-title">Consumo</h3>
+
+                  <div className="modal-form__row">
+                    <label className="form-field">
+                      <span>Fecha *</span>
+                      <input
+                        name="fecha"
+                        type="date"
+                        value={rationForm.fecha}
+                        onChange={handleRationChange}
+                        required
+                      />
+                    </label>
+
+                    <label className="form-field">
+                      <span>Cantidad *</span>
+                      <input
+                        name="cantidad"
+                        type="number"
+                        min={0}
+                        value={rationForm.cantidad}
+                        onChange={handleRationChange}
+                        required
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <div className="modal-form__actions">
+                  <button
+                    type="button"
+                    className="button button-secondary"
+                    onClick={() => setShowRationForm(false)}
+                  >
+                    Cancelar
+                  </button>
+                  <button className="button button-primary" disabled={isRationing}>
+                    {isRationing ? "Registrando..." : "Registrar ración"}
+                  </button>
+                </div>
+              </form>
+            </PageModal>
+          )}
+
+          {activeTab === "historial" && (
+            <section className="campamentos-list-card">
+              <div className="card-header card-toolbar">
                 <div>
                   <h3>Historial de movimientos</h3>
                   <p className="small-text">
@@ -809,8 +971,26 @@ function InventarioPage() {
                   </p>
                 </div>
 
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
-                  <label className="form-field" style={{ margin: 0 }}>
+                <div className="card-toolbar-actions">
+                  <label className="form-field">
+                    <span>Filtro campamento</span>
+                    <select
+                      value={campamentoFilter ?? ""}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        setCampamentoFilter(value ? Number(value) : undefined);
+                      }}
+                    >
+                      <option value="">Todos</option>
+                      {campamentos.map((camp) => (
+                        <option key={camp.id_campamento} value={camp.id_campamento}>
+                          {camp.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="form-field">
                     <span>Fecha de cálculo</span>
                     <input
                       type="date"
@@ -818,6 +998,7 @@ function InventarioPage() {
                       onChange={(event) => setRecalculateDate(event.target.value)}
                     />
                   </label>
+
                   <button
                     type="button"
                     className="button button-secondary"
@@ -865,8 +1046,110 @@ function InventarioPage() {
                   </table>
                 </div>
               )}
-            </div>
-          </section>
+            </section>
+          )}
+
+          {showForm && (
+            <PageModal
+              title={editingKey ? "Editar recurso" : "Agregar recurso"}
+              onClose={resetForm}
+              size="sm"
+            >
+              <form className="modal-form" onSubmit={handleSubmit}>
+                <p className="section-description">
+                  {editingKey
+                    ? "Actualiza la cantidad o el umbral del inventario."
+                    : "Registra un nuevo recurso en un campamento."}
+                </p>
+
+                <div className="modal-form__section">
+                  <h3 className="modal-form__section-title">Asignación</h3>
+
+                  <label className="form-field">
+                    <span>Campamento *</span>
+                    <select
+                      name="campId"
+                      value={form.campId}
+                      onChange={handleChange}
+                      required
+                      disabled={Boolean(editingKey)}
+                    >
+                      <option value={0}>Selecciona un campamento</option>
+                      {campamentos.map((camp) => (
+                        <option key={camp.id_campamento} value={camp.id_campamento}>
+                          {camp.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="form-field">
+                    <span>Recurso *</span>
+                    <select
+                      name="resourceId"
+                      value={form.resourceId}
+                      onChange={handleChange}
+                      required
+                      disabled={Boolean(editingKey)}
+                    >
+                      <option value={0}>Selecciona un recurso</option>
+                      {availableResources.map((resource) => (
+                        <option key={resource.id_recurso} value={resource.id_recurso}>
+                          {resource.nombre}
+                        </option>
+                      ))}
+                    </select>
+                    <small>
+                      Selecciona el recurso existente. Solo se edita cantidad y umbral.
+                    </small>
+                  </label>
+                </div>
+
+                <div className="modal-form__section">
+                  <h3 className="modal-form__section-title">Stock</h3>
+
+                  <div className="modal-form__row">
+                    <label className="form-field">
+                      <span>Cantidad *</span>
+                      <input
+                        name="quantity"
+                        type="number"
+                        min={0}
+                        value={form.quantity}
+                        onChange={handleChange}
+                        required
+                      />
+                    </label>
+
+                    <label className="form-field">
+                      <span>Umbral mínimo *</span>
+                      <input
+                        name="minThreshold"
+                        type="number"
+                        min={0}
+                        value={form.minThreshold}
+                        onChange={handleChange}
+                        required
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <div className="modal-form__actions">
+                  <button className="button button-primary" disabled={isSaving}>
+                    {isSaving ? "Guardando..." : editingKey ? "Actualizar" : "Crear"}
+                  </button>
+                  <button
+                    type="button"
+                    className="button button-secondary"
+                    onClick={resetForm}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            </PageModal>
+          )}
         </main>
       </div>
     </div>

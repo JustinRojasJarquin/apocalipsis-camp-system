@@ -1,5 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { KeyRound, UserCheck, UserX } from "lucide-react";
 import Navbar from "../../../shared/components/Navbar";
+import { PageModal } from "../../../shared/components/PageModal";
+import {
+  CrudAction,
+  CrudActionGroup,
+  CrudActions,
+} from "../../../shared/components/CrudActions";
+import { useDebouncedValue } from "../../../shared/hooks/useDebouncedValue";
 import { getPersonas } from "../../personas/personas.api";
 import type { Persona } from "../../personas/types";
 import { changeUserRole, createRol, getRoles } from "../../roles/roles.api";
@@ -58,6 +66,8 @@ function UsuariosPage() {
 
   const [userForm, setUserForm] = useState(emptyUserForm);
   const [rolForm, setRolForm] = useState(emptyRolForm);
+  const [mostrarFormularioUsuario, setMostrarFormularioUsuario] = useState(false);
+  const [mostrarFormularioRol, setMostrarFormularioRol] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [savingUser, setSavingUser] = useState(false);
@@ -70,34 +80,43 @@ function UsuariosPage() {
     campamento: "",
   });
 
-  const campamentos = Array.from(
-    new Map(
-      usuarios
-        .map((usuario) => usuario.persona?.campamento)
-        .filter(Boolean)
-        .map((campamento) => [campamento!.id_campamento, campamento!]),
-    ).values(),
-  ).sort((a, b) => a.nombre.localeCompare(b.nombre));
+  const debouncedBuscar = useDebouncedValue(filters.buscar);
 
-  const usuariosFiltrados = usuarios.filter((usuario) => {
-    const buscar = filters.buscar.trim().toLowerCase();
-    const persona = usuario.persona;
-    const nombreCompleto = persona
-      ? `${persona.nombre} ${persona.apellidos}`.toLowerCase()
-      : "";
-    const estado = getEstadoUsuario(usuario);
+  const campamentos = useMemo(
+    () =>
+      Array.from(
+        new Map(
+          usuarios
+            .map((usuario) => usuario.persona?.campamento)
+            .filter(Boolean)
+            .map((campamento) => [campamento!.id_campamento, campamento!]),
+        ).values(),
+      ).sort((a, b) => a.nombre.localeCompare(b.nombre)),
+    [usuarios],
+  );
 
-    return (
-      (!buscar ||
-        usuario.usuario.toLowerCase().includes(buscar) ||
-        nombreCompleto.includes(buscar)) &&
-      (!filters.rol || usuario.rol?.codigo === filters.rol) &&
-      (!filters.estado || estado === filters.estado) &&
-      (!filters.campamento ||
-        String(usuario.persona?.campamento?.id_campamento) ===
-          filters.campamento)
-    );
-  });
+  const usuariosFiltrados = useMemo(() => {
+    const buscar = debouncedBuscar.trim().toLowerCase();
+
+    return usuarios.filter((usuario) => {
+      const persona = usuario.persona;
+      const nombreCompleto = persona
+        ? `${persona.nombre} ${persona.apellidos}`.toLowerCase()
+        : "";
+      const estado = getEstadoUsuario(usuario);
+
+      return (
+        (!buscar ||
+          usuario.usuario.toLowerCase().includes(buscar) ||
+          nombreCompleto.includes(buscar)) &&
+        (!filters.rol || usuario.rol?.codigo === filters.rol) &&
+        (!filters.estado || estado === filters.estado) &&
+        (!filters.campamento ||
+          String(usuario.persona?.campamento?.id_campamento) ===
+            filters.campamento)
+      );
+    });
+  }, [usuarios, debouncedBuscar, filters.rol, filters.estado, filters.campamento]);
 
   const loadData = async () => {
     setLoading(true);
@@ -160,6 +179,7 @@ function UsuariosPage() {
       });
 
       setUserForm(emptyUserForm);
+      setMostrarFormularioUsuario(false);
       await loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo crear usuario.");
@@ -186,6 +206,7 @@ function UsuariosPage() {
       });
 
       setRolForm(emptyRolForm);
+      setMostrarFormularioRol(false);
       await loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo crear rol.");
@@ -272,7 +293,7 @@ function UsuariosPage() {
   };
 
   return (
-    <div style={{ display: "flex", background: "#0f172a", minHeight: "100vh" }}>
+    <div style={{ display: "flex", background: "#09110f", minHeight: "100vh" }}>
       <div style={{ flex: 1 }}>
         <Navbar />
 
@@ -287,9 +308,27 @@ function UsuariosPage() {
               </p>
             </div>
 
-            <div className="campamentos-stat">
-              <span className="stat-label">Usuarios</span>
-              <strong className="stat-value">{usuarios.length}</strong>
+            <div className="page-header-actions">
+              <div className="campamentos-stat">
+                <span className="stat-label">Usuarios</span>
+                <strong className="stat-value">{usuarios.length}</strong>
+              </div>
+
+              <button
+                type="button"
+                className="button button-secondary"
+                onClick={() => setMostrarFormularioRol(true)}
+              >
+                + Nuevo rol
+              </button>
+
+              <button
+                type="button"
+                className="button button-primary"
+                onClick={() => setMostrarFormularioUsuario(true)}
+              >
+                + Nuevo usuario
+              </button>
             </div>
           </section>
 
@@ -377,15 +416,21 @@ function UsuariosPage() {
             </div>
           </section>
 
-          <section className="campamentos-grid">
-            <div className="campamentos-list-card">
-              <div className="card-header">
-                <div>
-                  <h3>Usuarios registrados</h3>
-                  <p className="small-text">
-                    Administra el rol y estado de cada cuenta.
-                  </p>
-                </div>
+          <section className="campamentos-list-card">
+            <div className="card-header">
+              <div>
+                <h3>Usuarios registrados</h3>
+                <p className="small-text">
+                  Administra el rol y estado de cada cuenta.
+                </p>
+              </div>
+            </div>
+
+              <div className="filter-results-meta">
+                <span>
+                  Mostrando <strong>{usuariosFiltrados.length}</strong> de{" "}
+                  <strong>{usuarios.length}</strong> usuarios
+                </span>
               </div>
 
               {loading ? (
@@ -468,32 +513,24 @@ function UsuariosPage() {
                               </span>
                             </td>
 
-                            <td>
-                              <div style={{ display: "flex", gap: "8px" }}>
-                                <button
-                                  type="button"
-                                  className={
-                                    usuario.activo
-                                      ? "button button-danger"
-                                      : "button button-primary"
-                                  }
-                                  onClick={() =>
-                                    void handleToggleEstado(usuario)
-                                  }
-                                >
-                                  {usuario.activo ? "Desactivar" : "Activar"}
-                                </button>
-
-                                <button
-                                  type="button"
-                                  className="button button-secondary"
-                                  onClick={() =>
-                                    void handleResetPassword(usuario)
-                                  }
-                                >
-                                  Restablecer
-                                </button>
-                              </div>
+                            <td className="table-actions-cell">
+                              <CrudActions layout="table">
+                                <CrudActionGroup>
+                                  <CrudAction
+                                    label={
+                                      usuario.activo ? "Desactivar" : "Activar"
+                                    }
+                                    icon={usuario.activo ? UserX : UserCheck}
+                                    variant={usuario.activo ? "danger" : "success"}
+                                    onClick={() => void handleToggleEstado(usuario)}
+                                  />
+                                  <CrudAction
+                                    label="Restablecer"
+                                    icon={KeyRound}
+                                    onClick={() => void handleResetPassword(usuario)}
+                                  />
+                                </CrudActionGroup>
+                              </CrudActions>
                             </td>
                           </tr>
                         );
@@ -502,147 +539,191 @@ function UsuariosPage() {
                   </table>
                 </div>
               )}
-            </div>
-
-            <aside className="campamentos-form-card">
-              <form onSubmit={handleCreateUsuario}>
-                <div className="card-header">
-                  <div>
-                    <h3>Crear usuario</h3>
-                    <p className="small-text">
-                      Asocia una persona existente con un rol del sistema.
-                    </p>
-                  </div>
-                </div>
-
-                <label className="form-field">
-                  <span>Persona</span>
-                  <select
-                    value={userForm.id_persona}
-                    onChange={(event) =>
-                      setUserForm((current) => ({
-                        ...current,
-                        id_persona: event.target.value,
-                      }))
-                    }
-                  >
-                    <option value="">Seleccione persona</option>
-                    {personas.map((persona) => (
-                      <option key={persona.id_persona} value={persona.id_persona}>
-                        {persona.nombre} {persona.apellidos}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="form-field">
-                  <span>Correo Gmail</span>
-                  <input
-                    value={userForm.usuario}
-                    onChange={(event) =>
-                      setUserForm((current) => ({
-                        ...current,
-                        usuario: event.target.value,
-                      }))
-                    }
-                    placeholder="usuario@gmail.com"
-                  />
-                </label>
-
-                <label className="form-field">
-                  <span>Contrasena</span>
-                  <input
-                    type="password"
-                    value={userForm.password}
-                    onChange={(event) =>
-                      setUserForm((current) => ({
-                        ...current,
-                        password: event.target.value,
-                      }))
-                    }
-                    placeholder="Minimo 8, mayuscula y numero"
-                  />
-                </label>
-
-                <label className="form-field">
-                  <span>Rol</span>
-                  <select
-                    value={userForm.id_rol}
-                    onChange={(event) =>
-                      setUserForm((current) => ({
-                        ...current,
-                        id_rol: event.target.value,
-                      }))
-                    }
-                  >
-                    <option value="">Seleccione rol</option>
-                    {roles.map((rol) => (
-                      <option key={rol.id_rol} value={rol.id_rol}>
-                        {rol.nombre} - {getRolDescripcion(rol.codigo)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <button
-                  type="submit"
-                  className="button button-primary"
-                  disabled={savingUser}
-                >
-                  {savingUser ? "Creando..." : "Crear usuario"}
-                </button>
-              </form>
-
-              <hr style={{ margin: "28px 0", borderColor: "#334155" }} />
-
-              <form onSubmit={handleCreateRol}>
-                <div className="card-header">
-                  <div>
-                    <h3>Crear rol</h3>
-                    <p className="small-text">
-                      Define un nuevo rol para permisos del sistema.
-                    </p>
-                  </div>
-                </div>
-
-                <label className="form-field">
-                  <span>Nombre</span>
-                  <input
-                    value={rolForm.nombre}
-                    onChange={(event) =>
-                      setRolForm((current) => ({
-                        ...current,
-                        nombre: event.target.value,
-                      }))
-                    }
-                    placeholder="Gestor de recursos"
-                  />
-                </label>
-
-                <label className="form-field">
-                  <span>Codigo</span>
-                  <input
-                    value={rolForm.codigo}
-                    onChange={(event) =>
-                      setRolForm((current) => ({
-                        ...current,
-                        codigo: event.target.value,
-                      }))
-                    }
-                    placeholder="GESTOR_RECURSOS"
-                  />
-                </label>
-
-                <button
-                  type="submit"
-                  className="button button-secondary"
-                  disabled={savingRol}
-                >
-                  {savingRol ? "Creando..." : "Crear rol"}
-                </button>
-              </form>
-            </aside>
           </section>
+
+          {mostrarFormularioUsuario && (
+            <PageModal
+              title="Nuevo usuario"
+              onClose={() => {
+                setMostrarFormularioUsuario(false);
+                setUserForm(emptyUserForm);
+              }}
+              size="md"
+            >
+              <form className="modal-form" onSubmit={handleCreateUsuario}>
+                <p className="section-description">
+                  Asocia una persona existente con un rol del sistema.
+                </p>
+
+                <div className="modal-form__section">
+                  <h3 className="modal-form__section-title">Cuenta</h3>
+
+                  <label className="form-field">
+                    <span>Persona *</span>
+                    <select
+                      value={userForm.id_persona}
+                      onChange={(event) =>
+                        setUserForm((current) => ({
+                          ...current,
+                          id_persona: event.target.value,
+                        }))
+                      }
+                    >
+                      <option value="">Seleccione persona</option>
+                      {personas.map((persona) => (
+                        <option key={persona.id_persona} value={persona.id_persona}>
+                          {persona.nombre} {persona.apellidos}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="form-field">
+                    <span>Correo Gmail *</span>
+                    <input
+                      value={userForm.usuario}
+                      onChange={(event) =>
+                        setUserForm((current) => ({
+                          ...current,
+                          usuario: event.target.value,
+                        }))
+                      }
+                      placeholder="usuario@gmail.com"
+                    />
+                  </label>
+
+                  <label className="form-field">
+                    <span>Contrasena *</span>
+                    <input
+                      type="password"
+                      value={userForm.password}
+                      onChange={(event) =>
+                        setUserForm((current) => ({
+                          ...current,
+                          password: event.target.value,
+                        }))
+                      }
+                      placeholder="Minimo 8, mayuscula y numero"
+                    />
+                  </label>
+                </div>
+
+                <div className="modal-form__section">
+                  <h3 className="modal-form__section-title">Permisos</h3>
+
+                  <label className="form-field">
+                    <span>Rol *</span>
+                    <select
+                      value={userForm.id_rol}
+                      onChange={(event) =>
+                        setUserForm((current) => ({
+                          ...current,
+                          id_rol: event.target.value,
+                        }))
+                      }
+                    >
+                      <option value="">Seleccione rol</option>
+                      {roles.map((rol) => (
+                        <option key={rol.id_rol} value={rol.id_rol}>
+                          {rol.nombre} - {getRolDescripcion(rol.codigo)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className="modal-form__actions">
+                  <button
+                    type="button"
+                    className="button button-secondary"
+                    onClick={() => {
+                      setMostrarFormularioUsuario(false);
+                      setUserForm(emptyUserForm);
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="button button-primary"
+                    disabled={savingUser}
+                  >
+                    {savingUser ? "Creando..." : "Crear usuario"}
+                  </button>
+                </div>
+              </form>
+            </PageModal>
+          )}
+
+          {mostrarFormularioRol && (
+            <PageModal
+              title="Nuevo rol"
+              onClose={() => {
+                setMostrarFormularioRol(false);
+                setRolForm(emptyRolForm);
+              }}
+              size="sm"
+            >
+              <form className="modal-form" onSubmit={handleCreateRol}>
+                <p className="section-description">
+                  Define un nuevo rol para permisos del sistema.
+                </p>
+
+                <div className="modal-form__section">
+                  <h3 className="modal-form__section-title">Datos del rol</h3>
+
+                  <label className="form-field">
+                    <span>Nombre *</span>
+                    <input
+                      value={rolForm.nombre}
+                      onChange={(event) =>
+                        setRolForm((current) => ({
+                          ...current,
+                          nombre: event.target.value,
+                        }))
+                      }
+                      placeholder="Gestor de recursos"
+                      autoFocus
+                    />
+                  </label>
+
+                  <label className="form-field">
+                    <span>Codigo *</span>
+                    <input
+                      value={rolForm.codigo}
+                      onChange={(event) =>
+                        setRolForm((current) => ({
+                          ...current,
+                          codigo: event.target.value,
+                        }))
+                      }
+                      placeholder="GESTOR_RECURSOS"
+                    />
+                  </label>
+                </div>
+
+                <div className="modal-form__actions">
+                  <button
+                    type="button"
+                    className="button button-secondary"
+                    onClick={() => {
+                      setMostrarFormularioRol(false);
+                      setRolForm(emptyRolForm);
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="button button-secondary"
+                    disabled={savingRol}
+                  >
+                    {savingRol ? "Creando..." : "Crear rol"}
+                  </button>
+                </div>
+              </form>
+            </PageModal>
+          )}
         </main>
       </div>
     </div>

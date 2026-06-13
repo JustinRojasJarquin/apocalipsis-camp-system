@@ -1,4 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
+import {
+  Eye,
+  MapPin,
+  Pencil,
+  Plus,
+  Trash2,
+  Truck,
+  XCircle,
+} from "lucide-react";
+import { PageModal } from "../../../shared/components/PageModal";
+import {
+  CrudAction,
+  CrudActionGroup,
+  CrudActions,
+} from "../../../shared/components/CrudActions";
 import type { Campamento } from "../../campamentos/types";
 import type { InventarioResource } from "../../inventario/types";
 import type { Persona } from "../../personas/types";
@@ -122,6 +137,7 @@ function EnviosPage({
   const [recursosEnvio, setRecursosEnvio] = useState<RecursoSeleccionado[]>([]);
   const [personasEnvio, setPersonasEnvio] = useState<PersonaSeleccionada[]>([]);
   const [filtros, setFiltros] = useState<FiltrosEnvio>(emptyFiltros);
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
 
   const campamentoId = campamento.id_campamento;
 
@@ -237,6 +253,15 @@ function EnviosPage({
     setEnvioEditando(null);
     setRecursosEnvio([]);
     setPersonasEnvio([]);
+    setMostrarFormulario(false);
+  };
+
+  const abrirNuevoEnvio = () => {
+    setForm(emptyForm);
+    setEnvioEditando(null);
+    setRecursosEnvio([]);
+    setPersonasEnvio([]);
+    setMostrarFormulario(true);
   };
 
   const seleccionarSolicitud = (idSolicitud: string) => {
@@ -415,6 +440,7 @@ function EnviosPage({
         raciones_viaje: Number(item.raciones_viaje),
       })).filter((item) => item.id_persona > 0),
     );
+    setMostrarFormulario(true);
   };
 
   const abrirConfirmacionLlegada = (envio: Envio) => {
@@ -692,36 +718,83 @@ function EnviosPage({
                   </td>
                   <td>{renderHistorial(envio)}</td>
                   <td>
-                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                      <button className="button button-secondary" onClick={() => setEnvioDetalle(envio)}>
-                        Ver detalle
-                      </button>
+                    <CrudActions layout="table">
+                      <CrudActionGroup>
+                        <CrudAction
+                          label="Ver detalle"
+                          icon={Eye}
+                          onClick={() => setEnvioDetalle(envio)}
+                        />
+                        {esSaliente && envio.estado === "PENDIENTE" && (
+                          <CrudAction
+                            label="Editar"
+                            icon={Pencil}
+                            disabled={ocupado}
+                            onClick={() => iniciarEdicion(envio)}
+                          />
+                        )}
+                      </CrudActionGroup>
+
                       {esSaliente && envio.estado === "PENDIENTE" && (
-                        <>
-                          <button className="button button-secondary" disabled={ocupado} onClick={() => iniciarEdicion(envio)}>
-                            Editar
-                          </button>
-                          <button className="button button-primary" disabled={ocupado} onClick={() => void handleAccion(envio.id_envio, "salida")}>
-                            {ocupado ? "..." : "Confirmar salida"}
-                          </button>
-                        </>
+                        <CrudActionGroup>
+                          <CrudAction
+                            label={ocupado ? "..." : "Confirmar salida"}
+                            icon={Truck}
+                            variant="primary"
+                            disabled={ocupado}
+                            loading={ocupado}
+                            onClick={() =>
+                              void handleAccion(envio.id_envio, "salida")
+                            }
+                          />
+                        </CrudActionGroup>
                       )}
+
                       {!esSaliente && envio.estado === "EN_TRANSITO" && (
-                        <button className="button button-primary" disabled={ocupado} onClick={() => abrirConfirmacionLlegada(envio)}>
-                          {ocupado ? "..." : "Confirmar llegada"}
-                        </button>
+                        <CrudActionGroup>
+                          <CrudAction
+                            label={ocupado ? "..." : "Confirmar llegada"}
+                            icon={MapPin}
+                            variant="primary"
+                            disabled={ocupado}
+                            loading={ocupado}
+                            onClick={() => abrirConfirmacionLlegada(envio)}
+                          />
+                        </CrudActionGroup>
                       )}
-                      {(envio.estado === "PENDIENTE" || envio.estado === "EN_TRANSITO") && (
-                        <button className="button button-danger" disabled={ocupado} onClick={() => void handleAccion(envio.id_envio, "cancelar")}>
-                          {ocupado ? "..." : "Cancelar"}
-                        </button>
+
+                      {(envio.estado === "PENDIENTE" ||
+                        envio.estado === "EN_TRANSITO") && (
+                        <CrudActionGroup>
+                          <CrudAction
+                            label={ocupado ? "..." : "Cancelar"}
+                            icon={XCircle}
+                            variant="danger-soft"
+                            disabled={ocupado}
+                            loading={ocupado}
+                            onClick={() =>
+                              void handleAccion(envio.id_envio, "cancelar")
+                            }
+                          />
+                        </CrudActionGroup>
                       )}
-                      {(envio.estado === "PENDIENTE" || envio.estado === "CANCELADO") && (
-                        <button className="button button-danger" disabled={ocupado} onClick={() => void handleAccion(envio.id_envio, "eliminar")}>
-                          Eliminar
-                        </button>
+
+                      {(envio.estado === "PENDIENTE" ||
+                        envio.estado === "CANCELADO") && (
+                        <CrudActionGroup>
+                          <CrudAction
+                            label={ocupado ? "..." : "Eliminar"}
+                            icon={Trash2}
+                            variant="danger"
+                            disabled={ocupado}
+                            loading={ocupado}
+                            onClick={() =>
+                              void handleAccion(envio.id_envio, "eliminar")
+                            }
+                          />
+                        </CrudActionGroup>
                       )}
-                    </div>
+                    </CrudActions>
                   </td>
                 </tr>
               );
@@ -735,11 +808,21 @@ function EnviosPage({
   return (
     <section className="campamento-detail-section">
       <div className="detail-section-title">
-        <h4>Envios</h4>
-        <span>{envios.length} registros asociados a este campamento</span>
+        <div>
+          <h4>Envios</h4>
+          <span>{envios.length} registros asociados a este campamento</span>
+        </div>
+        <button
+          type="button"
+          className="button button-primary"
+          onClick={abrirNuevoEnvio}
+        >
+          <Plus size={16} style={{ marginRight: 6, verticalAlign: -2 }} />
+          Nuevo envio
+        </button>
       </div>
 
-      {error && <div className="error-box">{error}</div>}
+      {error && !mostrarFormulario && <div className="error-box">{error}</div>}
 
       <section className="campamentos-filter-card">
         <div className="campamentos-filter-row">
@@ -817,170 +900,199 @@ function EnviosPage({
         </div>
       </section>
 
-      <div className="campamento-mini-list">
-        <label className="form-field">
-          <span>Solicitud aprobada/ajustada</span>
-          <select
-            value={form.id_solicitud}
-            disabled={Boolean(envioEditando)}
-            onChange={(event) => seleccionarSolicitud(event.target.value)}
-          >
-            <option value="">Seleccione solicitud disponible</option>
-            {envioEditando && (
-              <option value={envioEditando.id_solicitud}>
-                Solicitud #{envioEditando.id_solicitud}
-              </option>
-            )}
-            {solicitudesDisponibles.map((solicitud) => (
-              <option key={solicitud.id_solicitud} value={solicitud.id_solicitud}>
-                #{solicitud.id_solicitud} - {solicitud.tipo} - {solicitud.motivo ?? "Sin motivo"}
-              </option>
-            ))}
-            {solicitudesConEnvio.map((solicitud) => {
-              const envio = (solicitud.envio ?? []).find(
-                (item) => item.estado !== "CANCELADO",
-              );
+      {mostrarFormulario && (
+        <PageModal
+          title={envioEditando ? `Editar envio #${envioEditando.id_envio}` : "Nuevo envio"}
+          onClose={limpiarFormulario}
+          size="lg"
+        >
+          <div className="modal-form">
+            <p className="section-description">
+              Vincula una solicitud aprobada, define fechas y agrega recursos o
+              personas al envio.
+            </p>
 
-              return (
-                <option
-                  key={`ocupada-${solicitud.id_solicitud}`}
-                  value={`ocupada-${solicitud.id_solicitud}`}
-                  disabled
+            <div className="modal-form__section">
+              <h3 className="modal-form__section-title">Datos del envío</h3>
+
+              <label className="form-field">
+                <span>Solicitud aprobada/ajustada</span>
+                <select
+                  value={form.id_solicitud}
+                  disabled={Boolean(envioEditando)}
+                  onChange={(event) => seleccionarSolicitud(event.target.value)}
                 >
-                  #{solicitud.id_solicitud} - ya tiene envio #{envio?.id_envio ?? "-"} ({envio?.estado ?? "activo"})
-                </option>
-              );
-            })}
-          </select>
-        </label>
+                  <option value="">Seleccione solicitud disponible</option>
+                  {envioEditando && (
+                    <option value={envioEditando.id_solicitud}>
+                      Solicitud #{envioEditando.id_solicitud}
+                    </option>
+                  )}
+                  {solicitudesDisponibles.map((solicitud) => (
+                    <option key={solicitud.id_solicitud} value={solicitud.id_solicitud}>
+                      #{solicitud.id_solicitud} - {solicitud.tipo} - {solicitud.motivo ?? "Sin motivo"}
+                    </option>
+                  ))}
+                  {solicitudesConEnvio.map((solicitud) => {
+                    const envio = (solicitud.envio ?? []).find(
+                      (item) => item.estado !== "CANCELADO",
+                    );
 
-        <label className="form-field">
-          <span>Campamento destino</span>
-          <select
-            value={form.id_campamento_destino}
-            disabled={Boolean(envioEditando) || Boolean(form.id_solicitud)}
-            onChange={(event) => updateField("id_campamento_destino", event.target.value)}
-          >
-            <option value="">Seleccione destino</option>
-            {campamentosDestino.map((item) => (
-              <option key={item.id_campamento} value={item.id_campamento}>
-                {item.nombre}
-              </option>
-            ))}
-          </select>
-        </label>
+                    return (
+                      <option
+                        key={`ocupada-${solicitud.id_solicitud}`}
+                        value={`ocupada-${solicitud.id_solicitud}`}
+                        disabled
+                      >
+                        #{solicitud.id_solicitud} - ya tiene envio #{envio?.id_envio ?? "-"} ({envio?.estado ?? "activo"})
+                      </option>
+                    );
+                  })}
+                </select>
+              </label>
 
-        <label className="form-field">
-          <span>Salida programada</span>
-          <input type="datetime-local" value={form.fecha_salida_programada} onChange={(event) => updateField("fecha_salida_programada", event.target.value)} />
-        </label>
+              <div className="modal-form__row">
+                <label className="form-field">
+                  <span>Campamento destino</span>
+                  <select
+                    value={form.id_campamento_destino}
+                    disabled={Boolean(envioEditando) || Boolean(form.id_solicitud)}
+                    onChange={(event) => updateField("id_campamento_destino", event.target.value)}
+                  >
+                    <option value="">Seleccione destino</option>
+                    {campamentosDestino.map((item) => (
+                      <option key={item.id_campamento} value={item.id_campamento}>
+                        {item.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-        <label className="form-field">
-          <span>Llegada programada</span>
-          <input type="datetime-local" value={form.fecha_llegada_programada} onChange={(event) => updateField("fecha_llegada_programada", event.target.value)} />
-        </label>
+                <label className="form-field">
+                  <span>Salida programada</span>
+                  <input type="datetime-local" value={form.fecha_salida_programada} onChange={(event) => updateField("fecha_salida_programada", event.target.value)} />
+                </label>
+              </div>
 
-        <label className="form-field">
-          <span>Recurso</span>
-          <select value={form.id_recurso} onChange={(event) => updateField("id_recurso", event.target.value)}>
-            <option value="">Seleccione recurso</option>
-            {recursosOrigen.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name} ({item.quantity})
-              </option>
-            ))}
-          </select>
-        </label>
+              <label className="form-field">
+                <span>Llegada programada</span>
+                <input type="datetime-local" value={form.fecha_llegada_programada} onChange={(event) => updateField("fecha_llegada_programada", event.target.value)} />
+              </label>
+            </div>
 
-        <label className="form-field">
-          <span>Cantidad enviada</span>
-          <input type="number" min="0" value={form.cantidad_recurso} onChange={(event) => updateField("cantidad_recurso", event.target.value)} />
-        </label>
+            <div className="modal-form__section">
+              <h3 className="modal-form__section-title">Agregar recursos</h3>
+              <div className="modal-form__row">
+                <label className="form-field">
+                  <span>Recurso</span>
+                  <select value={form.id_recurso} onChange={(event) => updateField("id_recurso", event.target.value)}>
+                    <option value="">Seleccione recurso</option>
+                    {recursosOrigen.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name} ({item.quantity})
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-        <div style={{ display: "flex", alignItems: "end" }}>
-          <button type="button" className="button button-secondary" onClick={agregarRecurso}>
-            Agregar recurso
-          </button>
-        </div>
+                <label className="form-field">
+                  <span>Cantidad enviada</span>
+                  <input type="number" min="0" value={form.cantidad_recurso} onChange={(event) => updateField("cantidad_recurso", event.target.value)} />
+                </label>
+              </div>
 
-        <label className="form-field">
-          <span>Persona</span>
-          <select value={form.id_persona} onChange={(event) => updateField("id_persona", event.target.value)}>
-            <option value="">Seleccione persona</option>
-            {personasDisponibles.map((persona) => (
-              <option key={persona.id_persona} value={persona.id_persona}>
-                {persona.nombre} {persona.apellidos}
-              </option>
-            ))}
-          </select>
-        </label>
+              <button type="button" className="button button-secondary" onClick={agregarRecurso}>
+                Agregar recurso
+              </button>
+            </div>
 
-        <label className="form-field">
-          <span>Raciones de viaje</span>
-          <input type="number" min="0" value={form.raciones_viaje} onChange={(event) => updateField("raciones_viaje", event.target.value)} />
-        </label>
+            <div className="modal-form__section">
+              <h3 className="modal-form__section-title">Agregar personas</h3>
+              <div className="modal-form__row">
+                <label className="form-field">
+                  <span>Persona</span>
+                  <select value={form.id_persona} onChange={(event) => updateField("id_persona", event.target.value)}>
+                    <option value="">Seleccione persona</option>
+                    {personasDisponibles.map((persona) => (
+                      <option key={persona.id_persona} value={persona.id_persona}>
+                        {persona.nombre} {persona.apellidos}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-        <div style={{ display: "flex", alignItems: "end" }}>
-          <button type="button" className="button button-secondary" onClick={agregarPersona}>
-            Agregar persona
-          </button>
-        </div>
-      </div>
+                <label className="form-field">
+                  <span>Raciones de viaje</span>
+                  <input type="number" min="0" value={form.raciones_viaje} onChange={(event) => updateField("raciones_viaje", event.target.value)} />
+                </label>
+              </div>
 
-      <div className="campamento-mini-list">
-        <article className="campamento-mini-card">
-          <strong>Recursos del envio</strong>
-          {recursosEnvio.length === 0 ? (
-            <span>Sin recursos agregados.</span>
-          ) : (
-            recursosEnvio.map((item) => (
-              <span key={item.id_recurso}>
-                {item.nombre}: {item.cantidad_enviada} {item.unidad ?? ""}
-                <button
-                  type="button"
-                  className="button button-danger"
-                  style={{ marginLeft: "10px", padding: "6px 10px" }}
-                  onClick={() => setRecursosEnvio((current) => current.filter((recurso) => recurso.id_recurso !== item.id_recurso))}
-                >
-                  Quitar
-                </button>
-              </span>
-            ))
-          )}
-        </article>
+              <button type="button" className="button button-secondary" onClick={agregarPersona}>
+                Agregar persona
+              </button>
+            </div>
 
-        <article className="campamento-mini-card">
-          <strong>Personas del envio</strong>
-          {personasEnvio.length === 0 ? (
-            <span>Sin personas agregadas.</span>
-          ) : (
-            personasEnvio.map((item) => (
-              <span key={item.id_persona}>
-                {item.nombre} / raciones: {item.raciones_viaje}
-                <button
-                  type="button"
-                  className="button button-danger"
-                  style={{ marginLeft: "10px", padding: "6px 10px" }}
-                  onClick={() => setPersonasEnvio((current) => current.filter((persona) => persona.id_persona !== item.id_persona))}
-                >
-                  Quitar
-                </button>
-              </span>
-            ))
-          )}
-        </article>
-      </div>
+            <div className="modal-form__section">
+              <h3 className="modal-form__section-title">Resumen del envío</h3>
 
-      <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-        <button type="button" className="button button-primary" onClick={() => void handleSubmit()}>
-          {envioEditando ? "Guardar cambios" : "Crear envio"}
-        </button>
-        {envioEditando && (
-          <button type="button" className="button button-secondary" onClick={limpiarFormulario}>
-            Cancelar edicion
-          </button>
-        )}
-      </div>
+              <div className="campamento-mini-list">
+              <article className="campamento-mini-card">
+                <strong>Recursos del envio</strong>
+                {recursosEnvio.length === 0 ? (
+                  <span>Sin recursos agregados.</span>
+                ) : (
+                  recursosEnvio.map((item) => (
+                    <span key={item.id_recurso}>
+                      {item.nombre}: {item.cantidad_enviada} {item.unidad ?? ""}
+                      <button
+                        type="button"
+                        className="button button-danger"
+                        style={{ marginLeft: "10px", padding: "6px 10px" }}
+                        onClick={() => setRecursosEnvio((current) => current.filter((recurso) => recurso.id_recurso !== item.id_recurso))}
+                      >
+                        Quitar
+                      </button>
+                    </span>
+                  ))
+                )}
+              </article>
+
+              <article className="campamento-mini-card">
+                <strong>Personas del envio</strong>
+                {personasEnvio.length === 0 ? (
+                  <span>Sin personas agregadas.</span>
+                ) : (
+                  personasEnvio.map((item) => (
+                    <span key={item.id_persona}>
+                      {item.nombre} / raciones: {item.raciones_viaje}
+                      <button
+                        type="button"
+                        className="button button-danger"
+                        style={{ marginLeft: "10px", padding: "6px 10px" }}
+                        onClick={() => setPersonasEnvio((current) => current.filter((persona) => persona.id_persona !== item.id_persona))}
+                      >
+                        Quitar
+                      </button>
+                    </span>
+                  ))
+                )}
+              </article>
+            </div>
+            </div>
+
+            {error && <div className="error-box">{error}</div>}
+
+            <div className="modal-form__actions">
+              <button type="button" className="button button-secondary" onClick={limpiarFormulario}>
+                Cancelar
+              </button>
+              <button type="button" className="button button-primary" onClick={() => void handleSubmit()}>
+                {envioEditando ? "Guardar cambios" : "Crear envio"}
+              </button>
+            </div>
+          </div>
+        </PageModal>
+      )}
 
       {loading ? (
         <div className="empty-state">Cargando envios...</div>

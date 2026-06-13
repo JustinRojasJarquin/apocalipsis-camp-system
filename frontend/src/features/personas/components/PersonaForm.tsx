@@ -163,136 +163,166 @@ function PersonaForm({
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div className="card-header">
-        <div>
-          <h3>{personaEditando ? "Editar persona" : "Nueva persona"}</h3>
-          <p className="small-text">
-            Registra la información personal, campamento, cargo y estado.
-          </p>
-        </div>
-      </div>
+    <form className="modal-form" onSubmit={handleSubmit}>
+      <p className="section-description">
+        Registra la información personal, campamento, cargo y estado de la
+        persona.
+      </p>
 
       {error && <div className="error-box">{error}</div>}
 
-      <label className="form-field">
-        <span>Campamento</span>
-        <select
-          value={form.id_campamento}
-          onChange={(event) =>
-            handleChange("id_campamento", event.target.value)
-          }
-        >
-          <option value="">Seleccione un campamento</option>
-          {campamentos.map((campamento) => (
-            <option
-              key={campamento.id_campamento}
-              value={campamento.id_campamento}
+      <div className="modal-form__section">
+        <h3 className="modal-form__section-title">Datos personales</h3>
+
+        <div className="modal-form__row">
+          <label className="form-field">
+            <span>Cédula *</span>
+            <input
+              value={form.cedula}
+              onChange={(event) => handleChange("cedula", event.target.value)}
+              autoFocus
+            />
+          </label>
+
+          <label className="form-field">
+            <span>Fecha nacimiento</span>
+            <input
+              type="date"
+              value={form.fecha_nacimiento}
+              onChange={(event) =>
+                handleChange("fecha_nacimiento", event.target.value)
+              }
+            />
+          </label>
+        </div>
+
+        <div className="modal-form__row">
+          <label className="form-field">
+            <span>Nombre *</span>
+            <input
+              value={form.nombre}
+              onChange={(event) => handleChange("nombre", event.target.value)}
+            />
+          </label>
+
+          <label className="form-field">
+            <span>Apellidos *</span>
+            <input
+              value={form.apellidos}
+              onChange={(event) =>
+                handleChange("apellidos", event.target.value)
+              }
+            />
+          </label>
+        </div>
+      </div>
+
+      <div className="modal-form__section">
+        <h3 className="modal-form__section-title">Asignación</h3>
+
+        <label className="form-field">
+          <span>Campamento *</span>
+          <select
+            value={form.id_campamento}
+            onChange={(event) =>
+              handleChange("id_campamento", event.target.value)
+            }
+          >
+            <option value="">Seleccione un campamento</option>
+            {campamentos.map((campamento) => (
+              <option
+                key={campamento.id_campamento}
+                value={campamento.id_campamento}
+              >
+                {campamento.nombre}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <div className="modal-form__row">
+          <label className="form-field">
+            <span>Cargo *</span>
+            <select
+              value={form.id_cargo_actual}
+              onChange={(event) =>
+                handleChange("id_cargo_actual", event.target.value)
+              }
             >
-              {campamento.nombre}
-            </option>
-          ))}
-        </select>
-      </label>
+              <option value="">Seleccione un cargo</option>
+              {cargos.map((cargo) => (
+                <option key={cargo.id_cargo} value={cargo.id_cargo}>
+                  {cargo.nombre}
+                </option>
+              ))}
+            </select>
+          </label>
 
-      <label className="form-field">
-        <span>Cedula</span>
-        <input
-          value={form.cedula}
-          onChange={(event) => handleChange("cedula", event.target.value)}
-        />
-      </label>
+          <label className="form-field">
+            <span>Estado *</span>
+            <select
+              value={form.id_estado_actual}
+              onChange={(event) =>
+                handleChange("id_estado_actual", event.target.value)
+              }
+            >
+              <option value="">Seleccione un estado</option>
+              {estados.map((estado) => (
+                <option key={estado.id_estado} value={estado.id_estado}>
+                  {estado.nombre}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
 
-      <label className="form-field">
-        <span>Nombre</span>
-        <input
-          value={form.nombre}
-          onChange={(event) => handleChange("nombre", event.target.value)}
-        />
-      </label>
+        <label className="form-field">
+          <span>Código campamento</span>
+          <input
+            value={form.codigo_campamento}
+            onChange={(event) =>
+              handleChange("codigo_campamento", event.target.value)
+            }
+            placeholder="Identificador interno del campamento"
+          />
+        </label>
+      </div>
 
-      <label className="form-field">
-        <span>Apellidos</span>
-        <input
-          value={form.apellidos}
-          onChange={(event) => handleChange("apellidos", event.target.value)}
-        />
-      </label>
+      <div className="modal-form__section">
+        <h3 className="modal-form__section-title">Medios (opcional)</h3>
 
-      <label className="form-field">
-        <span>Fecha nacimiento</span>
-        <input
-          type="date"
-          value={form.fecha_nacimiento}
-          onChange={(event) =>
-            handleChange("fecha_nacimiento", event.target.value)
-          }
-        />
-      </label>
+        <label className="form-field">
+          <span>Foto URL</span>
+          <input
+            value={form.foto_url}
+            onChange={(event) => handleChange("foto_url", event.target.value)}
+            placeholder="https://..."
+          />
+        </label>
 
-      <label className="form-field">
-        <span>Cargo</span>
-        <select
-          value={form.id_cargo_actual}
-          onChange={(event) =>
-            handleChange("id_cargo_actual", event.target.value)
-          }
+        <label className="form-field">
+          <span>Imagen carnet URL</span>
+          <input
+            value={form.imagen_carnet_url}
+            onChange={(event) =>
+              handleChange("imagen_carnet_url", event.target.value)
+            }
+            placeholder="https://..."
+          />
+        </label>
+      </div>
+
+      <div className="modal-form__actions">
+        <button
+          type="button"
+          className="button button-secondary"
+          onClick={() => {
+            setForm(emptyForm);
+            onCancelEdit();
+          }}
         >
-          <option value="">Seleccione un cargo</option>
-          {cargos.map((cargo) => (
-            <option key={cargo.id_cargo} value={cargo.id_cargo}>
-              {cargo.nombre}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label className="form-field">
-        <span>Estado</span>
-        <select
-          value={form.id_estado_actual}
-          onChange={(event) =>
-            handleChange("id_estado_actual", event.target.value)
-          }
-        >
-          <option value="">Seleccione un estado</option>
-          {estados.map((estado) => (
-            <option key={estado.id_estado} value={estado.id_estado}>
-              {estado.nombre}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label className="form-field">
-        <span>Codigo campamento</span>
-        <input
-          value={form.codigo_campamento}
-          onChange={(event) =>
-            handleChange("codigo_campamento", event.target.value)
-          }
-        />
-      </label>
-
-      <label className="form-field">
-        <span>Foto URL</span>
-        <input
-          value={form.foto_url}
-          onChange={(event) => handleChange("foto_url", event.target.value)}
-        />
-      </label>
-
-      <label className="form-field">
-        <span>Imagen carnet URL</span>
-        <input
-          value={form.imagen_carnet_url}
-          onChange={(event) =>
-            handleChange("imagen_carnet_url", event.target.value)
-          }
-        />
-      </label>
-
-      <div style={{ display: "flex", gap: "12px", marginTop: "18px" }}>
+          Cancelar
+        </button>
         <button
           type="submit"
           className="button button-primary"
@@ -304,19 +334,6 @@ function PersonaForm({
               ? "Actualizar"
               : "Crear"}
         </button>
-
-        {personaEditando && (
-          <button
-            type="button"
-            className="button button-secondary"
-            onClick={() => {
-              setForm(emptyForm);
-              onCancelEdit();
-            }}
-          >
-            Cancelar
-          </button>
-        )}
       </div>
     </form>
   );

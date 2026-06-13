@@ -1,4 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
+import { Check, Plus, SlidersHorizontal, X } from "lucide-react";
+import { PageModal } from "../../../shared/components/PageModal";
+import {
+  CrudAction,
+  CrudActionGroup,
+  CrudActions,
+} from "../../../shared/components/CrudActions";
 import type { Campamento } from "../../campamentos/types";
 import type { InventarioResource } from "../../inventario/types";
 import type { Persona } from "../../personas/types";
@@ -74,6 +81,7 @@ function SolicitudesPage({
   const [cantidadRecurso, setCantidadRecurso] = useState("");
   const [cargoId, setCargoId] = useState("");
   const [cantidadPersonas, setCantidadPersonas] = useState("");
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
 
   const campamentoId = campamento.id_campamento;
 
@@ -154,6 +162,7 @@ function SolicitudesPage({
     setCantidadRecurso("");
     setCargoId("");
     setCantidadPersonas("");
+    setMostrarFormulario(false);
   };
 
   const handleCrearSolicitud = async () => {
@@ -254,115 +263,164 @@ function SolicitudesPage({
   return (
     <section className="campamento-detail-section">
       <div className="detail-section-title">
-        <h4>Solicitudes</h4>
-        <span>{solicitudes.length} registros asociados a este campamento</span>
-      </div>
-
-      {error && <div className="error-box">{error}</div>}
-
-      <div className="campamento-mini-list">
-        <label className="form-field">
-          <span>Campamento destino</span>
-          <select
-            value={destinoId}
-            onChange={(event) => setDestinoId(event.target.value)}
-          >
-            <option value="">Seleccione destino</option>
-            {campamentosDestino.map((item) => (
-              <option key={item.id_campamento} value={item.id_campamento}>
-                {item.nombre}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="form-field">
-          <span>Tipo</span>
-          <select
-            value={tipo}
-            onChange={(event) => setTipo(event.target.value as SolicitudTipo)}
-          >
-            <option value="RECURSOS">Recursos</option>
-            <option value="PERSONAS">Personas</option>
-            <option value="MIXTA">Mixta</option>
-          </select>
-        </label>
-
-        <label className="form-field">
-          <span>Motivo</span>
-          <textarea
-            value={motivo}
-            onChange={(event) => setMotivo(event.target.value)}
-            placeholder="Motivo de la solicitud..."
-          />
-        </label>
-
-        {(tipo === "RECURSOS" || tipo === "MIXTA") && (
-          <>
-            <label className="form-field">
-              <span>Recurso</span>
-              <select
-                value={recursoId}
-                onChange={(event) => setRecursoId(event.target.value)}
-              >
-                <option value="">Seleccione recurso</option>
-                {recursosDisponibles.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="form-field">
-              <span>Cantidad</span>
-              <input
-                type="number"
-                min="1"
-                value={cantidadRecurso}
-                onChange={(event) => setCantidadRecurso(event.target.value)}
-              />
-            </label>
-          </>
-        )}
-
-        {(tipo === "PERSONAS" || tipo === "MIXTA") && (
-          <>
-            <label className="form-field">
-              <span>Cargo requerido</span>
-              <select
-                value={cargoId}
-                onChange={(event) => setCargoId(event.target.value)}
-              >
-                <option value="">Seleccione cargo</option>
-                {cargosDisponibles.map((cargo) => (
-                  <option key={cargo.id_cargo} value={cargo.id_cargo}>
-                    {cargo.nombre}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="form-field">
-              <span>Cantidad de personas</span>
-              <input
-                type="number"
-                min="1"
-                value={cantidadPersonas}
-                onChange={(event) => setCantidadPersonas(event.target.value)}
-              />
-            </label>
-          </>
-        )}
-
+        <div>
+          <h4>Solicitudes</h4>
+          <span>{solicitudes.length} registros asociados a este campamento</span>
+        </div>
         <button
           type="button"
           className="button button-primary"
-          onClick={() => void handleCrearSolicitud()}
+          onClick={() => setMostrarFormulario(true)}
         >
-          Crear solicitud
+          <Plus size={16} style={{ marginRight: 6, verticalAlign: -2 }} />
+          Nueva solicitud
         </button>
       </div>
+
+      {error && !mostrarFormulario && <div className="error-box">{error}</div>}
+
+      {mostrarFormulario && (
+        <PageModal
+          title="Nueva solicitud"
+          onClose={limpiarFormulario}
+          size="lg"
+        >
+          <div className="modal-form">
+            <p className="section-description">
+              Solicita recursos o personas a otro campamento indicando el
+              motivo y los detalles requeridos.
+            </p>
+
+            <div className="modal-form__section">
+              <h3 className="modal-form__section-title">Datos generales</h3>
+
+              <label className="form-field">
+                <span>Campamento destino *</span>
+                <select
+                  value={destinoId}
+                  onChange={(event) => setDestinoId(event.target.value)}
+                >
+                  <option value="">Seleccione destino</option>
+                  {campamentosDestino.map((item) => (
+                    <option key={item.id_campamento} value={item.id_campamento}>
+                      {item.nombre}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div className="modal-form__row">
+                <label className="form-field">
+                  <span>Tipo *</span>
+                  <select
+                    value={tipo}
+                    onChange={(event) => setTipo(event.target.value as SolicitudTipo)}
+                  >
+                    <option value="RECURSOS">Recursos</option>
+                    <option value="PERSONAS">Personas</option>
+                    <option value="MIXTA">Mixta</option>
+                  </select>
+                </label>
+              </div>
+
+              <label className="form-field">
+                <span>Motivo *</span>
+                <textarea
+                  value={motivo}
+                  onChange={(event) => setMotivo(event.target.value)}
+                  placeholder="Motivo de la solicitud..."
+                  rows={3}
+                />
+              </label>
+            </div>
+
+            {(tipo === "RECURSOS" || tipo === "MIXTA") && (
+              <div className="modal-form__section">
+                <h3 className="modal-form__section-title">Recursos solicitados</h3>
+
+                <div className="modal-form__row">
+                  <label className="form-field">
+                    <span>Recurso</span>
+                    <select
+                      value={recursoId}
+                      onChange={(event) => setRecursoId(event.target.value)}
+                    >
+                      <option value="">Seleccione recurso</option>
+                      {recursosDisponibles.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="form-field">
+                    <span>Cantidad</span>
+                    <input
+                      type="number"
+                      min="1"
+                      value={cantidadRecurso}
+                      onChange={(event) => setCantidadRecurso(event.target.value)}
+                    />
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {(tipo === "PERSONAS" || tipo === "MIXTA") && (
+              <div className="modal-form__section">
+                <h3 className="modal-form__section-title">Personas solicitadas</h3>
+
+                <div className="modal-form__row">
+                  <label className="form-field">
+                    <span>Cargo requerido</span>
+                    <select
+                      value={cargoId}
+                      onChange={(event) => setCargoId(event.target.value)}
+                    >
+                      <option value="">Seleccione cargo</option>
+                      {cargosDisponibles.map((cargo) => (
+                        <option key={cargo.id_cargo} value={cargo.id_cargo}>
+                          {cargo.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="form-field">
+                    <span>Cantidad de personas</span>
+                    <input
+                      type="number"
+                      min="1"
+                      value={cantidadPersonas}
+                      onChange={(event) => setCantidadPersonas(event.target.value)}
+                    />
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {error && <div className="error-box">{error}</div>}
+
+            <div className="modal-form__actions">
+              <button
+                type="button"
+                className="button button-secondary"
+                onClick={limpiarFormulario}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="button button-primary"
+                onClick={() => void handleCrearSolicitud()}
+              >
+                Crear solicitud
+              </button>
+            </div>
+          </div>
+        </PageModal>
+      )}
 
       <div className="detail-section-title" style={{ marginTop: "28px" }}>
         <h4>Recibidas</h4>
@@ -422,43 +480,44 @@ function SolicitudesPage({
                   </td>
                   <td>
                     {solicitud.estado === "PENDIENTE" ? (
-                      <div style={{ display: "flex", gap: "8px" }}>
-                        <button
-                          className="button button-primary"
-                          onClick={() =>
-                            void handleResponder(
-                              solicitud.id_solicitud,
-                              "APROBADA",
-                            )
-                          }
-                        >
-                          Aprobar
-                        </button>
-
-                        <button
-                          className="button button-danger"
-                          onClick={() =>
-                            void handleResponder(
-                              solicitud.id_solicitud,
-                              "RECHAZADA",
-                            )
-                          }
-                        >
-                          Rechazar
-                        </button>
-
-                        <button
-                          className="button button-secondary"
-                          onClick={() =>
-                            void handleResponder(
-                              solicitud.id_solicitud,
-                              "AJUSTADA",
-                            )
-                          }
-                        >
-                          Ajustar
-                        </button>
-                      </div>
+                      <CrudActions layout="table">
+                        <CrudActionGroup>
+                          <CrudAction
+                            label="Aprobar"
+                            icon={Check}
+                            variant="success"
+                            onClick={() =>
+                              void handleResponder(
+                                solicitud.id_solicitud,
+                                "APROBADA",
+                              )
+                            }
+                          />
+                          <CrudAction
+                            label="Ajustar"
+                            icon={SlidersHorizontal}
+                            onClick={() =>
+                              void handleResponder(
+                                solicitud.id_solicitud,
+                                "AJUSTADA",
+                              )
+                            }
+                          />
+                        </CrudActionGroup>
+                        <CrudActionGroup>
+                          <CrudAction
+                            label="Rechazar"
+                            icon={X}
+                            variant="danger"
+                            onClick={() =>
+                              void handleResponder(
+                                solicitud.id_solicitud,
+                                "RECHAZADA",
+                              )
+                            }
+                          />
+                        </CrudActionGroup>
+                      </CrudActions>
                     ) : (
                       "Procesada"
                     )}

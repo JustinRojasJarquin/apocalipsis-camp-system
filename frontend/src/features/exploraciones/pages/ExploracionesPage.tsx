@@ -1,4 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  AlertTriangle,
+  CheckCircle,
+  Package,
+  Play,
+  Trash2,
+  Users,
+  XCircle,
+} from "lucide-react";
 import type { Exploracion, ExploracionEstado } from "../types";
 import {
   listarExploraciones,
@@ -8,9 +17,15 @@ import {
 import ExploracionForm from "../components/ExploracionForm";
 import AsignarPersonas from "../components/AsignarPersonas";
 import RecursosMision from "../components/RecursosMision";
+import { PageModal } from "../../../shared/components/PageModal";
 import Navbar from "../../../shared/components/Navbar";
+import { useDebouncedValue } from "../../../shared/hooks/useDebouncedValue";
+import {
+  CrudAction,
+  CrudActionGroup,
+  CrudActions,
+} from "../../../shared/components/CrudActions";
 import { storage } from "../../../shared/utils/storage";
-import "../../../styles/theme.css";
 
 const ESTADO_ETIQUETA: Record<ExploracionEstado, string> = {
   PLANIFICADA: "Planificada",
@@ -36,6 +51,26 @@ function ExploracionesPage() {
   const [seleccionada, setSeleccionada] = useState<Exploracion | null>(null);
   const [vistaDetalle, setVistaDetalle] = useState<"personas" | "recursos" | null>(null);
   const [exploracionAEliminar, setExploracionAEliminar] = useState<Exploracion | null>(null);
+  const [filters, setFilters] = useState({
+    buscar: "",
+    estado: "" as ExploracionEstado | "",
+  });
+
+  const debouncedBuscar = useDebouncedValue(filters.buscar);
+
+  const exploracionesFiltradas = useMemo(() => {
+    const buscar = debouncedBuscar.trim().toLowerCase();
+
+    return exploraciones.filter((exp) => {
+      const descripcion = exp.descripcion?.toLowerCase() ?? "";
+      return (
+        (!buscar ||
+          exp.nombre.toLowerCase().includes(buscar) ||
+          descripcion.includes(buscar)) &&
+        (!filters.estado || exp.estado === filters.estado)
+      );
+    });
+  }, [exploraciones, debouncedBuscar, filters.estado]);
 
   const idCampamento = storage.getUsuario()?.persona?.campamento?.id_campamento ?? 0;
 
@@ -102,44 +137,106 @@ function ExploracionesPage() {
   };
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "var(--color-bg)" }}>
-
+    <div style={{ display: "flex", background: "#09110f", minHeight: "100vh" }}>
       <div style={{ flex: 1 }}>
         <Navbar />
 
-        <main className="exploraciones-page">
-          <section className="exploraciones-hero">
-            <div className="exploraciones-hero__content">
-              <p className="exploraciones-hero__eyebrow">Gestión operativa</p>
-              <h1 className="exploraciones-hero__title">Exploraciones</h1>
-              <p className="exploraciones-hero__subtitle">
-                Administra misiones, asignación de personas, recursos y seguimiento
-                de estados dentro del campamento.
+        <main className="campamentos-page">
+          <section className="campamentos-header">
+            <div>
+              <span className="page-badge">Gestión operativa</span>
+              <h1>Exploraciones</h1>
+              <p className="page-description">
+                Administra misiones, asignación de personas, recursos y
+                seguimiento de estados dentro del campamento.
               </p>
             </div>
 
-            <button
-              className="btn-primario"
-              onClick={() => setMostrarFormulario(true)}
-            >
-              + Nueva exploración
-            </button>
+            <div className="page-header-actions">
+              <div className="campamentos-stat">
+                <span className="stat-label">Total</span>
+                <strong className="stat-value">{exploraciones.length}</strong>
+              </div>
+
+              <button
+                type="button"
+                className="button button-primary"
+                onClick={() => setMostrarFormulario(true)}
+              >
+                + Nueva exploración
+              </button>
+            </div>
           </section>
 
-          {error && <p className="error-text">{error}</p>}
+          {error && <div className="error-box">{error}</div>}
+
+          <section className="campamentos-filter-card">
+            <div className="campamentos-filter-row">
+              <label className="filter-field">
+                <span>Buscar</span>
+                <input
+                  value={filters.buscar}
+                  onChange={(event) =>
+                    setFilters((current) => ({
+                      ...current,
+                      buscar: event.target.value,
+                    }))
+                  }
+                  placeholder="Nombre o descripción"
+                />
+              </label>
+
+              <label className="filter-field">
+                <span>Estado</span>
+                <select
+                  value={filters.estado}
+                  onChange={(event) =>
+                    setFilters((current) => ({
+                      ...current,
+                      estado: event.target.value as ExploracionEstado | "",
+                    }))
+                  }
+                >
+                  <option value="">Todos</option>
+                  {(Object.keys(ESTADO_ETIQUETA) as ExploracionEstado[]).map(
+                    (estado) => (
+                      <option key={estado} value={estado}>
+                        {ESTADO_ETIQUETA[estado]}
+                      </option>
+                    ),
+                  )}
+                </select>
+              </label>
+            </div>
+          </section>
 
           {cargando ? (
-            <div className="exploraciones-empty">
-              <p className="cargando-texto">Cargando exploraciones...</p>
+            <div className="empty-state">
+              <p>Cargando exploraciones...</p>
             </div>
-          ) : exploraciones.length === 0 ? (
-            <div className="exploraciones-empty">
-              <h3>No hay exploraciones registradas</h3>
-              <p>Crea una nueva exploración para comenzar a organizar las misiones.</p>
+          ) : exploracionesFiltradas.length === 0 ? (
+            <div className="empty-state">
+              <h3>
+                {exploraciones.length === 0
+                  ? "No hay exploraciones registradas"
+                  : "No hay exploraciones que coincidan con los filtros"}
+              </h3>
+              <p>
+                {exploraciones.length === 0
+                  ? "Crea una nueva exploración para comenzar a organizar las misiones."
+                  : "Prueba ajustando los filtros de búsqueda o estado."}
+              </p>
             </div>
           ) : (
-            <section className="exploraciones-lista">
-              {exploraciones.map((exp) => (
+            <section className="campamentos-list">
+              <div className="filter-results-meta">
+                <span>
+                  Mostrando <strong>{exploracionesFiltradas.length}</strong> de{" "}
+                  <strong>{exploraciones.length}</strong> exploraciones
+                </span>
+              </div>
+
+              {exploracionesFiltradas.map((exp) => (
                 <article key={exp.id_exploracion} className="exploracion-card">
                   <div className="exploracion-card__top">
                     <div className="exploracion-card__title-block">
@@ -155,91 +252,95 @@ function ExploracionesPage() {
                   </div>
 
                   <div className="exploracion-stats">
-                    <div className="stat-item">
-                      <span className="stat-label">Inicio planeado</span>
+                    <div className="campamento-summary-item">
+                      <span>Inicio planeado</span>
                       <strong>
                         {new Date(exp.fecha_inicio_plan).toLocaleDateString("es-CR")}
                       </strong>
                     </div>
 
-                    <div className="stat-item">
-                      <span className="stat-label">Días estimados</span>
+                    <div className="campamento-summary-item">
+                      <span>Días estimados</span>
                       <strong>{exp.dias_estimados}</strong>
                     </div>
 
-                    <div className="stat-item">
-                      <span className="stat-label">Días extra</span>
+                    <div className="campamento-summary-item">
+                      <span>Días extra</span>
                       <strong>{exp.dias_extra}</strong>
                     </div>
 
-                    <div className="stat-item">
-                      <span className="stat-label">Exploradores</span>
+                    <div className="campamento-summary-item">
+                      <span>Exploradores</span>
                       <strong>{exp.exploracion_persona.length}</strong>
                     </div>
                   </div>
 
-                  <div className="card-acciones">
+                  <CrudActions layout="card">
                     {exp.estado === "PLANIFICADA" && (
                       <>
-                        <button
-                          className="btn-secundario"
-                          onClick={() => abrirDetalle(exp, "personas")}
-                        >
-                          Asignar personas
-                        </button>
+                        <CrudActionGroup>
+                          <CrudAction
+                            label="Asignar personas"
+                            icon={Users}
+                            onClick={() => abrirDetalle(exp, "personas")}
+                          />
+                          <CrudAction
+                            label="Recursos a llevar"
+                            icon={Package}
+                            onClick={() => abrirDetalle(exp, "recursos")}
+                          />
+                        </CrudActionGroup>
 
-                        <button
-                          className="btn-secundario"
-                          onClick={() => abrirDetalle(exp, "recursos")}
-                        >
-                          Recursos a llevar
-                        </button>
+                        <CrudActionGroup>
+                          <CrudAction
+                            label="Iniciar"
+                            icon={Play}
+                            variant="success"
+                            onClick={() => handleCambiarEstado(exp, "EN_PROGRESO")}
+                          />
+                        </CrudActionGroup>
 
-                        <button
-                          className="btn-accion btn-success"
-                          onClick={() => handleCambiarEstado(exp, "EN_PROGRESO")}
-                        >
-                          Iniciar
-                        </button>
-
-                        <button
-                          className="btn-accion btn-danger-soft"
-                          onClick={() => handleCambiarEstado(exp, "CANCELADA")}
-                        >
-                          Cancelar
-                        </button>
-
-                        <button
-                          className="btn-accion btn-danger"
-                          onClick={() => handleEliminar(exp)}
-                        >
-                          Eliminar
-                        </button>
+                        <CrudActionGroup>
+                          <CrudAction
+                            label="Cancelar"
+                            icon={XCircle}
+                            variant="danger-soft"
+                            onClick={() => handleCambiarEstado(exp, "CANCELADA")}
+                          />
+                          <CrudAction
+                            label="Eliminar"
+                            icon={Trash2}
+                            variant="danger"
+                            onClick={() => handleEliminar(exp)}
+                          />
+                        </CrudActionGroup>
                       </>
                     )}
 
                     {exp.estado === "EN_PROGRESO" && (
                       <>
-                        <button
-                          className="btn-secundario"
-                          onClick={() => abrirDetalle(exp, "recursos")}
-                        >
-                          Registrar encontrados
-                        </button>
+                        <CrudActionGroup>
+                          <CrudAction
+                            label="Registrar encontrados"
+                            icon={Package}
+                            onClick={() => abrirDetalle(exp, "recursos")}
+                          />
+                        </CrudActionGroup>
 
-                        <button
-                          className="btn-accion btn-success"
-                          onClick={() => handleCambiarEstado(exp, "COMPLETADA")}
-                        >
-                          Completar
-                        </button>
-
-                        <button
-                          className="btn-accion btn-warning"
-                          onClick={() => handleCambiarEstado(exp, "FALLIDA")}
-                        >
-                          Marcar fallida
-                        </button>
+                        <CrudActionGroup>
+                          <CrudAction
+                            label="Completar"
+                            icon={CheckCircle}
+                            variant="success"
+                            onClick={() => handleCambiarEstado(exp, "COMPLETADA")}
+                          />
+                          <CrudAction
+                            label="Marcar fallida"
+                            icon={AlertTriangle}
+                            variant="warning"
+                            onClick={() => handleCambiarEstado(exp, "FALLIDA")}
+                          />
+                        </CrudActionGroup>
                       </>
                     )}
 
@@ -249,77 +350,78 @@ function ExploracionesPage() {
                       <>
                         <span className="texto-cerrado">Exploración finalizada</span>
 
-                        <button
-                          className="btn-accion btn-danger"
-                          onClick={() => handleEliminar(exp)}
-                        >
-                          Eliminar
-                        </button>
+                        <CrudActionGroup>
+                          <CrudAction
+                            label="Eliminar"
+                            icon={Trash2}
+                            variant="danger"
+                            onClick={() => handleEliminar(exp)}
+                          />
+                        </CrudActionGroup>
                       </>
                     )}
-                  </div>
+                  </CrudActions>
                 </article>
               ))}
             </section>
           )}
 
           {mostrarFormulario && (
-            <div className="modal-overlay">
-              <div className="modal-contenido">
-                <ExploracionForm
-                  idCampamento={idCampamento}
-                  onCreada={handleCreada}
-                  onCancelar={() => setMostrarFormulario(false)}
-                />
-              </div>
-            </div>
+            <PageModal
+              title="Nueva exploración"
+              onClose={() => setMostrarFormulario(false)}
+              size="lg"
+            >
+              <ExploracionForm
+                idCampamento={idCampamento}
+                onCreada={handleCreada}
+                onCancelar={() => setMostrarFormulario(false)}
+              />
+            </PageModal>
           )}
 
           {seleccionada && vistaDetalle === "personas" && (
-            <div className="modal-overlay">
-              <div className="modal-contenido">
-                <AsignarPersonas exploracion={seleccionada} onCerrar={cerrarDetalle} />
-              </div>
-            </div>
+            <PageModal onClose={cerrarDetalle} size="lg">
+              <AsignarPersonas exploracion={seleccionada} onCerrar={cerrarDetalle} />
+            </PageModal>
           )}
 
           {seleccionada && vistaDetalle === "recursos" && (
-            <div className="modal-overlay">
-              <div className="modal-contenido">
-                <RecursosMision exploracion={seleccionada} onCerrar={cerrarDetalle} />
-              </div>
-            </div>
+            <PageModal onClose={cerrarDetalle} size="lg">
+              <RecursosMision exploracion={seleccionada} onCerrar={cerrarDetalle} />
+            </PageModal>
           )}
 
           {exploracionAEliminar && (
-            <div className="modal-overlay">
-              <div className="modal-contenido">
-                <div className="form-container">
-                  <h2>Eliminar exploración</h2>
-                  <p>
+            <PageModal
+              title="Eliminar exploración"
+              onClose={() => setExploracionAEliminar(null)}
+              size="sm"
+            >
+                  <p className="section-description">
                     ¿Estás segura de que deseas eliminar{" "}
                     <strong>{exploracionAEliminar.nombre}</strong>? Esta acción no se
                     puede deshacer.
                   </p>
 
-                  <div className="form-acciones">
-                    <button
-                      className="btn-secundario"
-                      onClick={() => setExploracionAEliminar(null)}
-                    >
-                      Cancelar
-                    </button>
-
-                    <button
-                      className="btn-accion btn-danger"
-                      onClick={confirmarEliminar}
-                    >
-                      Eliminar
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+                  <CrudActions layout="inline">
+                    <CrudActionGroup>
+                      <CrudAction
+                        label="Cancelar"
+                        variant="default"
+                        onClick={() => setExploracionAEliminar(null)}
+                      />
+                    </CrudActionGroup>
+                    <CrudActionGroup>
+                      <CrudAction
+                        label="Eliminar"
+                        icon={Trash2}
+                        variant="danger"
+                        onClick={() => void confirmarEliminar()}
+                      />
+                    </CrudActionGroup>
+                  </CrudActions>
+            </PageModal>
           )}
         </main>
       </div>

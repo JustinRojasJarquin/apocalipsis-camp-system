@@ -1,6 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import {
+  Building2,
+  Eye,
+  FileText,
+  Pencil,
+  Trash2,
+  Truck,
+} from "lucide-react";
 import Navbar from "../../../shared/components/Navbar";
+import {
+  CrudAction,
+  CrudActionGroup,
+  CrudActions,
+} from "../../../shared/components/CrudActions";
 import CampamentosForm from "../components/CampamentosForm";
+import { PageModal } from "../../../shared/components/PageModal";
 import { deleteCampamento, getCampamentos } from "../campamentos.api";
 import type { Campamento } from "../types";
 import { getPersonas } from "../../personas/personas.api";
@@ -9,8 +23,9 @@ import { getResources } from "../../inventario/inventario.api";
 import type { InventarioResource } from "../../inventario/types";
 import SolicitudesPage from "../../solicitudes/pages/SolicitudesPage";
 import EnviosPage from "../../envios/pages/EnviosPage";
+import { useScrollReveal } from "../../../shared/hooks/useScrollReveal";
 
-type CampamentoTab = "lista" | "detalle" | "formulario" | "solicitudes" | "envios";
+type CampamentoTab = "lista" | "detalle" | "solicitudes" | "envios";
 
 function CampamentosPage() {
   const [campamentos, setCampamentos] = useState<Campamento[]>([]);
@@ -18,6 +33,7 @@ function CampamentosPage() {
   const [inventario, setInventario] = useState<InventarioResource[]>([]);
   const [campamentoEditando, setCampamentoEditando] =
     useState<Campamento | null>(null);
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
 
   const [selectedCampamentoId, setSelectedCampamentoId] =
     useState<number | null>(null);
@@ -150,20 +166,24 @@ function CampamentosPage() {
   };
 
   const tabButtonStyle = (tab: CampamentoTab): React.CSSProperties => ({
-    border: activeTab === tab ? "1px solid #3b82f6" : "1px solid #334155",
+    border:
+      activeTab === tab
+        ? "1px solid rgba(159,239,0,0.38)"
+        : "1px solid rgba(215,226,218,0.12)",
     background:
       activeTab === tab
-        ? "linear-gradient(135deg, rgba(59,130,246,0.25), rgba(59,130,246,0.08))"
-        : "rgba(15,23,42,0.88)",
-    color: activeTab === tab ? "#f8fafc" : "#cbd5e1",
+        ? "linear-gradient(135deg, rgba(159,239,0,0.18), rgba(159,239,0,0.06))"
+        : "rgba(16,24,20,0.88)",
+    color: activeTab === tab ? "#f7ffe8" : "#cbd5ce",
     padding: "14px 18px",
-    borderRadius: "16px",
+    borderRadius: "8px",
     cursor: "pointer",
-    fontWeight: 800,
+    fontWeight: 900,
+    letterSpacing: "0.02em",
   });
 
   return (
-    <div style={{ display: "flex", background: "#0f172a", minHeight: "100vh" }}>
+    <div style={{ display: "flex", background: "#09110f", minHeight: "100vh" }}>
       <div style={{ flex: 1 }}>
         <Navbar />
 
@@ -177,9 +197,22 @@ function CampamentosPage() {
               </p>
             </div>
 
-            <div className="campamentos-stat">
-              <span className="stat-label">Activos</span>
-              <strong className="stat-value">{campamentosActivos.length}</strong>
+            <div className="page-header-actions">
+              <div className="campamentos-stat">
+                <span className="stat-label">Activos</span>
+                <strong className="stat-value">{campamentosActivos.length}</strong>
+              </div>
+
+              <button
+                type="button"
+                className="button button-primary"
+                onClick={() => {
+                  setCampamentoEditando(null);
+                  setMostrarFormulario(true);
+                }}
+              >
+                + Nuevo campamento
+              </button>
             </div>
           </section>
 
@@ -203,16 +236,6 @@ function CampamentosPage() {
               onClick={() => setActiveTab("detalle")}
             >
               Detalle
-            </button>
-
-            <button
-              style={tabButtonStyle("formulario")}
-              onClick={() => {
-                setCampamentoEditando(null);
-                setActiveTab("formulario");
-              }}
-            >
-              Crear / Editar
             </button>
 
             <button
@@ -299,54 +322,51 @@ function CampamentosPage() {
                           </div>
                         </div>
 
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: "12px",
-                            marginTop: "18px",
-                            flexWrap: "wrap",
-                          }}
-                        >
-                        <button
-                          type="button"
-                          className="button button-secondary"
-                          onClick={() => selectCampamento(campamento, "detalle")}
-                        >
-                          Ver detalle
-                        </button>
-
-                        <button
-                          type="button"
-                          className="button button-primary"
-                          onClick={() => {
-                            setCampamentoEditando(campamento);
-                            selectCampamento(campamento, "formulario");
-                          }}
-                        >
-                          Editar
-                        </button>
-
-                        <button
-                          type="button"
-                          className="button button-secondary"
-                          onClick={() =>
-                            selectCampamento(campamento, "solicitudes")
-                          }
-                        >
-                          Solicitudes
-                        </button>
-
-                        <button
-                          type="button"
-                          className="button button-danger"
-                          disabled={isDeletingId === campamento.id_campamento}
-                          onClick={() => void handleDelete(campamento)}
-                        >
-                          {isDeletingId === campamento.id_campamento
-                            ? "Eliminando..."
-                            : "Eliminar"}
-                        </button>
-                        </div>
+                        <CrudActions layout="card">
+                          <CrudActionGroup>
+                            <CrudAction
+                              label="Ver detalle"
+                              icon={Eye}
+                              onClick={() =>
+                                selectCampamento(campamento, "detalle")
+                              }
+                            />
+                            <CrudAction
+                              label="Solicitudes"
+                              icon={FileText}
+                              onClick={() =>
+                                selectCampamento(campamento, "solicitudes")
+                              }
+                            />
+                          </CrudActionGroup>
+                          <CrudActionGroup>
+                            <CrudAction
+                              label="Editar"
+                              icon={Pencil}
+                              variant="primary"
+                              onClick={() => {
+                                setCampamentoEditando(campamento);
+                                setMostrarFormulario(true);
+                              }}
+                            />
+                          </CrudActionGroup>
+                          <CrudActionGroup>
+                            <CrudAction
+                              label={
+                                isDeletingId === campamento.id_campamento
+                                  ? "Eliminando..."
+                                  : "Eliminar"
+                              }
+                              icon={Trash2}
+                              variant="danger"
+                              disabled={
+                                isDeletingId === campamento.id_campamento
+                              }
+                              loading={isDeletingId === campamento.id_campamento}
+                              onClick={() => void handleDelete(campamento)}
+                            />
+                          </CrudActionGroup>
+                        </CrudActions>
                       </article>
                     );
                   })}
@@ -357,7 +377,7 @@ function CampamentosPage() {
 
           {activeTab === "detalle" && selectedCampamento && (
             <section className="campamentos-detail-card">
-              <div className="card-header">
+              <div className="card-header card-toolbar">
                 <div>
                   <span className="page-badge">Detalle del campamento</span>
                   <h3>{selectedCampamento.nombre}</h3>
@@ -366,7 +386,61 @@ function CampamentosPage() {
                       "Sin ubicacion registrada"}
                   </p>
                 </div>
+
+                <div className="card-toolbar-actions">
+                  <CrudActions layout="inline">
+                    <CrudActionGroup>
+                      <CrudAction
+                        label="Editar"
+                        icon={Pencil}
+                        variant="primary"
+                        onClick={() => {
+                          setCampamentoEditando(selectedCampamento);
+                          setMostrarFormulario(true);
+                        }}
+                      />
+                      <CrudAction
+                        label="Solicitudes"
+                        icon={FileText}
+                        onClick={() =>
+                          selectCampamento(selectedCampamento, "solicitudes")
+                        }
+                      />
+                      <CrudAction
+                        label="Envíos"
+                        icon={Truck}
+                        onClick={() =>
+                          selectCampamento(selectedCampamento, "envios")
+                        }
+                      />
+                    </CrudActionGroup>
+                    <CrudActionGroup>
+                      <CrudAction
+                        label={
+                          isDeletingId === selectedCampamento.id_campamento
+                            ? "Eliminando..."
+                            : "Eliminar"
+                        }
+                        icon={Trash2}
+                        variant="danger"
+                        disabled={
+                          isDeletingId === selectedCampamento.id_campamento
+                        }
+                        loading={
+                          isDeletingId === selectedCampamento.id_campamento
+                        }
+                        onClick={() => void handleDelete(selectedCampamento)}
+                      />
+                    </CrudActionGroup>
+                  </CrudActions>
+                </div>
               </div>
+
+              {selectedCampamento.descripcion?.trim() && (
+                <p className="section-description" style={{ marginBottom: 20 }}>
+                  {selectedCampamento.descripcion.trim()}
+                </p>
+              )}
 
               <div className="campamento-summary-grid">
                 <div className="campamento-summary-item">
@@ -464,21 +538,30 @@ function CampamentosPage() {
             </section>
           )}
 
-          {activeTab === "formulario" && (
-            <section className="campamentos-form-card">
+          {mostrarFormulario && (
+            <PageModal
+              title={
+                campamentoEditando ? "Editar campamento" : "Nuevo campamento"
+              }
+              onClose={() => {
+                setMostrarFormulario(false);
+                setCampamentoEditando(null);
+              }}
+              size="md"
+            >
               <CampamentosForm
                 campamentoEditando={campamentoEditando}
                 onCancelEdit={() => {
+                  setMostrarFormulario(false);
                   setCampamentoEditando(null);
-                  setActiveTab("lista");
                 }}
                 onSuccess={() => {
+                  setMostrarFormulario(false);
                   setCampamentoEditando(null);
-                  setActiveTab("lista");
                   void loadCampamentos();
                 }}
               />
-            </section>
+            </PageModal>
           )}
 
           {activeTab === "solicitudes" && selectedCampamento && (

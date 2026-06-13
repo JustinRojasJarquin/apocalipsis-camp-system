@@ -63,11 +63,17 @@ function ExploracionForm({ idCampamento, onCreada, onCancelar }: Props) {
   };
 
   return (
-    <div className="form-container">
-      <h2>Nueva Exploración</h2>
-      <form onSubmit={handleSubmit} className="exploracion-form">
-        <div className="campo">
-          <label htmlFor="nombre">Nombre de la misión *</label>
+    <form onSubmit={handleSubmit} className="modal-form">
+      <p className="section-description">
+        Define el objetivo, la fecha de salida y la duración estimada. Después
+        podrás asignar personas y recursos desde el listado.
+      </p>
+
+      <div className="modal-form__section">
+        <h3 className="modal-form__section-title">Datos de la misión</h3>
+
+        <label className="form-field" htmlFor="nombre">
+          <span>Nombre de la misión *</span>
           <input
             id="nombre"
             name="nombre"
@@ -76,23 +82,28 @@ function ExploracionForm({ idCampamento, onCreada, onCancelar }: Props) {
             onChange={handleChange}
             placeholder="Ej: Reconocimiento norte"
             maxLength={100}
+            autoFocus
           />
-        </div>
+        </label>
 
-        <div className="campo">
-          <label htmlFor="descripcion">Descripción</label>
+        <label className="form-field" htmlFor="descripcion">
+          <span>Descripción</span>
           <textarea
             id="descripcion"
             name="descripcion"
             value={form.descripcion}
             onChange={handleChange}
-            placeholder="Objetivo de la exploración..."
+            placeholder="Objetivo, zona a explorar, riesgos conocidos..."
             rows={3}
           />
-        </div>
+        </label>
+      </div>
 
-        <div className="campo">
-          <label htmlFor="fecha_inicio_plan">Fecha de inicio planificada *</label>
+      <div className="modal-form__section">
+        <h3 className="modal-form__section-title">Planificación</h3>
+
+        <label className="form-field" htmlFor="fecha_inicio_plan">
+          <span>Fecha de inicio planificada *</span>
           <input
             id="fecha_inicio_plan"
             name="fecha_inicio_plan"
@@ -101,11 +112,11 @@ function ExploracionForm({ idCampamento, onCreada, onCancelar }: Props) {
             onChange={handleChange}
             min={new Date().toISOString().split("T")[0]}
           />
-        </div>
+        </label>
 
-        <div className="campos-fila">
-          <div className="campo">
-            <label htmlFor="dias_estimados">Días estimados *</label>
+        <div className="modal-form__row">
+          <label className="form-field" htmlFor="dias_estimados">
+            <span>Días estimados *</span>
             <input
               id="dias_estimados"
               name="dias_estimados"
@@ -115,10 +126,10 @@ function ExploracionForm({ idCampamento, onCreada, onCancelar }: Props) {
               min={1}
               max={365}
             />
-          </div>
+          </label>
 
-          <div className="campo">
-            <label htmlFor="dias_extra">Días extra (margen)</label>
+          <label className="form-field" htmlFor="dias_extra">
+            <span>Días extra (margen)</span>
             <input
               id="dias_extra"
               name="dias_extra"
@@ -128,21 +139,25 @@ function ExploracionForm({ idCampamento, onCreada, onCancelar }: Props) {
               min={0}
               max={30}
             />
-          </div>
+          </label>
         </div>
+      </div>
 
-        {error && <p className="error-text">{error}</p>}
+      {error && <div className="error-box">{error}</div>}
 
-        <div className="form-acciones">
-          <button type="button" className="btn-secundario" onClick={onCancelar}>
-            Cancelar
-          </button>
-          <button type="submit" className="btn-primario" disabled={cargando}>
-            {cargando ? "Creando..." : "Crear exploración"}
-          </button>
-        </div>
-      </form>
-    </div>
+      <div className="modal-form__actions">
+        <button
+          type="button"
+          className="button button-secondary"
+          onClick={onCancelar}
+        >
+          Cancelar
+        </button>
+        <button type="submit" className="button button-primary" disabled={cargando}>
+          {cargando ? "Creando..." : "Crear exploración"}
+        </button>
+      </div>
+    </form>
   );
 }
 

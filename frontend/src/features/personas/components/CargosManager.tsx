@@ -1,4 +1,11 @@
 import { useEffect, useState } from "react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
+import { PageModal } from "../../../shared/components/PageModal";
+import {
+  CrudAction,
+  CrudActionGroup,
+  CrudActions,
+} from "../../../shared/components/CrudActions";
 import {
   createCargo,
   deleteCargo,
@@ -19,6 +26,7 @@ const emptyForm: CargoFormData = {
 export default function CargosManager({ onChanged }: Props) {
   const [cargos, setCargos] = useState<PersonaCargo[]>([]);
   const [cargoEditando, setCargoEditando] = useState<PersonaCargo | null>(null);
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [form, setForm] = useState<CargoFormData>(emptyForm);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -45,6 +53,13 @@ export default function CargosManager({ onChanged }: Props) {
   const resetForm = () => {
     setCargoEditando(null);
     setForm(emptyForm);
+    setMostrarFormulario(false);
+  };
+
+  const abrirCrear = () => {
+    setCargoEditando(null);
+    setForm(emptyForm);
+    setMostrarFormulario(true);
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -81,6 +96,7 @@ export default function CargosManager({ onChanged }: Props) {
       nombre: cargo.nombre,
       descripcion: cargo.descripcion ?? "",
     });
+    setMostrarFormulario(true);
   };
 
   const handleDelete = async (cargo: PersonaCargo) => {
@@ -107,110 +123,125 @@ export default function CargosManager({ onChanged }: Props) {
   };
 
   return (
-    <section className="campamentos-grid">
-      <div className="campamentos-list-card">
-        <div className="card-header">
-          <div>
-            <h3>Cargos registrados</h3>
-            <p className="small-text">
-              Administra los cargos disponibles para asignar personas.
-            </p>
-          </div>
+    <section className="campamentos-list-card">
+      <div className="card-header">
+        <div>
+          <h3>Cargos registrados</h3>
+          <p className="small-text">
+            Administra los cargos disponibles para asignar personas.
+          </p>
         </div>
 
-        {error && <div className="error-box">{error}</div>}
-
-        {loading ? (
-          <div className="empty-state">Cargando cargos...</div>
-        ) : cargos.length === 0 ? (
-          <div className="empty-state">No hay cargos registrados.</div>
-        ) : (
-          <div className="campamentos-list">
-            {cargos.map((cargo) => (
-              <article key={cargo.id_cargo} className="campamento-card">
-                <div className="campamento-card-header">
-                  <div>
-                    <h4>{cargo.nombre}</h4>
-                    <p className="campamento-meta">
-                      {cargo.descripcion?.trim() || "Sin descripcion"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="personas-actions">
-                  <button
-                    type="button"
-                    className="button button-primary"
-                    onClick={() => handleEdit(cargo)}
-                  >
-                    Editar
-                  </button>
-
-                  <button
-                    type="button"
-                    className="button button-danger"
-                    disabled={deletingId === cargo.id_cargo}
-                    onClick={() => void handleDelete(cargo)}
-                  >
-                    {deletingId === cargo.id_cargo ? "Eliminando..." : "Eliminar"}
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
+        <button type="button" className="button button-primary" onClick={abrirCrear}>
+          <Plus size={16} style={{ marginRight: 6, verticalAlign: -2 }} />
+          Nuevo cargo
+        </button>
       </div>
 
-      <form className="campamentos-form-card" onSubmit={handleSubmit}>
-        <div className="card-header">
-          <div>
-            <h3>{cargoEditando ? "Editar cargo" : "Nuevo cargo"}</h3>
-            <p className="small-text">
+      {error && !mostrarFormulario && <div className="error-box">{error}</div>}
+
+      {loading ? (
+        <div className="empty-state">Cargando cargos...</div>
+      ) : cargos.length === 0 ? (
+        <div className="empty-state">No hay cargos registrados.</div>
+      ) : (
+        <div className="campamentos-list">
+          {cargos.map((cargo) => (
+            <article key={cargo.id_cargo} className="campamento-card">
+              <div className="campamento-card-header">
+                <div>
+                  <h4>{cargo.nombre}</h4>
+                  <p className="campamento-meta">
+                    {cargo.descripcion?.trim() || "Sin descripcion"}
+                  </p>
+                </div>
+              </div>
+
+              <CrudActions layout="card">
+                <CrudActionGroup>
+                  <CrudAction
+                    label="Editar"
+                    icon={Pencil}
+                    variant="primary"
+                    onClick={() => handleEdit(cargo)}
+                  />
+                </CrudActionGroup>
+                <CrudActionGroup>
+                  <CrudAction
+                    label={
+                      deletingId === cargo.id_cargo ? "Eliminando..." : "Eliminar"
+                    }
+                    icon={Trash2}
+                    variant="danger"
+                    disabled={deletingId === cargo.id_cargo}
+                    loading={deletingId === cargo.id_cargo}
+                    onClick={() => void handleDelete(cargo)}
+                  />
+                </CrudActionGroup>
+              </CrudActions>
+            </article>
+          ))}
+        </div>
+      )}
+
+      {mostrarFormulario && (
+        <PageModal
+          title={cargoEditando ? "Editar cargo" : "Nuevo cargo"}
+          onClose={resetForm}
+          size="sm"
+        >
+          <form className="modal-form" onSubmit={handleSubmit}>
+            <p className="section-description">
               Crea cargos como exploradores, cocineros, guardias o medicos.
             </p>
-          </div>
-        </div>
 
-        <label className="form-field">
-          <span>Nombre</span>
-          <input
-            value={form.nombre}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, nombre: event.target.value }))
-            }
-          />
-        </label>
+            <div className="modal-form__section">
+              <h3 className="modal-form__section-title">Datos del cargo</h3>
 
-        <label className="form-field">
-          <span>Descripcion</span>
-          <textarea
-            rows={4}
-            value={form.descripcion}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                descripcion: event.target.value,
-              }))
-            }
-          />
-        </label>
+              <label className="form-field">
+                <span>Nombre *</span>
+                <input
+                  value={form.nombre}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, nombre: event.target.value }))
+                  }
+                  autoFocus
+                />
+              </label>
 
-        <div className="personas-actions" style={{ marginTop: "18px" }}>
-          <button type="submit" className="button button-primary" disabled={saving}>
-            {saving ? "Guardando..." : cargoEditando ? "Actualizar" : "Crear"}
-          </button>
+              <label className="form-field">
+                <span>Descripcion</span>
+                <textarea
+                  rows={4}
+                  value={form.descripcion}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      descripcion: event.target.value,
+                    }))
+                  }
+                  placeholder="Responsabilidades y alcance del cargo"
+                />
+              </label>
+            </div>
 
-          {cargoEditando && (
-            <button
-              type="button"
-              className="button button-secondary"
-              onClick={resetForm}
-            >
-              Cancelar
-            </button>
-          )}
-        </div>
-      </form>
+            {error && <div className="error-box">{error}</div>}
+
+            <div className="modal-form__actions">
+              <button
+                type="button"
+                className="button button-secondary"
+                onClick={resetForm}
+              >
+                Cancelar
+              </button>
+              <button type="submit" className="button button-primary" disabled={saving}>
+                {saving ? "Guardando..." : cargoEditando ? "Actualizar" : "Crear"}
+              </button>
+            </div>
+          </form>
+        </PageModal>
+      )}
     </section>
   );
 }
