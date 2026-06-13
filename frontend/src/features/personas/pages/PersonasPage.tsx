@@ -157,22 +157,6 @@ function PersonasPage() {
     }
   };
 
-  const tabButtonStyle = (tab: PersonasTab): React.CSSProperties => ({
-    border:
-      activeTab === tab
-        ? "1px solid rgba(159,239,0,0.38)"
-        : "1px solid rgba(215,226,218,0.12)",
-    background:
-      activeTab === tab
-        ? "linear-gradient(135deg, rgba(159,239,0,0.18), rgba(159,239,0,0.06))"
-        : "rgba(16,24,20,0.88)",
-    color: activeTab === tab ? "#f7ffe8" : "#cbd5ce",
-    padding: "14px 18px",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontWeight: 900,
-    letterSpacing: "0.02em",
-  });
 
   const exportCsv = () => {
     const headers = [
@@ -246,17 +230,10 @@ function PersonasPage() {
 
           {error && <div className="error-box">{error}</div>}
 
-          <section
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-              gap: "14px",
-              marginBottom: "24px",
-            }}
-          >
+          <section className="module-tabs">
             <button
               type="button"
-              style={tabButtonStyle("lista")}
+              className={`module-tab${activeTab === "lista" ? " module-tab--active" : ""}`}
               onClick={() => {
                 setPersonaEditando(null);
                 setActiveTab("lista");
@@ -267,7 +244,7 @@ function PersonasPage() {
 
             <button
               type="button"
-              style={tabButtonStyle("cargos")}
+              className={`module-tab${activeTab === "cargos" ? " module-tab--active" : ""}`}
               onClick={() => setActiveTab("cargos")}
             >
               Cargos
@@ -275,7 +252,7 @@ function PersonasPage() {
 
             <button
               type="button"
-              style={tabButtonStyle("estados")}
+              className={`module-tab${activeTab === "estados" ? " module-tab--active" : ""}`}
               onClick={() => setActiveTab("estados")}
             >
               Estados

@@ -1,4 +1,4 @@
-import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   Activity,
   Building2,
@@ -77,8 +77,29 @@ function DashboardPage() {
     campamentos: 0, personas: 0, inventario: 0, exploraciones: 0,
     evaluaciones: 0, usuarios: 0, recursos: 0,
   });
+  const [showCredits, setShowCredits] = useState(false);
+  const [creditsPhase, setCreditsPhase] = useState(0);
+  const creditsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleLogout = () => { storage.clearAuth(); window.location.href = "/"; };
+
+  const openCredits = useCallback(() => {
+    setShowCredits(true);
+    setCreditsPhase(0);
+    const t1 = setTimeout(() => setCreditsPhase(1), 600);
+    const t2 = setTimeout(() => setCreditsPhase(2), 1400);
+    const t3 = setTimeout(() => setCreditsPhase(3), 2200);
+    const t4 = setTimeout(() => setCreditsPhase(4), 3000);
+    const t5 = setTimeout(() => setCreditsPhase(5), 3800);
+    const t6 = setTimeout(() => setCreditsPhase(6), 4600);
+    creditsTimerRef.current = t6;
+  }, []);
+
+  const closeCredits = useCallback(() => {
+    setShowCredits(false);
+    setCreditsPhase(0);
+    if (creditsTimerRef.current) clearTimeout(creditsTimerRef.current);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -231,7 +252,87 @@ function DashboardPage() {
             ))}
           </div>
         </ScrollRevealSection>
+
+        {/* SECTION 5: CREDITOS */}
+        <ScrollRevealSection>
+          <div className="section-head"><Skull size={22} /><div><h2>Creditos</h2><span>Proyecto final EIF 209</span></div></div>
+          <div style={{ textAlign: "center", padding: "40px 20px" }}>
+            <button
+              type="button"
+              className="button button-primary"
+              onClick={openCredits}
+              style={{ fontSize: "16px", padding: "16px 36px", borderRadius: "12px" }}
+            >
+              <Skull size={20} style={{ marginRight: 8, verticalAlign: -3 }} />
+              Creditos
+            </button>
+          </div>
+        </ScrollRevealSection>
       </div>
+
+      {/* CREDITS MODAL */}
+      {showCredits && (
+        <div className="credits-overlay" onClick={closeCredits}>
+          <div className="credits-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="credits-scanlines" />
+            <div className="credits-vignette" />
+
+            <div className={`credits-content ${creditsPhase >= 1 ? "credits-phase-1" : ""}`}>
+              <div className="credits-university">
+                <div className="credits-university-icon">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                    <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                  </svg>
+                </div>
+                <h2 className="credits-university-name">Universidad Nacional</h2>
+                <p className="credits-university-sub">Sede Regional Brunca &mdash; Campus Coto</p>
+                <p className="credits-university-career">Bachillerato en Ingenieria de Sistemas de Informacion</p>
+              </div>
+
+              <div className={`credits-divider ${creditsPhase >= 2 ? "credits-divider--visible" : ""}`} />
+
+              <div className={`credits-project ${creditsPhase >= 2 ? "credits-project--visible" : ""}`}>
+                <h1 className="credits-project-name">Apocalipsis Camp System</h1>
+                <p className="credits-project-subtitle">Proyecto Final &mdash; EIF 209 Programacion IV</p>
+              </div>
+
+              <div className={`credits-divider ${creditsPhase >= 3 ? "credits-divider--visible" : ""}`} />
+
+              <div className={`credits-team ${creditsPhase >= 3 ? "credits-team--visible" : ""}`}>
+                <h3 className="credits-team-title">Integrantes</h3>
+                <div className="credits-team-grid">
+                  {["Justin Rojas", "Cristopher Urena", "Ashly Delgado", "Carolain Quesada", "Angelica Salazar"].map((name, i) => (
+                    <div key={name} className={`credits-member ${creditsPhase >= 4 ? "credits-member--visible" : ""}`} style={{ transitionDelay: `${i * 0.15}s` }}>
+                      <div className="credits-member-avatar">{name.charAt(0)}</div>
+                      <span className="credits-member-name">{name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className={`credits-divider ${creditsPhase >= 5 ? "credits-divider--visible" : ""}`} />
+
+              <div className={`credits-professor ${creditsPhase >= 5 ? "credits-professor--visible" : ""}`}>
+                <h3 className="credits-professor-title">Profesor</h3>
+                <p className="credits-professor-name">Juan Gamboa Abarca</p>
+              </div>
+
+              <div className={`credits-footer ${creditsPhase >= 6 ? "credits-footer--visible" : ""}`}>
+                <p className="credits-cycle">I Ciclo, 2026</p>
+                <p className="credits-date">13 de junio de 2026</p>
+              </div>
+            </div>
+
+            <button type="button" className="credits-close" onClick={closeCredits}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

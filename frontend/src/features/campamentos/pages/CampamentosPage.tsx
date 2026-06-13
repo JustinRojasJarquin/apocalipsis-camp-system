@@ -165,22 +165,6 @@ function CampamentosPage() {
     setActiveTab(tab);
   };
 
-  const tabButtonStyle = (tab: CampamentoTab): React.CSSProperties => ({
-    border:
-      activeTab === tab
-        ? "1px solid rgba(159,239,0,0.38)"
-        : "1px solid rgba(215,226,218,0.12)",
-    background:
-      activeTab === tab
-        ? "linear-gradient(135deg, rgba(159,239,0,0.18), rgba(159,239,0,0.06))"
-        : "rgba(16,24,20,0.88)",
-    color: activeTab === tab ? "#f7ffe8" : "#cbd5ce",
-    padding: "14px 18px",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontWeight: 900,
-    letterSpacing: "0.02em",
-  });
 
   return (
     <div style={{ display: "flex", background: "#09110f", minHeight: "100vh" }}>
@@ -218,20 +202,18 @@ function CampamentosPage() {
 
           {error && <div className="error-box">{error}</div>}
 
-          <section
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-              gap: "14px",
-              marginBottom: "24px",
-            }}
-          >
-            <button style={tabButtonStyle("lista")} onClick={() => setActiveTab("lista")}>
+          <section className="module-tabs">
+            <button
+              type="button"
+              className={`module-tab${activeTab === "lista" ? " module-tab--active" : ""}`}
+              onClick={() => setActiveTab("lista")}
+            >
               Lista
             </button>
 
             <button
-              style={tabButtonStyle("detalle")}
+              type="button"
+              className={`module-tab${activeTab === "detalle" ? " module-tab--active" : ""}`}
               disabled={!selectedCampamento}
               onClick={() => setActiveTab("detalle")}
             >
@@ -239,7 +221,8 @@ function CampamentosPage() {
             </button>
 
             <button
-              style={tabButtonStyle("solicitudes")}
+              type="button"
+              className={`module-tab${activeTab === "solicitudes" ? " module-tab--active" : ""}`}
               disabled={!selectedCampamento}
               onClick={() => setActiveTab("solicitudes")}
             >
@@ -247,7 +230,8 @@ function CampamentosPage() {
             </button>
 
             <button
-              style={tabButtonStyle("envios")}
+              type="button"
+              className={`module-tab${activeTab === "envios" ? " module-tab--active" : ""}`}
               disabled={!selectedCampamento}
               onClick={() => setActiveTab("envios")}
             >
