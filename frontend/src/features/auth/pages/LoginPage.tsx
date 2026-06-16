@@ -199,7 +199,6 @@ function LoginPage() {
 
           <div className="login-brand-content">
             <p className="login-overline">Apocalipsis Camp System</p>
-            <h1>Control operativo de supervivencia</h1>
             <p className="login-brand-description">
               Plataforma centralizada para administrar campamentos, personas,
               inventario, exploraciones y evaluaciones de ingreso en entornos

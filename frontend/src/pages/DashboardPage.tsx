@@ -13,6 +13,8 @@ import {
   BarChart3,
   PieChart,
   Skull,
+  Monitor,
+  ArrowRight,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../shared/hooks/useAuth";
@@ -177,6 +179,40 @@ function DashboardPage() {
                 </div>
               ))}
             </div>
+
+            <div style={{ marginTop: 30 }}>
+              <Link
+                to="/acceso-sistema"
+                className="button button-primary"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  fontSize: "18px",
+                  padding: "18px 42px",
+                  borderRadius: "14px",
+                  textDecoration: "none",
+                  background: "linear-gradient(135deg, #7abf13, #4f8f1e)",
+                  color: "#071006",
+                  fontWeight: 900,
+                  border: "1px solid rgba(159, 239, 0, 0.35)",
+                  boxShadow: "0 6px 24px rgba(42, 79, 15, 0.35)",
+                  transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow = "0 10px 32px rgba(42, 79, 15, 0.45)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "0 6px 24px rgba(42, 79, 15, 0.35)";
+                }}
+              >
+                <Monitor size={24} />
+                Acceso al sistema
+                <ArrowRight size={24} />
+              </Link>
+            </div>
           </div>
         </ScrollRevealSection>
 
@@ -225,35 +261,7 @@ function DashboardPage() {
           </div>
         </ScrollRevealSection>
 
-        {/* SECTION 4: MODULOS */}
-        <ScrollRevealSection>
-          <div className="section-head"><PieChart size={22} /><div><h2>Modulos del sistema</h2><span>{modules.length} modulos disponibles segun tu rol</span></div></div>
-          <div className="dashboard-module-grid">
-            {modules.map((module, i) => (
-              <StaggerCard key={module.title} index={i}>
-                <Link to={module.to} className="dashboard-module-link">
-                  <article className="dashboard-module-card" style={{ "--module-accent": module.accent } as CSSProperties}>
-                    <div className="dashboard-module-top">
-                      <div className="dashboard-module-icon">{module.iconLucide ?? (module.icon ? <img src={module.icon} alt={module.title} /> : <Package size={22} />)}</div>
-                      <span className="dashboard-module-status">{module.status}</span>
-                    </div>
-                    <div className="dashboard-module-count-area">
-                      <strong>{module.value ?? 0}</strong>
-                      <span>{module.countLabel ?? "Registros"}</span>
-                    </div>
-                    <div className="dashboard-module-content">
-                      <h3>{module.title}</h3>
-                      <p>{module.description}</p>
-                    </div>
-                    <div className="dashboard-module-footer"><span className="dashboard-module-action">Entrar</span></div>
-                  </article>
-                </Link>
-              </StaggerCard>
-            ))}
-          </div>
-        </ScrollRevealSection>
-
-        {/* SECTION 5: CREDITOS */}
+        {/* SECTION 4: CREDITOS */}
         <ScrollRevealSection>
           <div className="section-head"><Skull size={22} /><div><h2>Creditos</h2><span>Proyecto final EIF 209</span></div></div>
           <div style={{ textAlign: "center", padding: "40px 20px" }}>
@@ -337,7 +345,7 @@ function DashboardPage() {
   );
 }
 
-/* ── Scroll Reveal Section ── */
+
 function ScrollRevealSection({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [show, setShow] = useState(false);
@@ -354,12 +362,12 @@ function ScrollRevealSection({ children, className = "" }: { children: React.Rea
   return <div ref={ref} className={`scroll-reveal ${show ? "scroll-reveal--in" : ""} ${className}`}>{children}</div>;
 }
 
-/* ── Staggered Card ── */
+
 function StaggerCard({ children, index }: { children: React.ReactNode; index: number }) {
   return <div className="stagger-item" style={{ transitionDelay: `${index * 0.08}s` } as CSSProperties}>{children}</div>;
 }
 
-/* ── Progress Bar ── */
+
 function ProgressBarItem({ label, value, max, accent, delay }: { label: string; value: number; max: number; accent: string; delay: number }) {
   const pct = max > 0 ? (value / max) * 100 : 0;
   return (

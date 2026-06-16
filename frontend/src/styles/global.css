@@ -1,7 +1,13 @@
 @import "tailwindcss";
 @import "./modules.css";
 @import "./professional.css";
+@import "./inventory-sections.css";
+
+/* ═══════════════════════════════════════════════════════════════
+   INVENTORY SECTIONS CSS VARIABLES  (Apocalypse Theme)
+   ═══════════════════════════════════════════════════════════════ */
 :root {
+  /* Base colors */
   --color-bg: #07111f;
   --color-surface: rgba(15, 23, 42, 0.82);
   --color-surface-2: rgba(30, 41, 59, 0.92);
@@ -17,6 +23,15 @@
 
   --shadow-xl: 0 25px 60px rgba(0, 0, 0, 0.35);
   --blur-lg: blur(18px);
+
+  /* ── Inventory Sections Theme ── */
+  --section-surface: rgba(8, 18, 13, 0.9);
+  --section-border: rgba(159, 239, 0, 0.08);
+  --section-text: #eef3f0;
+  --section-muted: #9aa8a0;
+  --section-accent: #9fef00;
+  --section-danger: #ef4444;
+  --section-warning: #f6c453;
 }
 
 * {
