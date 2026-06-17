@@ -51,3 +51,11 @@ export interface PersonaResponseDTO {
     nombre: string;
   } | null;
 }
+
+export interface PersonaFiltersDTO {
+  buscar?: string;
+  id_campamento?: number;
+  id_cargo?: number;
+  id_estado?: number;
+  activo?: boolean;
+}

@@ -14,4 +14,10 @@ export const ENDPOINTS = {
   exploraciones: {
     base: "/exploraciones",
   },
+  solicitudes: {
+    base: "/solicitudes",
+  },
+  usuarios: {
+    base: "/usuarios",
+  },
 };

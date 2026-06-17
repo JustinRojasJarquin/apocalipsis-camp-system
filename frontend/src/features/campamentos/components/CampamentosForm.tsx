@@ -106,62 +106,64 @@ export default function CampamentosForm({
   };
 
   return (
-    <form className="campamentos-form" onSubmit={handleSubmit}>
-      <div className="form-section-header">
-        <h3>{campamentoEditando ? "Editar campamento" : "Nuevo campamento"}</h3>
-        <p className="section-description">
-          {campamentoEditando
-            ? "Modifica los datos del campamento."
-            : "Completa los campos para crear uno nuevo."}
-        </p>
+    <form className="modal-form" onSubmit={handleSubmit}>
+      <p className="section-description">
+        {campamentoEditando
+          ? "Modifica los datos del campamento."
+          : "Completa los campos para registrar un nuevo campamento."}
+      </p>
+
+      <div className="modal-form__section">
+        <h3 className="modal-form__section-title">Identificación</h3>
+
+        <label className="form-field">
+          <span>Nombre *</span>
+          <input
+            name="nombre"
+            value={form.nombre}
+            onChange={handleChange}
+            className={fieldErrors.nombre ? "input-error" : ""}
+            placeholder="Ej: Campamento Norte"
+            autoFocus
+          />
+          {fieldErrors.nombre && (
+            <span className="field-error">{fieldErrors.nombre}</span>
+          )}
+        </label>
+
+        <label className="form-field">
+          <span>Ubicación</span>
+          <input
+            name="ubicacion"
+            value={form.ubicacion}
+            onChange={handleChange}
+            className={fieldErrors.ubicacion ? "input-error" : ""}
+            placeholder="Zona o coordenadas aproximadas"
+          />
+          {fieldErrors.ubicacion && (
+            <span className="field-error">{fieldErrors.ubicacion}</span>
+          )}
+        </label>
       </div>
 
-      <label className="form-field">
-        <span>Nombre</span>
-        <input
-          name="nombre"
-          value={form.nombre}
-          onChange={handleChange}
-          className={fieldErrors.nombre ? "input-error" : ""}
-        />
-        {fieldErrors.nombre && (
-          <span className="field-error">{fieldErrors.nombre}</span>
-        )}
-      </label>
+      <div className="modal-form__section">
+        <h3 className="modal-form__section-title">Descripción</h3>
 
-      <label className="form-field">
-        <span>Ubicacion</span>
-        <input
-          name="ubicacion"
-          value={form.ubicacion}
-          onChange={handleChange}
-          className={fieldErrors.ubicacion ? "input-error" : ""}
-        />
-        {fieldErrors.ubicacion && (
-          <span className="field-error">{fieldErrors.ubicacion}</span>
-        )}
-      </label>
-
-      <label className="form-field">
-        <span>Descripcion</span>
-        <textarea
-          name="descripcion"
-          value={form.descripcion}
-          onChange={handleChange}
-        />
-      </label>
+        <label className="form-field">
+          <span>Notas del campamento</span>
+          <textarea
+            name="descripcion"
+            value={form.descripcion}
+            onChange={handleChange}
+            rows={4}
+            placeholder="Capacidad, recursos disponibles, observaciones..."
+          />
+        </label>
+      </div>
 
       {error && <div className="error-box">{error}</div>}
 
-      <button className="button button-primary" disabled={isSaving}>
-        {isSaving
-          ? "Guardando..."
-          : campamentoEditando?.id_campamento
-            ? "Actualizar"
-            : "Guardar"}
-      </button>
-
-      {campamentoEditando && (
+      <div className="modal-form__actions">
         <button
           type="button"
           className="button button-secondary"
@@ -170,9 +172,16 @@ export default function CampamentosForm({
             onCancelEdit?.();
           }}
         >
-          Cancelar edicion
+          Cancelar
         </button>
-      )}
+        <button className="button button-primary" disabled={isSaving}>
+          {isSaving
+            ? "Guardando..."
+            : campamentoEditando?.id_campamento
+              ? "Actualizar"
+              : "Guardar"}
+        </button>
+      </div>
     </form>
   );
 }

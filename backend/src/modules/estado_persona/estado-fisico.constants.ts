@@ -1,0 +1,15 @@
+export const ESTADOS_FISICOS = {
+  SANO: 'SANO',
+
+  HERIDO: 'HERIDO',
+
+  ENFERMO: 'ENFERMO',
+
+  INFECTADO: 'INFECTADO',
+
+  AGOTADO: 'AGOTADO',
+
+  EN_MISION: 'EN_MISION',
+
+  MUERTO: 'MUERTO'
+} as const;

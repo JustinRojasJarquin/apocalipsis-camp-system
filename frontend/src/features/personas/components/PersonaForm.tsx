@@ -1,20 +1,27 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
-import { createPersona, updatePersona } from "../personas.api";
-import type { Persona, PersonaCampamento, PersonaFormData } from "../types";
+import { useEffect, useState } from "react";
+import {
+  createPersona,
+  getCargos,
+  getEstados,
+  updatePersona,
+  assignCargoByIA,
+} from "../personas.api";
+import type {
+  Persona,
+  PersonaCampamento,
+  PersonaCargo,
+  PersonaEstado,
+  PersonaFormData,
+  CargoIARecommendation,
+} from "../types";
+import { Building2, KeyRound, Loader2 } from "lucide-react";
 
 interface Props {
-  onSuccess: () => void;
-  personaEditando?: Persona | null;
   campamentos: PersonaCampamento[];
-  onCancelEdit?: () => void;
-}
-
-interface ValidationErrors {
-  id_campamento?: string;
-  cedula?: string;
-  nombre?: string;
-  apellidos?: string;
-  fecha_nacimiento?: string;
+  personaEditando: Persona | null;
+  onCancelEdit: () => void;
+  onSuccess: () => void;
+  campamentoPreseleccionado?: PersonaCampamento | null;
 }
 
 const emptyForm: PersonaFormData = {
@@ -26,108 +33,128 @@ const emptyForm: PersonaFormData = {
   foto_url: "",
   imagen_carnet_url: "",
   codigo_campamento: "",
+  id_cargo_actual: "",
+  id_estado_actual: "",
 };
 
-const normalizeDateInput = (value?: string | null) => {
-  if (!value) {
-    return "";
-  }
-
-  const datePart = value.slice(0, 10);
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(datePart);
-
-  if (!match) {
-    return "";
-  }
-
-  return `${match[1]}-${match[2]}-${match[3]}`;
-};
-
-export default function PersonaForm({
-  onSuccess,
-  personaEditando,
+function PersonaForm({
   campamentos,
+  personaEditando,
   onCancelEdit,
+  onSuccess,
+  campamentoPreseleccionado,
 }: Props) {
   const [form, setForm] = useState<PersonaFormData>(emptyForm);
-  const [fieldErrors, setFieldErrors] = useState<ValidationErrors>({});
+  const [cargos, setCargos] = useState<PersonaCargo[]>([]);
+  const [estados, setEstados] = useState<PersonaEstado[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [iaLoading, setIaLoading] = useState(false);
+  const [iaResult, setIaResult] = useState<CargoIARecommendation | null>(null);
+  const [iaError, setIaError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (personaEditando) {
-      setForm({
-        id_campamento: String(personaEditando.id_campamento),
-        cedula: personaEditando.cedula,
-        nombre: personaEditando.nombre,
-        apellidos: personaEditando.apellidos,
-        fecha_nacimiento: normalizeDateInput(personaEditando.fecha_nacimiento),
-        foto_url: personaEditando.foto_url ?? "",
-        imagen_carnet_url: personaEditando.imagen_carnet_url ?? "",
-        codigo_campamento: personaEditando.codigo_campamento ?? "",
-      });
+    const loadCatalogos = async () => {
+      try {
+        const [cargosData, estadosData] = await Promise.all([
+          getCargos(),
+          getEstados(),
+        ]);
+
+        setCargos(cargosData);
+        setEstados(estadosData);
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "No se pudieron cargar cargos o estados.",
+        );
+      }
+    };
+
+    void loadCatalogos();
+  }, []);
+
+  useEffect(() => {
+    if (!personaEditando) {
+      setForm(emptyForm);
+      // Si hay campamento preseleccionado, usarlo
+      if (campamentoPreseleccionado?.id_campamento) {
+        setForm((f) => ({ ...f, id_campamento: String(campamentoPreseleccionado.id_campamento) }));
+      }
       return;
     }
 
-    setForm(emptyForm);
+    setForm({
+      id_campamento: String(personaEditando.id_campamento ?? ""),
+      cedula: personaEditando.cedula ?? "",
+      nombre: personaEditando.nombre ?? "",
+      apellidos: personaEditando.apellidos ?? "",
+      fecha_nacimiento: personaEditando.fecha_nacimiento
+        ? personaEditando.fecha_nacimiento.slice(0, 10)
+        : "",
+      foto_url: personaEditando.foto_url ?? "",
+      imagen_carnet_url: personaEditando.imagen_carnet_url ?? "",
+      codigo_campamento: personaEditando.codigo_campamento ?? "",
+      id_cargo_actual: personaEditando.id_cargo_actual
+        ? String(personaEditando.id_cargo_actual)
+        : "",
+      id_estado_actual: personaEditando.id_estado_actual
+        ? String(personaEditando.id_estado_actual)
+        : "",
+    });
   }, [personaEditando]);
 
   const handleChange = (
-    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+    field: keyof PersonaFormData,
+    value: string,
   ) => {
-    setForm((currentForm) => ({
-      ...currentForm,
-      [event.target.name]: event.target.value,
+    setForm((current) => ({
+      ...current,
+      [field]: value,
     }));
   };
 
-  const validateForm = () => {
-    const errors: ValidationErrors = {};
-
+  const validate = () => {
     if (!form.id_campamento) {
-      errors.id_campamento = "Selecciona un campamento";
+      return "Debe seleccionar un campamento.";
     }
 
     if (!form.cedula.trim()) {
-      errors.cedula = "La cedula es obligatoria";
-    } else if (form.cedula.trim().length < 4) {
-      errors.cedula = "La cedula debe tener al menos 4 caracteres";
+      return "Debe ingresar la cedula.";
     }
 
     if (!form.nombre.trim()) {
-      errors.nombre = "El nombre es obligatorio";
-    } else if (form.nombre.trim().length < 2) {
-      errors.nombre = "El nombre debe tener al menos 2 caracteres";
+      return "Debe ingresar el nombre.";
     }
 
     if (!form.apellidos.trim()) {
-      errors.apellidos = "Los apellidos son obligatorios";
-    } else if (form.apellidos.trim().length < 2) {
-      errors.apellidos = "Los apellidos deben tener al menos 2 caracteres";
+      return "Debe ingresar los apellidos.";
     }
 
-    if (
-      form.fecha_nacimiento &&
-      Number.isNaN(Date.parse(form.fecha_nacimiento))
-    ) {
-      errors.fecha_nacimiento = "La fecha de nacimiento no es valida";
+    if (!form.id_cargo_actual) {
+      return "Debe seleccionar un cargo.";
     }
 
-    return errors;
+    if (!form.id_estado_actual) {
+      return "Debe seleccionar un estado.";
+    }
+
+    return null;
   };
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const errors = validateForm();
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
+    const validationError = validate();
+
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
-    setFieldErrors({});
+    setSaving(true);
     setError(null);
-    setIsSaving(true);
 
     try {
       if (personaEditando?.id_persona) {
@@ -138,158 +165,313 @@ export default function PersonaForm({
 
       setForm(emptyForm);
       onSuccess();
-      onCancelEdit?.();
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "No se pudo guardar la persona.",
       );
     } finally {
-      setIsSaving(false);
+      setSaving(false);
+    }
+  };
+
+  const handleAsignarCargoIA = async () => {
+    // Si estamos editando, usar el id_persona directamente
+    // Si estamos creando, primero guardar la persona y luego asignar cargo
+    let personaId = personaEditando?.id_persona;
+
+    if (!personaId) {
+      // Validar campos mínimos requeridos
+      if (!form.cedula.trim() || !form.nombre.trim() || !form.apellidos.trim() || !form.id_campamento) {
+        setIaError("Completa los datos básicos de la persona antes de usar la IA.");
+        return;
+      }
+
+      // Crear la persona y asignar cargo con IA en un solo paso
+      setIaLoading(true);
+      setIaError(null);
+      setIaResult(null);
+      try {
+        const nuevaPersona = await createPersona(form);
+        personaId = nuevaPersona.id_persona;
+        
+        if (!personaId) {
+          throw new Error("No se pudo obtener el ID de la persona creada.");
+        }
+        
+        // Ahora asignar cargo con IA automáticamente
+        const result = await assignCargoByIA(personaId);
+        setIaResult(result);
+        
+        // Recargar catálogos por si cambió el cargo
+        const [cargosData] = await Promise.all([getCargos()]);
+        setCargos(cargosData);
+        
+        // Actualizar el formulario con el cargo recomendado
+        if (result.changed && result.recommendedCargoId) {
+          setForm((f) => ({ ...f, id_cargo_actual: String(result.recommendedCargoId) }));
+        }
+        
+        // Notificar al componente padre para recargar datos
+        onSuccess();
+      } catch (err) {
+        setIaError(
+          err instanceof Error
+            ? err.message
+            : "No se pudo crear la persona o asignar cargo.",
+        );
+      } finally {
+        setIaLoading(false);
+      }
+      return;
+    }
+
+    // Asignar cargo con IA a persona existente
+    setIaLoading(true);
+    setIaError(null);
+    setIaResult(null);
+
+    try {
+      const result = await assignCargoByIA(personaId);
+      setIaResult(result);
+      // Recargar catálogos por si cambió el cargo
+      const [cargosData] = await Promise.all([getCargos()]);
+      setCargos(cargosData);
+      // Actualizar el formulario con el nuevo cargo si cambió
+      if (result.changed && result.recommendedCargoId) {
+        setForm((f) => ({ ...f, id_cargo_actual: String(result.recommendedCargoId) }));
+      }
+    } catch (err) {
+      setIaError(
+        err instanceof Error
+          ? err.message
+          : "No se pudo asignar cargo con IA.",
+      );
+    } finally {
+      setIaLoading(false);
     }
   };
 
   return (
-    <form className="campamentos-form" onSubmit={handleSubmit}>
-      <div className="form-section-header">
-        <h3>{personaEditando ? "Editar persona" : "Nueva persona"}</h3>
-        <p className="section-description">
-          {personaEditando
-            ? "Actualiza la informacion personal y su campamento."
-            : "Registra una nueva persona dentro de un campamento activo."}
-        </p>
-      </div>
-
-      <label className="form-field">
-        <span>Campamento</span>
-        <select
-          name="id_campamento"
-          value={form.id_campamento}
-          onChange={handleChange}
-          className={fieldErrors.id_campamento ? "input-error" : ""}
-        >
-          <option value="">Selecciona un campamento</option>
-          {campamentos.map((campamento) => (
-            <option
-              key={campamento.id_campamento}
-              value={campamento.id_campamento}
-            >
-              {campamento.nombre}
-            </option>
-          ))}
-        </select>
-        {fieldErrors.id_campamento && (
-          <span className="field-error">{fieldErrors.id_campamento}</span>
-        )}
-      </label>
-
-      <label className="form-field">
-        <span>Cedula</span>
-        <input
-          name="cedula"
-          value={form.cedula}
-          onChange={handleChange}
-          className={fieldErrors.cedula ? "input-error" : ""}
-        />
-        {fieldErrors.cedula && (
-          <span className="field-error">{fieldErrors.cedula}</span>
-        )}
-      </label>
-
-      <label className="form-field">
-        <span>Nombre</span>
-        <input
-          name="nombre"
-          value={form.nombre}
-          onChange={handleChange}
-          className={fieldErrors.nombre ? "input-error" : ""}
-        />
-        {fieldErrors.nombre && (
-          <span className="field-error">{fieldErrors.nombre}</span>
-        )}
-      </label>
-
-      <label className="form-field">
-        <span>Apellidos</span>
-        <input
-          name="apellidos"
-          value={form.apellidos}
-          onChange={handleChange}
-          className={fieldErrors.apellidos ? "input-error" : ""}
-        />
-        {fieldErrors.apellidos && (
-          <span className="field-error">{fieldErrors.apellidos}</span>
-        )}
-      </label>
-
-      <label className="form-field">
-        <span>Fecha de nacimiento</span>
-        <input
-          type="date"
-          name="fecha_nacimiento"
-          value={form.fecha_nacimiento}
-          onChange={handleChange}
-          className={fieldErrors.fecha_nacimiento ? "input-error" : ""}
-        />
-        {fieldErrors.fecha_nacimiento && (
-          <span className="field-error">{fieldErrors.fecha_nacimiento}</span>
-        )}
-      </label>
-
-      <label className="form-field">
-        <span>Codigo interno</span>
-        <input
-          name="codigo_campamento"
-          value={form.codigo_campamento}
-          onChange={handleChange}
-          placeholder="Opcional"
-        />
-      </label>
-
-      <label className="form-field">
-        <span>URL de foto</span>
-        <input
-          name="foto_url"
-          value={form.foto_url}
-          onChange={handleChange}
-          placeholder="https://..."
-        />
-      </label>
-
-      <label className="form-field">
-        <span>URL de carnet</span>
-        <input
-          name="imagen_carnet_url"
-          value={form.imagen_carnet_url}
-          onChange={handleChange}
-          placeholder="https://..."
-        />
-      </label>
+    <form className="modal-form" onSubmit={handleSubmit}>
+      <p className="section-description">
+        Registra la información personal, campamento, cargo y estado de la
+        persona.
+      </p>
 
       {error && <div className="error-box">{error}</div>}
 
-      <button
-        className="button button-primary"
-        disabled={isSaving || campamentos.length === 0}
-      >
-        {isSaving
-          ? "Guardando..."
-          : personaEditando?.id_persona
-            ? "Actualizar"
-            : "Guardar"}
-      </button>
+      <div className="modal-form__section">
+        <h3 className="modal-form__section-title">Datos personales</h3>
 
-      {personaEditando && (
+        <div className="modal-form__row">
+          <label className="form-field">
+            <span>Cédula *</span>
+            <input
+              value={form.cedula}
+              onChange={(event) => handleChange("cedula", event.target.value)}
+              autoFocus
+            />
+          </label>
+
+          <label className="form-field">
+            <span>Fecha nacimiento</span>
+            <input
+              type="date"
+              value={form.fecha_nacimiento}
+              onChange={(event) =>
+                handleChange("fecha_nacimiento", event.target.value)
+              }
+            />
+          </label>
+        </div>
+
+        <div className="modal-form__row">
+          <label className="form-field">
+            <span>Nombre *</span>
+            <input
+              value={form.nombre}
+              onChange={(event) => handleChange("nombre", event.target.value)}
+            />
+          </label>
+
+          <label className="form-field">
+            <span>Apellidos *</span>
+            <input
+              value={form.apellidos}
+              onChange={(event) =>
+                handleChange("apellidos", event.target.value)
+              }
+            />
+          </label>
+        </div>
+      </div>
+
+      <div className="modal-form__section">
+        <h3 className="modal-form__section-title">Asignación</h3>
+
+        {campamentoPreseleccionado ? (
+          <div style={{ padding: "14px 16px", border: "1px solid var(--admin-line)", borderRadius: 8, background: "rgba(0,0,0,0.14)" }}>
+            <span style={{ color: "var(--admin-muted)", fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Campamento</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <Building2 size={18} style={{ color: "var(--admin-accent)" }} />
+              <div>
+                <strong style={{ color: "var(--admin-text)", fontSize: 15 }}>{campamentoPreseleccionado.nombre}</strong>
+                <span style={{ color: "var(--admin-muted)", fontSize: 12, marginLeft: 8 }}>{campamentoPreseleccionado.nombre}</span>
+              </div>
+            </div>
+            <input type="hidden" value={campamentoPreseleccionado.id_campamento} />
+          </div>
+        ) : (
+          <label className="form-field">
+            <span>Campamento *</span>
+            <select
+              value={form.id_campamento}
+              onChange={(event) =>
+                handleChange("id_campamento", event.target.value)
+              }
+            >
+              <option value="">Seleccione un campamento</option>
+              {campamentos.map((campamento) => (
+                <option
+                  key={campamento.id_campamento}
+                  value={campamento.id_campamento}
+                >
+                  {campamento.nombre}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
+        <div className="modal-form__row">
+          <label className="form-field">
+            <span>Cargo *</span>
+            <select
+              value={form.id_cargo_actual}
+              onChange={(event) =>
+                handleChange("id_cargo_actual", event.target.value)
+              }
+            >
+              <option value="">Seleccione un cargo</option>
+              {cargos.map((cargo) => (
+                <option key={cargo.id_cargo} value={cargo.id_cargo}>
+                  {cargo.nombre}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="form-field">
+            <span>Estado *</span>
+            <select
+              value={form.id_estado_actual}
+              onChange={(event) =>
+                handleChange("id_estado_actual", event.target.value)
+              }
+            >
+              <option value="">Seleccione un estado</option>
+              {estados.map((estado) => (
+                <option key={estado.id_estado} value={estado.id_estado}>
+                  {estado.nombre}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <label className="form-field">
+          <span>Código campamento</span>
+          <input
+            value={form.codigo_campamento}
+            onChange={(event) =>
+              handleChange("codigo_campamento", event.target.value)
+            }
+            placeholder="Identificador interno del campamento"
+          />
+        </label>
+
+        <div style={{ marginTop: 16, padding: 16, border: "1px solid var(--section-border)", borderRadius: 8, background: "rgba(0,0,0,0.12)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <span style={{ color: "var(--section-text)", fontSize: 14, fontWeight: 700 }}>Asignación de cargo con IA</span>
+            <button
+              type="button"
+              className="btn btn--primary btn--sm"
+              onClick={handleAsignarCargoIA}
+              disabled={iaLoading}
+            >
+              {iaLoading ? <><Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> {personaEditando?.id_persona ? "Consultando..." : "Creando..."}</> : <><KeyRound size={14} /> {personaEditando?.id_persona ? "Asignar cargo con IA" : "Crear y asignar cargo"}</>}
+            </button>
+          </div>
+
+            {iaError && <div style={{ padding: 10, border: "1px solid rgba(239,68,68,0.3)", borderRadius: 6, background: "rgba(239,68,68,0.06)", color: "#fca5a5", fontSize: 13, marginBottom: 12 }}>{iaError}</div>}
+
+            {iaResult && (
+              <div style={{ padding: 12, border: "1px solid rgba(56,189,248,0.3)", borderRadius: 6, background: "rgba(56,189,248,0.06)" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+                  <div>
+                    <span style={{ color: "var(--section-muted)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Cargo recomendado</span>
+                    <p style={{ color: "#9fef00", fontSize: 14, fontWeight: 700, margin: "2px 0 0" }}>{iaResult.recommendedCargoName}</p>
+                  </div>
+                  <div>
+                    <span style={{ color: "var(--section-muted)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Resultado</span>
+                    <p style={{ color: iaResult.changed ? "#9fef00" : "#f6c453", fontSize: 13, fontWeight: 700, margin: "2px 0 0" }}>{iaResult.changed ? "Cargo actualizado" : "Sin cambios"}</p>
+                  </div>
+                </div>
+                <p style={{ color: "var(--section-muted)", fontSize: 12, margin: 0 }}><strong>Motivo:</strong> {iaResult.reason}</p>
+              </div>
+            )}
+          </div>
+      </div>
+
+      <div className="modal-form__section">
+        <h3 className="modal-form__section-title">Medios (opcional)</h3>
+
+        <label className="form-field">
+          <span>Foto URL</span>
+          <input
+            value={form.foto_url}
+            onChange={(event) => handleChange("foto_url", event.target.value)}
+            placeholder="https://..."
+          />
+        </label>
+
+        <label className="form-field">
+          <span>Imagen carnet URL</span>
+          <input
+            value={form.imagen_carnet_url}
+            onChange={(event) =>
+              handleChange("imagen_carnet_url", event.target.value)
+            }
+            placeholder="https://..."
+          />
+        </label>
+      </div>
+
+      <div className="modal-form__actions">
         <button
           type="button"
           className="button button-secondary"
           onClick={() => {
             setForm(emptyForm);
-            onCancelEdit?.();
+            onCancelEdit();
           }}
         >
-          Cancelar edicion
+          Cancelar
         </button>
-      )}
+        <button
+          type="submit"
+          className="button button-primary"
+          disabled={saving}
+        >
+          {saving
+            ? "Guardando..."
+            : personaEditando
+              ? "Actualizar"
+              : "Crear"}
+        </button>
+      </div>
     </form>
   );
 }
+
+export default PersonaForm;

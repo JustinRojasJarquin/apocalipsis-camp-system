@@ -72,7 +72,8 @@ export const actualizarEstadoController = async (
   try {
     const id_exploracion = Number(req.params.id);
     const datos = validarActualizarEstado(req.body);
-    const actualizada = await actualizarEstado(id_exploracion, datos);
+    const idUsuario = req.usuario!.id_usuario;
+    const actualizada = await actualizarEstado(id_exploracion, datos, idUsuario);
     return res.status(200).json(actualizada);
   } catch (error: any) {
     const status = error.message === "Exploración no encontrada" ? 404 : 400;
@@ -145,7 +146,8 @@ export const registrarRecursoEncontradoController = async (
   try {
     const id_exploracion = Number(req.params.id);
     const datos = validarRecursoEncontrado(req.body);
-    const recurso = await registrarRecursoEncontrado(id_exploracion, datos);
+    const idUsuario = req.usuario!.id_usuario;
+    const recurso = await registrarRecursoEncontrado(id_exploracion, datos, idUsuario);
     return res.status(201).json(recurso);
   } catch (error: any) {
     const status = error.message === "Exploración no encontrada" ? 404 : 400;

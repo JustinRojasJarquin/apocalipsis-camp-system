@@ -246,32 +246,36 @@ model inventario_movimiento {
 }
 
 model persona {
-  id_persona          Int                   @id @default(autoincrement())
-  id_campamento       Int
-  cedula              String                @db.VarChar(30)
-  nombre              String                @db.VarChar(100)
-  apellidos           String                @db.VarChar(150)
-  fecha_nacimiento    DateTime?             @db.Date
-  foto_url            String?               @db.VarChar(255)
-  imagen_carnet_url   String?               @db.VarChar(255)
-  codigo_campamento   String?               @unique(map: "codigo_campamento") @db.VarChar(20)
-  id_cargo_actual     Int?
-  id_estado_actual    Int?
-  activo              Boolean               @default(true)
-  asignacion_cargo    asignacion_cargo[]
-  envio_persona       envio_persona[]
-  evaluacion_ingreso  evaluacion_ingreso[]
-  exploracion_persona exploracion_persona[]
-  campamento          campamento            @relation(fields: [id_campamento], references: [id_campamento], onDelete: NoAction, onUpdate: NoAction, map: "persona_ibfk_1")
-  cargo               cargo?                @relation(fields: [id_cargo_actual], references: [id_cargo], onDelete: NoAction, onUpdate: NoAction, map: "persona_ibfk_2")
-  estado_persona      estado_persona?       @relation(fields: [id_estado_actual], references: [id_estado], onDelete: NoAction, onUpdate: NoAction, map: "persona_ibfk_3")
-  produccion_diaria   produccion_diaria[]
-  racion_diaria       racion_diaria[]
-  usuario             usuario[]
+  id_persona                      Int                               @id @default(autoincrement())
+  id_campamento                   Int
+  cedula                          String                            @db.VarChar(30)
+  nombre                          String                            @db.VarChar(100)
+  apellidos                       String                            @db.VarChar(150)
+  fecha_nacimiento                DateTime?                         @db.Date
+  foto_url                        String?                           @db.VarChar(255)
+  imagen_carnet_url               String?                           @db.VarChar(255)
+  codigo_campamento               String?                           @unique(map: "codigo_campamento") @db.VarChar(20)
+  id_cargo_actual                 Int?
+  id_estado_actual                Int?
+  activo                          Boolean                           @default(true)
+  id_estado_fisico                Int?
+  asignacion_cargo                asignacion_cargo[]
+  envio_persona                   envio_persona[]
+  evaluacion_ingreso              evaluacion_ingreso[]
+  exploracion_persona             exploracion_persona[]
+  historial_estado_fisico_persona historial_estado_fisico_persona[]
+  estado_fisico_persona           estado_fisico_persona?            @relation(fields: [id_estado_fisico], references: [id_estado_fisico], onDelete: NoAction, onUpdate: NoAction, map: "fk_persona_estado_fisico")
+  campamento                      campamento                        @relation(fields: [id_campamento], references: [id_campamento], onDelete: NoAction, onUpdate: NoAction, map: "persona_ibfk_1")
+  cargo                           cargo?                            @relation(fields: [id_cargo_actual], references: [id_cargo], onDelete: NoAction, onUpdate: NoAction, map: "persona_ibfk_2")
+  estado_persona                  estado_persona?                   @relation(fields: [id_estado_actual], references: [id_estado], onDelete: NoAction, onUpdate: NoAction, map: "persona_ibfk_3")
+  produccion_diaria               produccion_diaria[]
+  racion_diaria                   racion_diaria[]
+  usuario                         usuario[]
 
   @@index([id_campamento], map: "id_campamento")
   @@index([id_cargo_actual], map: "id_cargo_actual")
   @@index([id_estado_actual], map: "id_estado_actual")
+  @@index([id_estado_fisico], map: "fk_persona_estado_fisico")
 }
 
 model produccion_diaria {
@@ -400,6 +404,31 @@ model usuario {
 
   @@index([id_persona], map: "id_persona")
   @@index([id_rol], map: "id_rol")
+}
+
+model estado_fisico_persona {
+  id_estado_fisico                Int                               @id @default(autoincrement())
+  nombre                          String                            @unique(map: "nombre") @db.VarChar(50)
+  descripcion                     String?                           @db.Text
+  disponible                      Boolean                           @default(true)
+  nivel_riesgo                    Int                               @default(0)
+  historial_estado_fisico_persona historial_estado_fisico_persona[]
+  persona                         persona[]
+}
+
+model historial_estado_fisico_persona {
+  id_historial          Int                   @id @default(autoincrement())
+  id_persona            Int
+  id_estado_fisico      Int
+  fecha_inicio          DateTime              @default(now()) @db.DateTime(0)
+  fecha_fin             DateTime?             @db.DateTime(0)
+  observacion           String?               @db.Text
+  sugerido_por_ia       Boolean               @default(false)
+  persona               persona               @relation(fields: [id_persona], references: [id_persona], onDelete: NoAction, onUpdate: NoAction, map: "historial_estado_fisico_persona_ibfk_1")
+  estado_fisico_persona estado_fisico_persona @relation(fields: [id_estado_fisico], references: [id_estado_fisico], onDelete: NoAction, onUpdate: NoAction, map: "historial_estado_fisico_persona_ibfk_2")
+
+  @@index([id_estado_fisico], map: "id_estado_fisico")
+  @@index([id_persona], map: "id_persona")
 }
 
 enum exploracion_persona_rol_en_mision {

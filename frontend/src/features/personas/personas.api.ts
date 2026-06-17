@@ -1,4 +1,11 @@
-import type { Persona, PersonaFormData } from "./types";
+import type {
+  Persona,
+  PersonaCargo,
+  PersonaEstado,
+  PersonaFilters,
+  PersonaFormData,
+  CargoIARecommendation,
+} from "./types";
 
 const BASE_URL = "http://localhost:4000/api/personas";
 
@@ -8,6 +15,7 @@ const handleResponse = async <T>(res: Response): Promise<T> => {
 
   if (!res.ok) {
     const errorData = data as { error?: string; mensaje?: string } | null;
+
     const message =
       errorData?.error ||
       errorData?.mensaje ||
@@ -29,11 +37,49 @@ const mapPayload = (data: PersonaFormData) => ({
   foto_url: data.foto_url.trim() || null,
   imagen_carnet_url: data.imagen_carnet_url.trim() || null,
   codigo_campamento: data.codigo_campamento.trim() || null,
+  id_cargo_actual: data.id_cargo_actual
+    ? Number(data.id_cargo_actual)
+    : null,
+  id_estado_actual: data.id_estado_actual
+    ? Number(data.id_estado_actual)
+    : null,
 });
 
-export const getPersonas = async (): Promise<Persona[]> => {
-  const res = await fetch(BASE_URL);
+const appendFilter = (
+  params: URLSearchParams,
+  key: string,
+  value: string,
+) => {
+  const trimmed = value.trim();
+
+  if (trimmed) {
+    params.set(key, trimmed);
+  }
+};
+
+export const getPersonas = async (
+  filters?: Partial<PersonaFilters>,
+): Promise<Persona[]> => {
+  const params = new URLSearchParams();
+
+  appendFilter(params, "buscar", filters?.buscar ?? "");
+  appendFilter(params, "id_campamento", filters?.id_campamento ?? "");
+  appendFilter(params, "id_cargo", filters?.id_cargo ?? "");
+  appendFilter(params, "id_estado", filters?.id_estado ?? "");
+
+  const query = params.toString();
+  const res = await fetch(query ? `${BASE_URL}?${query}` : BASE_URL);
   return await handleResponse<Persona[]>(res);
+};
+
+export const getCargos = async (): Promise<PersonaCargo[]> => {
+  const res = await fetch(`${BASE_URL}/cargos`);
+  return await handleResponse<PersonaCargo[]>(res);
+};
+
+export const getEstados = async (): Promise<PersonaEstado[]> => {
+  const res = await fetch(`${BASE_URL}/estados`);
+  return await handleResponse<PersonaEstado[]>(res);
 };
 
 export const createPersona = async (data: PersonaFormData) => {
@@ -66,4 +112,18 @@ export const deletePersona = async (id: number) => {
   });
 
   await handleResponse<Persona>(res);
+};
+
+export const getPersonaById = async (id: number): Promise<Persona> => {
+  const res = await fetch(`${BASE_URL}/${id}`);
+  return await handleResponse<Persona>(res);
+};
+
+export const assignCargoByIA = async (
+  id: number,
+): Promise<CargoIARecommendation> => {
+  const res = await fetch(`${BASE_URL}/${id}/asignar-cargo-ia`, {
+    method: "POST",
+  });
+  return await handleResponse<CargoIARecommendation>(res);
 };
