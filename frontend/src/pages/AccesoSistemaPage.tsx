@@ -36,7 +36,7 @@ import EnviosPage from "../features/envios/pages/EnviosPage";
 import SolicitudesPage from "../features/solicitudes/pages/SolicitudesPage";
 
 type SysTab = "campamentos" | "roles" | "usuarios" | "recursos";
-type CampTab = "detalle" | "personas" | "cargos" | "estados" | "cargoIA" | "inventario" | "exploraciones" | "evaluaciones" | "envios" | "solicitudes";
+type CampTab = "detalle" | "personas" | "cargos" | "estados" | "inventario" | "exploraciones" | "evaluaciones" | "envios" | "solicitudes";
 
 function AccesoSistemaPage() {
   const { usuario } = useAuth();
@@ -91,6 +91,9 @@ function AccesoSistemaPage() {
   const [iaLoading, setIaLoading] = useState(false);
   const [iaResult, setIaResult] = useState<CargoIARecommendation | null>(null);
   const [iaError, setIaError] = useState<string | null>(null);
+  const [campamentoEditando, setCampamentoEditando] = useState<Campamento | null>(null);
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [isDeletingCampId, setIsDeletingCampId] = useState<number | null>(null);
 
   const campamentosActivos = campamentos.filter((c) => c.activo !== false);
   const selectedCamp = campamentosActivos.find((c) => c.id_campamento === selectedCampId);
@@ -128,6 +131,12 @@ function AccesoSistemaPage() {
   useEffect(() => { void loadAll(); }, [selectedCampId]);
 
   const goToCamp = (id: number) => { setSelectedCampId(id); setCampTab("detalle"); };
+  const handleDeleteCampamento = async (id: number) => {
+    if (!window.confirm("Desactivar campamento?")) return;
+    setIsDeletingCampId(id);
+    try { await deleteCampamento(id); await loadAll(); } catch (err) { setError(err instanceof Error ? err.message : "Error"); }
+    finally { setIsDeletingCampId(null); }
+  };
   const goBack = () => { setSelectedCampId(null); setCampTab("detalle"); };
   const handleLogout = () => { storage.clearAuth(); window.location.href = "/"; };
 
@@ -276,13 +285,18 @@ function AccesoSistemaPage() {
                   <div className="section-header__left"><h3 className="section-header__title"><Building2 size={20} style={{ color: "var(--section-accent)" }} /> Todos los campamentos</h3><p className="section-header__sub">Selecciona un campamento para gestionar todos sus módulos.</p></div>
                   <div className="section-header__actions"><div className="header-stat"><span className="header-stat__label">Activos</span><strong className="header-stat__value">{campamentosActivos.length}</strong></div></div>
                 </div>
+                {mostrarFormulario && (<div style={{ padding: "16px 22px", borderBottom: "1px solid var(--section-border)", background: "rgba(0,0,0,0.12)" }}><CampamentosForm campamentoEditando={campamentoEditando} onCancelEdit={() => { setMostrarFormulario(false); setCampamentoEditando(null); }} onSuccess={() => { setMostrarFormulario(false); setCampamentoEditando(null); void loadAll(); }} /></div>)}
                 <div className="section-body">
                   {loading ? <div className="section-empty"><p className="section-empty__desc">Cargando...</p></div> : campamentosActivos.length === 0 ? <div className="section-empty"><p className="section-empty__title">Sin campamentos</p></div> : (
                     <div className="content-list">{campamentosActivos.map((camp) => (
                       <article key={camp.id_campamento} className="content-card">
                         <div className="content-card__header"><div><h4 className="content-card__title">{camp.nombre}</h4><p className="content-card__meta"><MapPin size={12} style={{ verticalAlign: "middle", marginRight: 4, opacity: 0.6 }} />{camp.ubicacion?.trim() || "Sin ubicacion"}</p></div><span className="status-tag status-tag--active">Activo</span></div>
                         {camp.descripcion?.trim() && <p className="content-card__body">{camp.descripcion.trim()}</p>}
-                        <div className="content-card__actions"><button type="button" className="btn btn--primary" onClick={() => goToCamp(camp.id_campamento!)}><Eye size={16} /> Ver detalle completo</button></div>
+                        <div className="content-card__actions">
+                          <button type="button" className="btn btn--primary" onClick={() => goToCamp(camp.id_campamento!)}><Eye size={16} /> Ver detalle completo</button>
+                          <button type="button" className="btn btn--secondary btn--sm" onClick={() => { setCampamentoEditando(camp); setMostrarFormulario(true); }}><Pencil size={12} /> Editar</button>
+                          <button type="button" className="btn btn--danger btn--sm" disabled={isDeletingCampId === camp.id_campamento} onClick={() => void handleDeleteCampamento(camp.id_campamento!)}><Trash2 size={12} /> Eliminar</button>
+                        </div>
                       </article>
                     ))}</div>
                   )}
@@ -331,14 +345,13 @@ function AccesoSistemaPage() {
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, padding: "14px 20px", border: "1px solid var(--section-border)", borderRadius: 10, background: "rgba(0,0,0,0.15)", flexWrap: "wrap" }}>
               <Building2 size={20} style={{ color: "var(--section-accent)", flexShrink: 0 }} />
               <div style={{ flex: 1 }}><strong style={{ color: "var(--section-text)", fontSize: 18 }}>{selectedCamp.nombre}</strong><span style={{ color: "var(--section-muted)", fontSize: 13, marginLeft: 8 }}><MapPin size={12} style={{ verticalAlign: "middle", marginRight: 2 }} />{selectedCamp.ubicacion?.trim() || "Sin ubicacion"}</span></div>
-              <button type="button" className="btn btn--ghost btn--sm" onClick={goBack}><ArrowLeft size={14} /> Volver</button>
             </div>
 
             <section className="module-tabs" style={{ marginTop: 0 }}>
-              {(["detalle", "personas", "cargos", "estados", "cargoIA", "inventario", "exploraciones", "evaluaciones", "envios", "solicitudes"] as CampTab[]).map((tab) => (
+              {(["detalle", "personas", "cargos", "estados", "inventario", "exploraciones", "evaluaciones", "envios", "solicitudes"] as CampTab[]).map((tab) => (
                 <button key={tab} type="button" className={`module-tab${campTab === tab ? " module-tab--active" : ""}`} onClick={() => setCampTab(tab)}>
-                  {tab === "detalle" && <Building2 size={14} />} {tab === "personas" && <Users size={14} />} {tab === "cargos" && <Hash size={14} />} {tab === "estados" && <Activity size={14} />} {tab === "cargoIA" && <KeyRound size={14} />} {tab === "inventario" && <Package size={14} />} {tab === "exploraciones" && <Compass size={14} />} {tab === "evaluaciones" && <ClipboardCheck size={14} />} {tab === "envios" && <Truck size={14} />} {tab === "solicitudes" && <FileText size={14} />}
-                  {tab === "detalle" ? "Resumen" : tab === "cargos" ? `Cargos (${cargos.length})` : tab === "estados" ? `Estados (${estadosPer.length})` : tab === "cargoIA" ? "Cargo IA" : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  {tab === "detalle" && <Building2 size={14} />} {tab === "personas" && <Users size={14} />} {tab === "cargos" && <Hash size={14} />} {tab === "estados" && <Activity size={14} />} {tab === "inventario" && <Package size={14} />} {tab === "exploraciones" && <Compass size={14} />} {tab === "evaluaciones" && <ClipboardCheck size={14} />} {tab === "envios" && <Truck size={14} />} {tab === "solicitudes" && <FileText size={14} />}
+                  {tab === "detalle" ? "Resumen" : tab === "cargos" ? `Cargos (${cargos.length})` : tab === "estados" ? `Estados (${estadosPer.length})` : tab.charAt(0).toUpperCase() + tab.slice(1)}
                   {tab === "personas" && ` (${personasCamp.length})`} {tab === "inventario" && ` (${inventarioCamp.length})`} {tab === "exploraciones" && ` (${exploracionesCamp.length})`} {tab === "evaluaciones" && ` (${evaluacionesCamp.length})`}
                 </button>
               ))}
@@ -370,86 +383,6 @@ function AccesoSistemaPage() {
             {campTab === "cargos" && <CargosManager onChanged={() => void loadAll()} />}
             {campTab === "estados" && <EstadosManager onChanged={() => void loadAll()} />}
 
-            {campTab === "cargoIA" && (
-              <section className="section-card">
-                <div className="section-header">
-                  <div className="section-header__left"><h3 className="section-header__title"><KeyRound size={18} style={{ color: "var(--section-accent)" }} /> Asignación de cargo con IA</h3><p className="section-header__sub">Selecciona una persona para que la IA asigne un cargo automáticamente</p></div>
-                </div>
-                <div className="section-body">
-                  <label className="filter-group" style={{ marginBottom: 20 }}>
-                    <span className="filter-group__label">Seleccionar persona</span>
-                    <select className="filter-group__input" value={iaSelectedPersona} onChange={(e) => { setIaSelectedPersona(Number(e.target.value)); setIaResult(null); setIaError(null); }}>
-                      <option value={0}>Selecciona una persona del campamento</option>
-                      {personasCamp.map((p) => <option key={p.id_persona} value={p.id_persona!}>{p.nombre} {p.apellidos} — {p.cargo?.nombre ?? "Sin cargo"}</option>)}
-                    </select>
-                  </label>
-
-                  {iaPersona && (
-                    <>
-                      {/* ── Detalle de persona ── */}
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12, marginBottom: 20 }}>
-                        <div className="eval-item"><span className="eval-item__label">Nombre</span><div className="eval-item__value"><strong>{iaPersona.nombre} {iaPersona.apellidos}</strong></div></div>
-                        <div className="eval-item"><span className="eval-item__label">Cédula</span><div className="eval-item__value"><strong>{iaPersona.cedula}</strong></div></div>
-                        <div className="eval-item"><span className="eval-item__label">Campamento</span><div className="eval-item__value"><strong>{iaPersona.campamento?.nombre ?? `#${iaPersona.id_campamento}`}</strong></div></div>
-                        <div className="eval-item"><span className="eval-item__label">Cargo actual</span><div className="eval-item__value"><strong>{iaPersona.cargo?.nombre ?? "Sin cargo"}</strong></div></div>
-                        <div className="eval-item"><span className="eval-item__label">Estado</span><div className="eval-item__value"><strong>{iaPersona.estado_persona?.nombre ?? "Sin estado"}</strong></div></div>
-                        <div className="eval-item"><span className="eval-item__label">Nacimiento</span><div className="eval-item__value"><strong>{iaPersona.fecha_nacimiento?.slice(0, 10)?.split("-").reverse().join("/") ?? "Sin fecha"}</strong></div></div>
-                        <div className="eval-item"><span className="eval-item__label">Código</span><div className="eval-item__value"><strong>{iaPersona.codigo_campamento?.trim() || "Sin código"}</strong></div></div>
-                      </div>
-
-                      {/* ── Botones de acción ── */}
-                      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
-                        <button type="button" className="btn btn--primary" disabled={iaLoading} onClick={() => void handleCargoIA()}>
-                          {iaLoading ? "Consultando IA..." : <><KeyRound size={14} /> Asignar cargo con IA</>}
-                        </button>
-                        <button type="button" className="btn btn--secondary" onClick={() => { setCampTab("evaluaciones"); setEvalPersonaId(iaSelectedPersona); }}>
-                          <ClipboardCheck size={14} /> Evaluación de ingreso
-                        </button>
-                      </div>
-
-                      {iaError && <div style={{ padding: 12, border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, background: "rgba(239,68,68,0.06)", color: "#fca5a5", fontSize: 14, marginBottom: 16 }}>{iaError}</div>}
-
-                      {/* ── Resultado IA ── */}
-                      {iaResult && (
-                        <div style={{ padding: 16, border: "1px solid rgba(56,189,248,0.3)", borderRadius: 8, background: "rgba(56,189,248,0.06)", marginBottom: 20 }}>
-                          <h4 style={{ margin: "0 0 12px", color: "#38bdf8", fontSize: 14, fontWeight: 700 }}>Resultado de la IA</h4>
-                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
-                            <div className="eval-item"><span className="eval-item__label">Cargo recomendado</span><div className="eval-item__value"><strong style={{ color: "#9fef00" }}>{iaResult.recommendedCargoName}</strong></div></div>
-                            <div className="eval-item"><span className="eval-item__label">Resultado</span><div className="eval-item__value"><strong style={{ color: iaResult.changed ? "#9fef00" : "#f6c453" }}>{iaResult.changed ? "Cargo actualizado con la recomendación IA." : "El cargo actual no cambió."}</strong></div></div>
-                          </div>
-                          <div style={{ marginTop: 10 }}>
-                            <span className="eval-item__label">Motivo</span>
-                            <p style={{ color: "var(--section-muted)", fontSize: 13, margin: "4px 0 0" }}>{iaResult.reason}</p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* ── Historial de cargos ── */}
-                      {iaPersona.asignacion_cargo && iaPersona.asignacion_cargo.length > 0 && (
-                        <div>
-                          <h4 style={{ margin: "0 0 10px", color: "var(--section-text)", fontSize: 14, fontWeight: 700 }}>Historial de cargos ({iaPersona.asignacion_cargo.length})</h4>
-                          <div className="section-body--flush"><div className="section-table-wrapper"><table className="section-table">
-                            <thead><tr><th>Cargo</th><th>Campamento</th><th>Inicio</th><th>Fin</th></tr></thead>
-                            <tbody>{iaPersona.asignacion_cargo.map((h) => (
-                              <tr key={h.id_asignacion}>
-                                <td style={{ fontWeight: 600 }}>{h.cargo?.nombre ?? `#${h.id_cargo}`}</td>
-                                <td>{h.campamento?.nombre ?? `#${h.id_campamento}`}</td>
-                                <td>{h.fecha_inicio?.slice(0, 10)?.split("-").reverse().join("/") ?? "—"}</td>
-                                <td>{h.fecha_fin ? h.fecha_fin.slice(0, 10).split("-").reverse().join("/") : <span style={{ color: "#9fef00" }}>Actual</span>}</td>
-                              </tr>
-                            ))}</tbody>
-                          </table></div></div>
-                        </div>
-                      )}
-
-                      {(!iaPersona.asignacion_cargo || iaPersona.asignacion_cargo.length === 0) && (
-                        <p style={{ color: "var(--section-muted)", fontSize: 13 }}>Sin historial de cargos registrado.</p>
-                      )}
-                    </>
-                  )}
-                </div>
-              </section>
-            )}
 
             {campTab === "inventario" && (
               <section className="section-card">
@@ -496,7 +429,7 @@ function AccesoSistemaPage() {
         )}
       </div>
 
-      {showPersonaForm && (<PageModal title={personaEditando ? "Editar persona" : "Nueva persona"} onClose={() => { setShowPersonaForm(false); setPersonaEditando(null); }} size="lg"><PersonaForm campamentos={campamentosActivos.map((c) => ({ id_campamento: c.id_campamento as number, nombre: c.nombre }))} personaEditando={personaEditando} onCancelEdit={() => { setShowPersonaForm(false); setPersonaEditando(null); }} onSuccess={() => { setShowPersonaForm(false); setPersonaEditando(null); void loadAll(); }} /></PageModal>)}
+      {showPersonaForm && (<PageModal title={personaEditando ? "Editar persona" : "Nueva persona"} onClose={() => { setShowPersonaForm(false); setPersonaEditando(null); }} size="lg"><PersonaForm campamentos={campamentosActivos.map((c) => ({ id_campamento: c.id_campamento as number, nombre: c.nombre }))} personaEditando={personaEditando} onCancelEdit={() => { setShowPersonaForm(false); setPersonaEditando(null); }} onSuccess={() => { setShowPersonaForm(false); setPersonaEditando(null); void loadAll(); }} campamentoPreseleccionado={selectedCamp ? { id_campamento: selectedCamp.id_campamento as number, nombre: selectedCamp.nombre } : null} /></PageModal>)}
       {showExploracionForm && (<PageModal title="Nueva exploración" onClose={() => setShowExploracionForm(false)} size="lg"><ExploracionForm idCampamento={selectedCampId!} onCreada={handleExpCreated} onCancelar={() => setShowExploracionForm(false)} /></PageModal>)}
       {exploracionDetalle && vistaDetalleExp === "personas" && (<PageModal onClose={() => { setExploracionDetalle(null); setVistaDetalleExp(null); void loadAll(); }} size="lg"><AsignarPersonas exploracion={exploracionDetalle} onCerrar={() => { setExploracionDetalle(null); setVistaDetalleExp(null); void loadAll(); }} /></PageModal>)}
       {exploracionDetalle && vistaDetalleExp === "recursos" && (<PageModal onClose={() => { setExploracionDetalle(null); setVistaDetalleExp(null); void loadAll(); }} size="lg"><RecursosMision exploracion={exploracionDetalle} onCerrar={() => { setExploracionDetalle(null); setVistaDetalleExp(null); void loadAll(); }} /></PageModal>)}

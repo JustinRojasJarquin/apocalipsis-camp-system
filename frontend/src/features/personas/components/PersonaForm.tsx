@@ -4,6 +4,7 @@ import {
   getCargos,
   getEstados,
   updatePersona,
+  assignCargoByIA,
 } from "../personas.api";
 import type {
   Persona,
@@ -11,13 +12,16 @@ import type {
   PersonaCargo,
   PersonaEstado,
   PersonaFormData,
+  CargoIARecommendation,
 } from "../types";
+import { Building2, KeyRound, Loader2 } from "lucide-react";
 
 interface Props {
   campamentos: PersonaCampamento[];
   personaEditando: Persona | null;
   onCancelEdit: () => void;
   onSuccess: () => void;
+  campamentoPreseleccionado?: PersonaCampamento | null;
 }
 
 const emptyForm: PersonaFormData = {
@@ -38,12 +42,16 @@ function PersonaForm({
   personaEditando,
   onCancelEdit,
   onSuccess,
+  campamentoPreseleccionado,
 }: Props) {
   const [form, setForm] = useState<PersonaFormData>(emptyForm);
   const [cargos, setCargos] = useState<PersonaCargo[]>([]);
   const [estados, setEstados] = useState<PersonaEstado[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [iaLoading, setIaLoading] = useState(false);
+  const [iaResult, setIaResult] = useState<CargoIARecommendation | null>(null);
+  const [iaError, setIaError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadCatalogos = async () => {
@@ -70,6 +78,10 @@ function PersonaForm({
   useEffect(() => {
     if (!personaEditando) {
       setForm(emptyForm);
+      // Si hay campamento preseleccionado, usarlo
+      if (campamentoPreseleccionado?.id_campamento) {
+        setForm((f) => ({ ...f, id_campamento: String(campamentoPreseleccionado.id_campamento) }));
+      }
       return;
     }
 
@@ -162,6 +174,83 @@ function PersonaForm({
     }
   };
 
+  const handleAsignarCargoIA = async () => {
+    // Si estamos editando, usar el id_persona directamente
+    // Si estamos creando, primero guardar la persona y luego asignar cargo
+    let personaId = personaEditando?.id_persona;
+
+    if (!personaId) {
+      // Validar campos mínimos requeridos
+      if (!form.cedula.trim() || !form.nombre.trim() || !form.apellidos.trim() || !form.id_campamento) {
+        setIaError("Completa los datos básicos de la persona antes de usar la IA.");
+        return;
+      }
+
+      // Crear la persona y asignar cargo con IA en un solo paso
+      setIaLoading(true);
+      setIaError(null);
+      setIaResult(null);
+      try {
+        const nuevaPersona = await createPersona(form);
+        personaId = nuevaPersona.id_persona;
+        
+        if (!personaId) {
+          throw new Error("No se pudo obtener el ID de la persona creada.");
+        }
+        
+        // Ahora asignar cargo con IA automáticamente
+        const result = await assignCargoByIA(personaId);
+        setIaResult(result);
+        
+        // Recargar catálogos por si cambió el cargo
+        const [cargosData] = await Promise.all([getCargos()]);
+        setCargos(cargosData);
+        
+        // Actualizar el formulario con el cargo recomendado
+        if (result.changed && result.recommendedCargoId) {
+          setForm((f) => ({ ...f, id_cargo_actual: String(result.recommendedCargoId) }));
+        }
+        
+        // Notificar al componente padre para recargar datos
+        onSuccess();
+      } catch (err) {
+        setIaError(
+          err instanceof Error
+            ? err.message
+            : "No se pudo crear la persona o asignar cargo.",
+        );
+      } finally {
+        setIaLoading(false);
+      }
+      return;
+    }
+
+    // Asignar cargo con IA a persona existente
+    setIaLoading(true);
+    setIaError(null);
+    setIaResult(null);
+
+    try {
+      const result = await assignCargoByIA(personaId);
+      setIaResult(result);
+      // Recargar catálogos por si cambió el cargo
+      const [cargosData] = await Promise.all([getCargos()]);
+      setCargos(cargosData);
+      // Actualizar el formulario con el nuevo cargo si cambió
+      if (result.changed && result.recommendedCargoId) {
+        setForm((f) => ({ ...f, id_cargo_actual: String(result.recommendedCargoId) }));
+      }
+    } catch (err) {
+      setIaError(
+        err instanceof Error
+          ? err.message
+          : "No se pudo asignar cargo con IA.",
+      );
+    } finally {
+      setIaLoading(false);
+    }
+  };
+
   return (
     <form className="modal-form" onSubmit={handleSubmit}>
       <p className="section-description">
@@ -220,25 +309,39 @@ function PersonaForm({
       <div className="modal-form__section">
         <h3 className="modal-form__section-title">Asignación</h3>
 
-        <label className="form-field">
-          <span>Campamento *</span>
-          <select
-            value={form.id_campamento}
-            onChange={(event) =>
-              handleChange("id_campamento", event.target.value)
-            }
-          >
-            <option value="">Seleccione un campamento</option>
-            {campamentos.map((campamento) => (
-              <option
-                key={campamento.id_campamento}
-                value={campamento.id_campamento}
-              >
-                {campamento.nombre}
-              </option>
-            ))}
-          </select>
-        </label>
+        {campamentoPreseleccionado ? (
+          <div style={{ padding: "14px 16px", border: "1px solid var(--admin-line)", borderRadius: 8, background: "rgba(0,0,0,0.14)" }}>
+            <span style={{ color: "var(--admin-muted)", fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Campamento</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <Building2 size={18} style={{ color: "var(--admin-accent)" }} />
+              <div>
+                <strong style={{ color: "var(--admin-text)", fontSize: 15 }}>{campamentoPreseleccionado.nombre}</strong>
+                <span style={{ color: "var(--admin-muted)", fontSize: 12, marginLeft: 8 }}>{campamentoPreseleccionado.nombre}</span>
+              </div>
+            </div>
+            <input type="hidden" value={campamentoPreseleccionado.id_campamento} />
+          </div>
+        ) : (
+          <label className="form-field">
+            <span>Campamento *</span>
+            <select
+              value={form.id_campamento}
+              onChange={(event) =>
+                handleChange("id_campamento", event.target.value)
+              }
+            >
+              <option value="">Seleccione un campamento</option>
+              {campamentos.map((campamento) => (
+                <option
+                  key={campamento.id_campamento}
+                  value={campamento.id_campamento}
+                >
+                  {campamento.nombre}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
 
         <div className="modal-form__row">
           <label className="form-field">
@@ -286,6 +389,38 @@ function PersonaForm({
             placeholder="Identificador interno del campamento"
           />
         </label>
+
+        <div style={{ marginTop: 16, padding: 16, border: "1px solid var(--section-border)", borderRadius: 8, background: "rgba(0,0,0,0.12)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <span style={{ color: "var(--section-text)", fontSize: 14, fontWeight: 700 }}>Asignación de cargo con IA</span>
+            <button
+              type="button"
+              className="btn btn--primary btn--sm"
+              onClick={handleAsignarCargoIA}
+              disabled={iaLoading}
+            >
+              {iaLoading ? <><Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> {personaEditando?.id_persona ? "Consultando..." : "Creando..."}</> : <><KeyRound size={14} /> {personaEditando?.id_persona ? "Asignar cargo con IA" : "Crear y asignar cargo"}</>}
+            </button>
+          </div>
+
+            {iaError && <div style={{ padding: 10, border: "1px solid rgba(239,68,68,0.3)", borderRadius: 6, background: "rgba(239,68,68,0.06)", color: "#fca5a5", fontSize: 13, marginBottom: 12 }}>{iaError}</div>}
+
+            {iaResult && (
+              <div style={{ padding: 12, border: "1px solid rgba(56,189,248,0.3)", borderRadius: 6, background: "rgba(56,189,248,0.06)" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+                  <div>
+                    <span style={{ color: "var(--section-muted)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Cargo recomendado</span>
+                    <p style={{ color: "#9fef00", fontSize: 14, fontWeight: 700, margin: "2px 0 0" }}>{iaResult.recommendedCargoName}</p>
+                  </div>
+                  <div>
+                    <span style={{ color: "var(--section-muted)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Resultado</span>
+                    <p style={{ color: iaResult.changed ? "#9fef00" : "#f6c453", fontSize: 13, fontWeight: 700, margin: "2px 0 0" }}>{iaResult.changed ? "Cargo actualizado" : "Sin cambios"}</p>
+                  </div>
+                </div>
+                <p style={{ color: "var(--section-muted)", fontSize: 12, margin: 0 }}><strong>Motivo:</strong> {iaResult.reason}</p>
+              </div>
+            )}
+          </div>
       </div>
 
       <div className="modal-form__section">
