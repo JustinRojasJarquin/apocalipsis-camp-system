@@ -17,7 +17,7 @@ function Navbar() {
   const cargoNombre = usuario?.persona?.cargo?.nombre;
   const campamentoNombre = usuario?.persona?.campamento?.nombre;
 
-  const { secondsLeft, isActive, logout } = useInactivityTimer();
+  const { secondsLeft } = useInactivityTimer();
 
   const handleLogout = () => {
     storage.clearAuth();

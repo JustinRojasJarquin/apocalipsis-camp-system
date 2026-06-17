@@ -7,7 +7,7 @@ import type {
   CargoIARecommendation,
 } from "./types";
 
-const BASE_URL = "http://localhost:4000/api/personas";
+export const BASE_URL = "http://localhost:4000/api/personas";
 
 const handleResponse = async <T>(res: Response): Promise<T> => {
   const body = await res.text();
@@ -117,6 +117,26 @@ export const deletePersona = async (id: number) => {
 export const getPersonaById = async (id: number): Promise<Persona> => {
   const res = await fetch(`${BASE_URL}/${id}`);
   return await handleResponse<Persona>(res);
+};
+
+export const recomendarCargoIA = async (data: {
+  persona: string;
+  estado?: string;
+  cargoActual?: string | null;
+  campamento?: string;
+}) => {
+  const res = await fetch(`${BASE_URL}/recomendar-cargo-ia`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+  return await handleResponse<{
+    recommendedCargoId: number;
+    recommendedCargoName: string;
+    reason: string;
+  }>(res);
 };
 
 export const assignCargoByIA = async (

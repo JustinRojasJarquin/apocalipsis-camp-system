@@ -40,7 +40,7 @@ export function mapInventoryError(body: ErrorBody): string | null {
   return null;
 }
 
-function translateKnown(text: string): string {
+function translateKnown(text: string): string | null {
   const t = text.toLowerCase();
 
   // Known direct translations and patterns

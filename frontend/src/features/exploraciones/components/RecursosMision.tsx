@@ -6,6 +6,7 @@ import {
 } from "../exploraciones.api";
 import { getAvailableResources } from "../../inventario/inventario.api";
 import type { RecursoOption } from "../../inventario/types";
+import { Package, Search, Plus, Backpack, Sparkles } from "lucide-react";
 
 interface Props {
   exploracion: Exploracion;
@@ -87,139 +88,282 @@ function RecursosMision({ exploracion, onCerrar }: Props) {
   };
 
   return (
-    <div className="form-container">
-      <h2>Recursos de la misión</h2>
-      <p className="subtitulo">{exploracion.nombre}</p>
-
-      {/* ─── Recursos a llevar ─── */}
-      <div className="recursos-seccion">
-        <h3>Recursos a llevar</h3>
-        {exploracion.exploracion_recurso_llevado.length === 0 ? (
-          <p className="sin-datos-inline">Sin recursos asignados.</p>
-        ) : (
-          <ul className="recursos-lista">
-            {exploracion.exploracion_recurso_llevado.map((r) => (
-              <li key={r.id_registro}>
-                <span>{nombreRecurso(r.id_recurso)}</span>
-                <span className="cantidad">
-                  {Number(r.cantidad_llevada).toLocaleString("es-CR")}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {esPlanificada && (
-          <div className="agregar-seccion">
-            <div className="campos-fila">
-              <div className="campo">
-                <label htmlFor="recurso-llevar">Recurso</label>
-                <select
-                  id="recurso-llevar"
-                  value={idRecursoLlevado}
-                  onChange={(e) => setIdRecursoLlevado(Number(e.target.value))}
-                >
-                  <option value={0}>-- Seleccionar --</option>
-                  {recursos.map((r) => (
-                    <option key={r.id_recurso} value={r.id_recurso}>
-                      {r.nombre}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="campo">
-                <label htmlFor="cantidad-llevar">Cantidad</label>
-                <input
-                  id="cantidad-llevar"
-                  type="number"
-                  value={cantidadLlevada}
-                  min={1}
-                  onChange={(e) => setCantidadLlevada(Number(e.target.value))}
-                />
-              </div>
-            </div>
-            <button
-              className="btn-primario"
-              onClick={handleAgregarLlevado}
-              disabled={cargando}
-            >
-              {cargando ? "Guardando..." : "Agregar recurso"}
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* ─── Recursos encontrados ─── */}
-      {esEnProgreso && (
-        <div className="recursos-seccion">
-          <h3>Recursos encontrados</h3>
-          {exploracion.exploracion_recurso_encontrado.length === 0 ? (
-            <p className="sin-datos-inline">Sin recursos registrados aún.</p>
-          ) : (
-            <ul className="recursos-lista">
-              {exploracion.exploracion_recurso_encontrado.map((r) => (
-                <li key={r.id_registro}>
-                  <span>{nombreRecurso(r.id_recurso)}</span>
-                  <span className="cantidad">
-                    {Number(r.cantidad_encontrada).toLocaleString("es-CR")}
-                  </span>
-                  {r.generado_aleatorio && (
-                    <span className="badge-aleatorio">Hallazgo</span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-
-          <div className="agregar-seccion">
-            <div className="campos-fila">
-              <div className="campo">
-                <label htmlFor="recurso-encontrado">Recurso encontrado</label>
-                <select
-                  id="recurso-encontrado"
-                  value={idRecursoEncontrado}
-                  onChange={(e) =>
-                    setIdRecursoEncontrado(Number(e.target.value))
-                  }
-                >
-                  <option value={0}>-- Seleccionar --</option>
-                  {recursos.map((r) => (
-                    <option key={r.id_recurso} value={r.id_recurso}>
-                      {r.nombre}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="campo">
-                <label htmlFor="cantidad-encontrada">Cantidad</label>
-                <input
-                  id="cantidad-encontrada"
-                  type="number"
-                  value={cantidadEncontrada}
-                  min={0}
-                  onChange={(e) =>
-                    setCantidadEncontrada(Number(e.target.value))
-                  }
-                />
-              </div>
-            </div>
-            <button
-              className="btn-primario"
-              onClick={handleRegistrarEncontrado}
-              disabled={cargando}
-            >
-              {cargando ? "Guardando..." : "Registrar encontrado"}
-            </button>
+    <div className="modal-form" style={{ maxWidth: "100%" }}>
+      <div className="section-card" style={{ border: "none" }}>
+        {/* Header */}
+        <div
+          className="section-header"
+          style={{ marginBottom: 20, borderBottom: "1px solid var(--section-border)", paddingBottom: 16 }}
+        >
+          <div className="section-header__left">
+            <h3 style={{ margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+              <Package size={18} /> Recursos de la misión
+            </h3>
+            <p className="section-header__sub" style={{ margin: "4px 0 0" }}>
+              {exploracion.nombre}
+            </p>
           </div>
         </div>
-      )}
 
-      {error && <p className="error-text">{error}</p>}
+        {/* ─── Recursos a llevar ─── */}
+        <div style={{ marginBottom: 24 }}>
+          <h4 style={{ margin: "0 0 12px", fontSize: 14, color: "var(--section-muted)", textTransform: "uppercase", letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}>
+            <Backpack size={14} /> Recursos a llevar ({exploracion.exploracion_recurso_llevado.length})
+          </h4>
 
-      <div className="form-acciones">
-        <button className="btn-secundario" onClick={onCerrar}>
-          Cerrar
-        </button>
+          {exploracion.exploracion_recurso_llevado.length === 0 ? (
+            <div
+              className="section-empty"
+              style={{ padding: "24px 16px", borderRadius: 8, background: "rgba(0,0,0,0.1)" }}
+            >
+              <p className="section-empty__desc" style={{ margin: 0 }}>
+                Sin recursos asignados.
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {exploracion.exploracion_recurso_llevado.map((r) => (
+                <div
+                  key={r.id_registro}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "10px 14px",
+                    borderRadius: 8,
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid var(--section-border)",
+                  }}
+                >
+                  <span style={{ fontSize: 14, fontWeight: 500 }}>
+                    {nombreRecurso(r.id_recurso)}
+                  </span>
+                  <span
+                    style={{
+                      background: "rgba(246,196,83,0.15)",
+                      color: "#f6c453",
+                      padding: "2px 10px",
+                      borderRadius: 12,
+                      fontSize: 13,
+                      fontWeight: 600,
+                    }}
+                  >
+                    x{Number(r.cantidad_llevada).toLocaleString("es-CR")}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {esPlanificada && (
+            <div
+              style={{
+                marginTop: 16,
+                padding: 20,
+                borderRadius: 8,
+                border: "1px solid var(--section-border)",
+                background: "rgba(246,196,83,0.03)",
+              }}
+            >
+              <h4
+                style={{
+                  margin: "0 0 16px",
+                  fontSize: 14,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  color: "#f6c453",
+                }}
+              >
+                <Plus size={15} /> Agregar recurso a llevar
+              </h4>
+
+              <div className="modal-form__row" style={{ marginBottom: 16 }}>
+                <label className="form-field">
+                  <span>Recurso</span>
+                  <select
+                    value={idRecursoLlevado}
+                    onChange={(e) => setIdRecursoLlevado(Number(e.target.value))}
+                  >
+                    <option value={0}>-- Seleccionar --</option>
+                    {recursos.map((r) => (
+                      <option key={r.id_recurso} value={r.id_recurso}>
+                        {r.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="form-field">
+                  <span>Cantidad</span>
+                  <input
+                    type="number"
+                    value={cantidadLlevada}
+                    min={1}
+                    onChange={(e) => setCantidadLlevada(Number(e.target.value))}
+                  />
+                </label>
+              </div>
+
+              <div className="modal-form__actions" style={{ justifyContent: "flex-start" }}>
+                <button
+                  type="button"
+                  className="button button-primary"
+                  onClick={handleAgregarLlevado}
+                  disabled={cargando}
+                >
+                  {cargando ? "Guardando..." : "Agregar recurso"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ─── Recursos encontrados ─── */}
+        {esEnProgreso && (
+          <div style={{ marginBottom: 24 }}>
+            <h4 style={{ margin: "0 0 12px", fontSize: 14, color: "var(--section-muted)", textTransform: "uppercase", letterSpacing: "0.5px", display: "flex", alignItems: "center", gap: 6 }}>
+              <Search size={14} /> Recursos encontrados ({exploracion.exploracion_recurso_encontrado.length})
+            </h4>
+
+            {exploracion.exploracion_recurso_encontrado.length === 0 ? (
+              <div
+                className="section-empty"
+                style={{ padding: "24px 16px", borderRadius: 8, background: "rgba(0,0,0,0.1)" }}
+              >
+                <p className="section-empty__desc" style={{ margin: 0 }}>
+                  Sin recursos registrados aún.
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {exploracion.exploracion_recurso_encontrado.map((r) => (
+                  <div
+                    key={r.id_registro}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "10px 14px",
+                      borderRadius: 8,
+                      background: "rgba(255,255,255,0.03)",
+                      border: "1px solid var(--section-border)",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 14, fontWeight: 500 }}>
+                        {nombreRecurso(r.id_recurso)}
+                      </span>
+                      {r.generado_aleatorio && (
+                        <span
+                          style={{
+                            background: "rgba(167,139,250,0.15)",
+                            color: "#a78bfa",
+                            padding: "2px 8px",
+                            borderRadius: 10,
+                            fontSize: 11,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 3,
+                          }}
+                        >
+                          <Sparkles size={10} /> Hallazgo
+                        </span>
+                      )}
+                    </div>
+                    <span
+                      style={{
+                        background: "rgba(52,211,153,0.15)",
+                        color: "#34d399",
+                        padding: "2px 10px",
+                        borderRadius: 12,
+                        fontSize: 13,
+                        fontWeight: 600,
+                      }}
+                    >
+                      x{Number(r.cantidad_encontrada).toLocaleString("es-CR")}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div
+              style={{
+                marginTop: 16,
+                padding: 20,
+                borderRadius: 8,
+                border: "1px solid var(--section-border)",
+                background: "rgba(52,211,153,0.03)",
+              }}
+            >
+              <h4
+                style={{
+                  margin: "0 0 16px",
+                  fontSize: 14,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  color: "#34d399",
+                }}
+              >
+                <Plus size={15} /> Registrar recurso encontrado
+              </h4>
+
+              <div className="modal-form__row" style={{ marginBottom: 16 }}>
+                <label className="form-field">
+                  <span>Recurso encontrado</span>
+                  <select
+                    value={idRecursoEncontrado}
+                    onChange={(e) =>
+                      setIdRecursoEncontrado(Number(e.target.value))
+                    }
+                  >
+                    <option value={0}>-- Seleccionar --</option>
+                    {recursos.map((r) => (
+                      <option key={r.id_recurso} value={r.id_recurso}>
+                        {r.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="form-field">
+                  <span>Cantidad</span>
+                  <input
+                    type="number"
+                    value={cantidadEncontrada}
+                    min={0}
+                    onChange={(e) =>
+                      setCantidadEncontrada(Number(e.target.value))
+                    }
+                  />
+                </label>
+              </div>
+
+              <div className="modal-form__actions" style={{ justifyContent: "flex-start" }}>
+                <button
+                  type="button"
+                  className="button button-primary"
+                  onClick={handleRegistrarEncontrado}
+                  disabled={cargando}
+                >
+                  {cargando ? "Guardando..." : "Registrar encontrado"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="error-box" style={{ marginBottom: 16 }}>{error}</div>
+        )}
+
+        <div className="modal-form__actions">
+          <button type="button" className="button button-secondary" onClick={onCerrar}>
+            Cerrar
+          </button>
+        </div>
       </div>
     </div>
   );

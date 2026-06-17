@@ -1,17 +1,13 @@
-import { type CSSProperties, useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { type CSSProperties, useEffect, useRef, useState, useCallback } from "react";
 import {
-  Activity,
   Building2,
   Users,
   Package,
   Compass,
-  ClipboardCheck,
-  Shield,
   LogOut,
   ShieldAlert,
   TrendingUp,
   BarChart3,
-  PieChart,
   Skull,
   Monitor,
   ArrowRight,
@@ -27,10 +23,6 @@ import { getUsuarios } from "../features/usuarios/usuarios.api";
 import { getRecursos } from "../features/recursos/recursos.api";
 import { storage } from "../shared/utils/storage";
 
-import campamentosIcon from "../assets/campamentos.png";
-import personasIcon from "../assets/personas.png";
-import inventarioIcon from "../assets/inventario.png";
-import exploracionesIcon from "../assets/exploraciones.png";
 
 type DashboardStats = {
   campamentos: number;
@@ -40,22 +32,6 @@ type DashboardStats = {
   evaluaciones: number;
   usuarios: number;
   recursos: number;
-};
-
-type ModuleItem = {
-  title: string;
-  value?: number;
-  countLabel?: string;
-  to: string;
-  icon?: string;
-  iconLucide?: React.ReactNode;
-  accent: string;
-  description: string;
-  status: string;
-};
-
-type ModuleItemWithRoles = ModuleItem & {
-  roles: string[];
 };
 
 const COLORS = {
@@ -88,11 +64,6 @@ function DashboardPage() {
   const openCredits = useCallback(() => {
     setShowCredits(true);
     setCreditsPhase(0);
-    const t1 = setTimeout(() => setCreditsPhase(1), 600);
-    const t2 = setTimeout(() => setCreditsPhase(2), 1400);
-    const t3 = setTimeout(() => setCreditsPhase(3), 2200);
-    const t4 = setTimeout(() => setCreditsPhase(4), 3000);
-    const t5 = setTimeout(() => setCreditsPhase(5), 3800);
     const t6 = setTimeout(() => setCreditsPhase(6), 4600);
     creditsTimerRef.current = t6;
   }, []);
@@ -125,19 +96,6 @@ function DashboardPage() {
     })();
   }, [usuario]);
 
-  const modules = useMemo((): ModuleItem[] => {
-    const all: ModuleItemWithRoles[] = [
-      { title: "Campamentos", value: stats.campamentos, countLabel: "Activos", to: "/campamentos", icon: campamentosIcon, accent: COLORS.CAMPAMENTO, description: "Gestiona zonas seguras, infraestructura y recursos.", status: "Operativo", roles: ["ADMIN", "ADMINISTRADOR", "GESTOR_RECURSOS", "GESTION_RECURSOS", "TRABAJADOR"] },
-      { title: "Personas", value: stats.personas, countLabel: "Registros", to: "/personas", icon: personasIcon, accent: COLORS.PERSONA, description: "Administra perfiles, roles, estados y asignaciones.", status: "Vigilancia", roles: ["ADMIN", "ADMINISTRADOR", "VIAJES", "ENCARGADO_VIAJES"] },
-      { title: "Inventario", value: stats.inventario, countLabel: "Recursos", to: "/inventario", icon: inventarioIcon, accent: COLORS.INVENTARIO, description: "Controla suministros, herramientas y reservas.", status: "Suministros", roles: ["ADMIN", "ADMINISTRADOR", "GESTOR_RECURSOS", "GESTION_RECURSOS", "TRABAJADOR"] },
-      { title: "Evaluaciones", value: stats.evaluaciones, countLabel: "Ingresos", to: "/evaluaciones", iconLucide: <ClipboardCheck size={22} />, accent: COLORS.EVALUACION, description: "Gestiona evaluaciones de ingreso y admision.", status: "Admision", roles: ["ADMIN", "ADMINISTRADOR", "VIAJES", "ENCARGADO_VIAJES"] },
-      { title: "Exploraciones", value: stats.exploraciones, countLabel: "Misiones", to: "/exploraciones", icon: exploracionesIcon, accent: COLORS.EXPLORACION, description: "Planifica salidas y seguimiento de misiones.", status: "Campo", roles: ["ADMIN", "ADMINISTRADOR", "VIAJES", "ENCARGADO_VIAJES"] },
-      { title: "Usuarios", value: stats.usuarios, countLabel: "Sistema", to: "/usuarios", iconLucide: <Shield size={22} />, accent: COLORS.USUARIO, description: "Administra cuentas, roles y permisos.", status: "Seguridad", roles: ["ADMIN", "ADMINISTRADOR"] },
-      { title: "Catalogo", value: stats.recursos, countLabel: "Items", to: "/recursos", iconLucide: <Package size={22} />, accent: COLORS.RECURSO, description: "Catalogo central de recursos disponibles.", status: "Inventario", roles: ["ADMIN", "ADMINISTRADOR", "GESTOR_RECURSOS", "GESTION_RECURSOS", "TRABAJADOR"] },
-    ];
-    if (!rolCodigo) return all;
-    return all.filter((m) => m.roles.includes(rolCodigo));
-  }, [stats, rolCodigo]);
 
   const maxVal = Math.max(1, stats.campamentos, stats.personas, stats.inventario, stats.exploraciones, stats.evaluaciones, stats.usuarios, stats.recursos);
 
@@ -172,7 +130,7 @@ function DashboardPage() {
                 { label: "Personas", val: stats.personas, accent: COLORS.PERSONA },
                 { label: "Inventario", val: stats.inventario, accent: COLORS.INVENTARIO },
                 { label: "Exploraciones", val: stats.exploraciones, accent: COLORS.EXPLORACION },
-              ].map((s, i) => (
+              ].map((s) => (
                 <div key={s.label} className="scroll-mini-stat" style={{ "--m-accent": s.accent } as CSSProperties}>
                   <strong>{s.val}</strong>
                   <span>{s.label}</span>

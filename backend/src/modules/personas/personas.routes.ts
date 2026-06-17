@@ -3,6 +3,7 @@ import * as controller from "./personas.controller";
 
 const router = Router();
 
+router.post("/recomendar-cargo-ia", controller.recomendarCargoIA);
 router.get("/cargos", controller.getCargos);
 router.get("/estados", controller.getEstados);
 

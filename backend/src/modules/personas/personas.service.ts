@@ -212,7 +212,7 @@ const buildPersonaWhere = (filters: PersonaFiltersDTO = {}) => {
 const parseRecomendacionCargoIA = (text: string) => {
   const trimmed = text.trim();
   if (!trimmed) {
-    throw new Error("Respuesta vacía de la IA");
+    throw new Error("Respuesta vacรญa de la IA");
   }
 
   let jsonText = trimmed;
@@ -228,7 +228,7 @@ const parseRecomendacionCargoIA = (text: string) => {
   try {
     parsed = JSON.parse(jsonText);
   } catch {
-    throw new Error("La respuesta de la IA no es JSON válido");
+    throw new Error("La respuesta de la IA no es JSON vรกlido");
   }
 
   const recommendedCargoId = Number(parsed.recommendedCargoId ?? parsed.id);
@@ -237,7 +237,7 @@ const parseRecomendacionCargoIA = (text: string) => {
   const reason = parsed.reason ?? parsed.motivo ?? "Sin motivo disponible";
 
   if (!recommendedCargoName || !Number.isInteger(recommendedCargoId)) {
-    throw new Error("Respuesta de IA incompleta o inválida");
+    throw new Error("Respuesta de IA incompleta o invรกlida");
   }
 
   return { recommendedCargoId, recommendedCargoName, reason };
@@ -342,10 +342,7 @@ export const createPersona = async (data: CreatePersonaDTO) => {
       );
     }
 
-    return await tx.persona.findUniqueOrThrow({
-      where: { id_persona: persona.id_persona },
-      include: personaInclude,
-    });
+    return persona;
   });
 };
 
@@ -408,6 +405,43 @@ export const updatePersona = async (id: number, data: UpdatePersonaDTO) => {
   });
 };
 
+export const recomendarCargoIA = async (data: {
+  persona: string;
+  estado?: string;
+  cargoActual?: string | null;
+  campamento?: string;
+}) => {
+  const cargos = await getCargos();
+  if (cargos.length === 0) {
+    throw new Error("No hay cargos disponibles para recomendar");
+  }
+
+  const raw = await recomendarCargoPorIA({
+    persona: data.persona,
+    estado: data.estado,
+    cargoActual: data.cargoActual ?? null,
+    campamento: data.campamento ?? "",
+    cargosDisponibles: cargos.map(
+      (cargo) => `${cargo.id_cargo}: ${cargo.nombre}`,
+    ),
+  });
+
+  const recommendation = parseRecomendacionCargoIA(raw);
+  const suggestedCargo =
+    cargos.find((cargo) => cargo.id_cargo === recommendation.recommendedCargoId) ??
+    cargos.find(
+      (cargo) =>
+        cargo.nombre.toLowerCase() ===
+        recommendation.recommendedCargoName.toLowerCase(),
+    ) ?? cargos[0];
+
+  return {
+    recommendedCargoId: suggestedCargo.id_cargo,
+    recommendedCargoName: suggestedCargo.nombre,
+    reason: recommendation.reason,
+  };
+};
+
 export const assignCargoByIA = async (id_persona: number) => {
   ensurePositiveId(id_persona);
 
@@ -446,7 +480,7 @@ export const assignCargoByIA = async (id_persona: number) => {
       reason:
         error instanceof Error
           ? error.message
-          : "No fue posible generar una recomendación IA.",
+          : "No fue posible generar una recomendaciรณn IA.",
     };
   }
 

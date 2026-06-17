@@ -95,6 +95,16 @@ export const remove = async (req: Request, res: Response) => {
   }
 };
 
+export const recomendarCargoIA = async (req: Request, res: Response) => {
+  try {
+    const data = await service.recomendarCargoIA(req.body);
+    res.json(data);
+  } catch (error) {
+    const message = (error as Error).message;
+    res.status(getErrorStatus(message)).json({ error: message });
+  }
+};
+
 export const assignCargoByIA = async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);

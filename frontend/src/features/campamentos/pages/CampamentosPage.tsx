@@ -1,6 +1,5 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import {
-  Building2,
   Eye,
   FileText,
   Pencil,
@@ -23,7 +22,6 @@ import { getResources } from "../../inventario/inventario.api";
 import type { InventarioResource } from "../../inventario/types";
 import SolicitudesPage from "../../solicitudes/pages/SolicitudesPage";
 import EnviosPage from "../../envios/pages/EnviosPage";
-import { useScrollReveal } from "../../../shared/hooks/useScrollReveal";
 
 type CampamentoTab = "lista" | "detalle" | "solicitudes" | "envios";
 

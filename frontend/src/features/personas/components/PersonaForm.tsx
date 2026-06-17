@@ -4,6 +4,8 @@ import {
   getCargos,
   getEstados,
   updatePersona,
+  recomendarCargoIA,
+  assignCargoByIA,
 } from "../personas.api";
 import type {
   Persona,
@@ -18,6 +20,7 @@ interface Props {
   personaEditando: Persona | null;
   onCancelEdit: () => void;
   onSuccess: () => void;
+  idCampamentoFijo?: number | null;
 }
 
 const emptyForm: PersonaFormData = {
@@ -38,12 +41,19 @@ function PersonaForm({
   personaEditando,
   onCancelEdit,
   onSuccess,
+  idCampamentoFijo,
 }: Props) {
   const [form, setForm] = useState<PersonaFormData>(emptyForm);
   const [cargos, setCargos] = useState<PersonaCargo[]>([]);
   const [estados, setEstados] = useState<PersonaEstado[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [iaLoading, setIaLoading] = useState(false);
+  const [iaResult, setIaResult] = useState<{
+    recommendedCargoId: number;
+    recommendedCargoName: string;
+    reason: string;
+  } | null>(null);
 
   useEffect(() => {
     const loadCatalogos = async () => {
@@ -69,12 +79,15 @@ function PersonaForm({
 
   useEffect(() => {
     if (!personaEditando) {
-      setForm(emptyForm);
+      setForm({
+        ...emptyForm,
+        id_campamento: idCampamentoFijo ? String(idCampamentoFijo) : "",
+      });
       return;
     }
 
     setForm({
-      id_campamento: String(personaEditando.id_campamento ?? ""),
+      id_campamento: idCampamentoFijo ? String(idCampamentoFijo) : String(personaEditando.id_campamento ?? ""),
       cedula: personaEditando.cedula ?? "",
       nombre: personaEditando.nombre ?? "",
       apellidos: personaEditando.apellidos ?? "",
@@ -91,7 +104,7 @@ function PersonaForm({
         ? String(personaEditando.id_estado_actual)
         : "",
     });
-  }, [personaEditando]);
+  }, [personaEditando, idCampamentoFijo]);
 
   const handleChange = (
     field: keyof PersonaFormData,
@@ -104,7 +117,7 @@ function PersonaForm({
   };
 
   const validate = () => {
-    if (!form.id_campamento) {
+    if (!idCampamentoFijo && !form.id_campamento) {
       return "Debe seleccionar un campamento.";
     }
 
@@ -120,15 +133,69 @@ function PersonaForm({
       return "Debe ingresar los apellidos.";
     }
 
-    if (!form.id_cargo_actual) {
-      return "Debe seleccionar un cargo.";
-    }
-
     if (!form.id_estado_actual) {
       return "Debe seleccionar un estado.";
     }
 
     return null;
+  };
+
+  const handleAsignarCargoIA = async () => {
+    if (!form.nombre.trim() || !form.apellidos.trim()) {
+      setError("Complete nombre y apellidos antes de usar la IA.");
+      return;
+    }
+
+    // Si está editando y ya tiene un cargo definido, preguntar antes de sobrescribir
+    if (personaEditando?.id_persona && form.id_cargo_actual) {
+      const confirmar = window.confirm(
+        "La persona ya tiene un cargo asignado. ¿Desea reemplazarlo con la recomendación de IA?"
+      );
+      if (!confirmar) return;
+    }
+
+    setIaLoading(true);
+    setIaResult(null);
+    setError(null);
+
+    try {
+      let result: {
+        recommendedCargoId: number;
+        recommendedCargoName: string;
+        reason: string;
+      };
+
+      if (personaEditando?.id_persona) {
+        // Para persona existente, usar el endpoint que asigna y persiste
+        const fullResult = await assignCargoByIA(personaEditando.id_persona);
+        result = {
+          recommendedCargoId: fullResult.recommendedCargoId,
+          recommendedCargoName: fullResult.recommendedCargoName,
+          reason: fullResult.reason,
+        };
+      } else {
+        // Para persona nueva, solo recomendar sin persistir
+        result = await recomendarCargoIA({
+          persona: `${form.nombre.trim()} ${form.apellidos.trim()}`,
+          campamento: form.id_campamento
+            ? campamentos.find(c => String(c.id_campamento) === form.id_campamento)?.nombre
+            : undefined,
+        });
+      }
+
+      if (result.recommendedCargoId) {
+        setForm((current) => ({
+          ...current,
+          id_cargo_actual: String(result.recommendedCargoId),
+        }));
+      }
+
+      setIaResult(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo asignar cargo con IA.");
+    } finally {
+      setIaLoading(false);
+    }
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -220,29 +287,31 @@ function PersonaForm({
       <div className="modal-form__section">
         <h3 className="modal-form__section-title">Asignación</h3>
 
-        <label className="form-field">
-          <span>Campamento *</span>
-          <select
-            value={form.id_campamento}
-            onChange={(event) =>
-              handleChange("id_campamento", event.target.value)
-            }
-          >
-            <option value="">Seleccione un campamento</option>
-            {campamentos.map((campamento) => (
-              <option
-                key={campamento.id_campamento}
-                value={campamento.id_campamento}
-              >
-                {campamento.nombre}
-              </option>
-            ))}
-          </select>
-        </label>
+        {!idCampamentoFijo && (
+          <label className="form-field">
+            <span>Campamento *</span>
+            <select
+              value={form.id_campamento}
+              onChange={(event) =>
+                handleChange("id_campamento", event.target.value)
+              }
+            >
+              <option value="">Seleccione un campamento</option>
+              {campamentos.map((campamento) => (
+                <option
+                  key={campamento.id_campamento}
+                  value={campamento.id_campamento}
+                >
+                  {campamento.nombre}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
 
         <div className="modal-form__row">
           <label className="form-field">
-            <span>Cargo *</span>
+            <span>Cargo</span>
             <select
               value={form.id_cargo_actual}
               onChange={(event) =>
@@ -286,6 +355,26 @@ function PersonaForm({
             placeholder="Identificador interno del campamento"
           />
         </label>
+
+        <div style={{ marginTop: 12 }}>
+          <button
+            type="button"
+            className="btn btn--secondary btn--sm"
+            onClick={handleAsignarCargoIA}
+            disabled={iaLoading}
+          >
+            {iaLoading ? "Consultando IA..." : "Asignar cargo con IA"}
+          </button>
+
+          {iaResult && (
+            <div style={{ marginTop: 10, padding: 10, border: "1px solid var(--section-border)", borderRadius: 6, background: "rgba(0,0,0,0.15)" }}>
+              <p style={{ fontSize: 13, margin: "0 0 4px" }}><strong>Recomendación IA:</strong> {iaResult.reason}</p>
+              <p style={{ fontSize: 12, margin: 0, color: "var(--section-muted)" }}>
+                Cargo sugerido: {iaResult.recommendedCargoName}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="modal-form__section">

@@ -54,7 +54,7 @@ function InventarioPage() {
   const [movements, setMovements] = useState<MovimientoRegistro[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [errorDetails, setErrorDetails] = useState<unknown | null>(null);
+  const [errorDetails, setErrorDetails] = useState<any | null>(null);
   const [showErrorDetails, setShowErrorDetails] = useState(false);
   const [errorSummary, setErrorSummary] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -158,10 +158,15 @@ function InventarioPage() {
   const loadCampamentos = async () => {
     try {
       const data = await getCampamentos();
-      setCampamentos(data);
+      setCampamentos(
+        data.map((camp) => ({
+          id_campamento: camp.id_campamento ?? 0,
+          nombre: camp.nombre,
+        })),
+      );
     } catch (err) {
       console.error("Error cargando campamentos:", err);
-      // fallback silencioso si no está disponible.
+      // fallback silencioso si no estรก disponible.
     }
   };
 
@@ -170,16 +175,22 @@ function InventarioPage() {
       const data = await getAvailableResources();
       setAvailableResources(data);
     } catch {
-      // fallback silencioso si no está disponible.
+      // fallback silencioso si no estรก disponible.
     }
   };
 
   const loadPersonas = async () => {
     try {
       const data = await getPersonas();
-      setPersonas(data);
+      setPersonas(
+        data.map((persona) => ({
+          id_persona: persona.id_persona ?? 0,
+          nombre: persona.nombre,
+          apellidos: persona.apellidos,
+        })),
+      );
     } catch {
-      // fallback silencioso si no está disponible.
+      // fallback silencioso si no estรก disponible.
     }
   };
 
@@ -342,7 +353,7 @@ function InventarioPage() {
 
     try {
       await createProduccion(productionForm);
-      setMessage("Producción registrada correctamente.");
+      setMessage("Producciรณn registrada correctamente.");
       setProductionForm((current) => ({
         ...current,
         cantidad: 0,
@@ -360,7 +371,7 @@ function InventarioPage() {
         setErrorDetails(body);
         setErrorSummary(formatErrorSummary(body));
       } else {
-        setError("No se pudo registrar la producción.");
+        setError("No se pudo registrar la producciรณn.");
         setErrorDetails(null);
         setErrorSummary(null);
       }
@@ -377,7 +388,7 @@ function InventarioPage() {
 
     try {
       await createRacion(rationForm);
-      setMessage("Ración registrada correctamente.");
+      setMessage("Raciรณn registrada correctamente.");
       setRationForm((current) => ({
         ...current,
         cantidad: 0,
@@ -393,7 +404,7 @@ function InventarioPage() {
         setErrorDetails(body);
         setErrorSummary(formatErrorSummary(body));
       } else {
-        setError("No se pudo registrar la ración.");
+        setError("No se pudo registrar la raciรณn.");
         setErrorDetails(null);
         setErrorSummary(null);
       }
@@ -485,7 +496,7 @@ function InventarioPage() {
                   </button>
                   {showErrorDetails && (
                     <pre style={{ whiteSpace: "pre-wrap", marginTop: 8 }}>
-                      {JSON.stringify(errorDetails, null, 2)}
+                      {typeof errorDetails === "string" ? errorDetails : errorDetails ? JSON.stringify(errorDetails, null, 2) : ""}
                     </pre>
                   )}
                 </div>
@@ -568,7 +579,7 @@ function InventarioPage() {
                 >
                   <option value="">Todos</option>
                   <option value="stable">Estable</option>
-                  <option value="critical">Crítico</option>
+                  <option value="critical">Crรญtico</option>
                 </select>
               </label>
             </div>
@@ -672,17 +683,17 @@ function InventarioPage() {
               <div>
                 <h3>Operaciones diarias</h3>
                 <p className="small-text">
-                  Registra producción y consumo diario para actualizar el
-                  inventario automáticamente.
+                  Registra producciรณn y consumo diario para actualizar el
+                  inventario automรกticamente.
                 </p>
               </div>
             </div>
 
             <div className="campamentos-list" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
               <article className="campamento-card">
-                <h4>Producción diaria</h4>
+                <h4>Producciรณn diaria</h4>
                 <p className="small-text">
-                  Registra la producción por persona y actualiza el inventario.
+                  Registra la producciรณn por persona y actualiza el inventario.
                 </p>
                 <button
                   type="button"
@@ -691,15 +702,15 @@ function InventarioPage() {
                   onClick={() => setShowProductionForm(true)}
                 >
                   <Plus size={16} style={{ marginRight: 6, verticalAlign: -2 }} />
-                  Registrar producción
+                  Registrar producciรณn
                 </button>
               </article>
 
               <article className="campamento-card">
-                <h4>Ración diaria</h4>
+                <h4>Raciรณn diaria</h4>
                 <p className="small-text">
                   Registra el consumo diario y ajusta el inventario
-                  automáticamente.
+                  automรกticamente.
                 </p>
                 <button
                   type="button"
@@ -708,7 +719,7 @@ function InventarioPage() {
                   onClick={() => setShowRationForm(true)}
                 >
                   <Plus size={16} style={{ marginRight: 6, verticalAlign: -2 }} />
-                  Registrar ración
+                  Registrar raciรณn
                 </button>
               </article>
             </div>
@@ -717,13 +728,13 @@ function InventarioPage() {
 
           {showProductionForm && (
             <PageModal
-              title="Producción diaria"
+              title="Producciรณn diaria"
               onClose={() => setShowProductionForm(false)}
               size="md"
             >
               <form className="modal-form" onSubmit={handleProductionSubmit}>
                 <p className="section-description">
-                  Registra la producción por persona y actualiza el inventario.
+                  Registra la producciรณn por persona y actualiza el inventario.
                 </p>
 
                 <div className="modal-form__section">
@@ -841,7 +852,7 @@ function InventarioPage() {
                     Cancelar
                   </button>
                   <button className="button button-primary" disabled={isProducing}>
-                    {isProducing ? "Registrando..." : "Registrar producción"}
+                    {isProducing ? "Registrando..." : "Registrar producciรณn"}
                   </button>
                 </div>
               </form>
@@ -850,13 +861,13 @@ function InventarioPage() {
 
           {showRationForm && (
             <PageModal
-              title="Ración diaria"
+              title="Raciรณn diaria"
               onClose={() => setShowRationForm(false)}
               size="md"
             >
               <form className="modal-form" onSubmit={handleRationSubmit}>
                 <p className="section-description">
-                  Registra el consumo diario y ajusta el inventario automáticamente.
+                  Registra el consumo diario y ajusta el inventario automรกticamente.
                 </p>
 
                 <div className="modal-form__section">
@@ -954,7 +965,7 @@ function InventarioPage() {
                     Cancelar
                   </button>
                   <button className="button button-primary" disabled={isRationing}>
-                    {isRationing ? "Registrando..." : "Registrar ración"}
+                    {isRationing ? "Registrando..." : "Registrar raciรณn"}
                   </button>
                 </div>
               </form>
@@ -967,7 +978,7 @@ function InventarioPage() {
                 <div>
                   <h3>Historial de movimientos</h3>
                   <p className="small-text">
-                    Registros automáticos de producción y consumo diario.
+                    Registros automรกticos de producciรณn y consumo diario.
                   </p>
                 </div>
 
@@ -991,7 +1002,7 @@ function InventarioPage() {
                   </label>
 
                   <label className="form-field">
-                    <span>Fecha de cálculo</span>
+                    <span>Fecha de cรกlculo</span>
                     <input
                       type="date"
                       value={recalculateDate}
@@ -1063,7 +1074,7 @@ function InventarioPage() {
                 </p>
 
                 <div className="modal-form__section">
-                  <h3 className="modal-form__section-title">Asignación</h3>
+                  <h3 className="modal-form__section-title">Asignaciรณn</h3>
 
                   <label className="form-field">
                     <span>Campamento *</span>
@@ -1122,7 +1133,7 @@ function InventarioPage() {
                     </label>
 
                     <label className="form-field">
-                      <span>Umbral mínimo *</span>
+                      <span>Umbral mรญnimo *</span>
                       <input
                         name="minThreshold"
                         type="number"
