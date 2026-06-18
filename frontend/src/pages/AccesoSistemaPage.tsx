@@ -30,6 +30,7 @@ import type { Rol } from "../features/roles/roles.api";
 import { getRecursos, createRecurso, updateRecurso, deleteRecurso } from "../features/recursos/recursos.api";
 import type { RecursoItem } from "../features/recursos/types";
 import { useAuth } from "../shared/hooks/useAuth";
+import { useInactivityTimer } from "../shared/hooks/useInactivityTimer";
 import { storage } from "../shared/utils/storage";
 import { PageModal } from "../shared/components/PageModal";
 import EnviosPage from "../features/envios/pages/EnviosPage";
@@ -41,6 +42,12 @@ type CampTab = "detalle" | "personas" | "cargos" | "estados" | "inventario" | "e
 function AccesoSistemaPage() {
   const { usuario } = useAuth();
   const rolCodigo = usuario?.rol?.codigo ?? "";
+  const { secondsLeft } = useInactivityTimer();
+  const formatTime = (totalSeconds: number) => {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  };
   const [sysTab, setSysTab] = useState<SysTab>("campamentos");
   const [selectedCampId, setSelectedCampId] = useState<number | null>(null);
   const [campTab, setCampTab] = useState<CampTab>("detalle");
@@ -251,6 +258,15 @@ function AccesoSistemaPage() {
             )}
           </div>
           <div className="admin-topbar-right">
+            <div className="inactivity-timer" title="Tiempo restante de sesion">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+              <span className={`inactivity-timer__value${secondsLeft <= 60 ? " is-warning" : ""}`}>
+                {formatTime(secondsLeft)}
+              </span>
+            </div>
             <button type="button" className="admin-topbar-logout" onClick={handleLogout}><LogOut size={14} /> Salir</button>
           </div>
         </div>
