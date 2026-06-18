@@ -269,7 +269,7 @@ function AccesoSistemaPage() {
               <section className="section-card" style={{ marginTop: 0 }}>
                 <div className="section-header">
                   <div className="section-header__left"><h3 className="section-header__title"><Building2 size={20} style={{ color: "var(--section-accent)" }} /> Todos los campamentos</h3><p className="section-header__sub">Selecciona un campamento para gestionar todos sus módulos.</p></div>
-                  <div className="section-header__actions"><div className="header-stat"><span className="header-stat__label">Activos</span><strong className="header-stat__value">{campamentosActivos.length}</strong></div></div>
+                  <div className="section-header__actions"><div className="header-stat"><span className="header-stat__label">Activos</span><strong className="header-stat__value">{campamentosActivos.length}</strong></div><button type="button" className="btn btn--primary btn--sm" onClick={() => { setCampEditando(null); setShowCampForm(true); }}><Plus size={13} /> Nuevo campamento</button></div>
                 </div>
                 <div className="section-body">
                   {loading ? <div className="section-empty"><p className="section-empty__desc">Cargando...</p></div> : campamentosActivos.length === 0 ? <div className="section-empty"><p className="section-empty__title">Sin campamentos</p></div> : (
